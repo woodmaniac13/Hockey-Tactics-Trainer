@@ -1,80 +1,333 @@
 2D Web-Based Interactive Tactical Trainer for Field Hockey
 
-Full Technical Design Specification (Final Integrated Version)
+Overview
+
+A browser-based tactical training tool where players:
+	•	interact with a 2D field hockey board
+	•	reposition a player based on a scenario
+	•	receive immediate feedback based on tactical principles
+
+The system runs entirely in the browser and is deployed as a static site on GitHub Pages.
+
+The MVP is a static single-page application with no backend dependency. All scoring, content loading, state management, and progress persistence happen client-side.
 
 ⸻
 
-1. Overview
+Product Goal
 
-1.1 Purpose
+Teach players to make better tactical positioning decisions in field hockey by presenting scenarios and judging their chosen movement based on:
+	•	support
+	•	transfer
+	•	cover
+	•	spacing
+	•	width/depth
+	•	pressure response
 
-A 2D web-based interactive tactical training system where players:
-	•	are presented with realistic field hockey scenarios
-	•	reposition their player via drag-and-drop
-	•	receive AI-evaluated feedback based on tactical principles
-
-⸻
-
-1.2 Core Philosophy
-
-Positioning is evaluated based on:
-	•	Role fulfillment (support / transfer / cover)
-	•	Relationship to the ball
-	•	Team structure (triangles, width, depth)
-
-NOT:
-	•	exact coordinate matching
+The product is not trying to simulate full match physics. It is a tactical decision trainer, not a game simulation.
 
 ⸻
 
-1.3 Key Design Principles
-	•	Constraint-based scoring
-	•	Multiple valid solutions
+Non-Goals
+
+The MVP must not attempt to provide:
+	•	full real-time multi-player simulation
+	•	physics-based ball movement
+	•	live coach dashboards
+	•	cloud sync
+	•	user login
+	•	multiplayer collaboration
+	•	freeform whiteboard drawing tools
+	•	server-authoritative scoring
+
+⸻
+
+Core Principles
+	•	Ball-relative positioning (support / transfer / cover)
+	•	Constraint-based evaluation (not exact positions)
+	•	Multiple valid solutions allowed
+	•	Deterministic scoring
 	•	Explainable feedback
-	•	Deterministic evaluation
-	•	Coach-aligned logic
+	•	Static deployment compatibility
+	•	Content-driven design through scenario JSON files
 
 ⸻
 
-2. System Architecture
+MVP Scope
 
-2.1 Components
+Included
+	•	Interactive board
+	•	Scenario loading from static files
+	•	In-browser evaluation
+	•	Feedback system
+	•	Local progress tracking
+	•	Reasoning capture
+	•	Difficulty progression
+	•	Visual overlays after submission
+	•	Scenario validation at load time
+	•	Import/export of local progress JSON
 
-Client (Web)
-	•	2D pitch UI
-	•	Drag interaction
-	•	Instant scoring (local WASM)
-	•	Feedback rendering
-
-Server
-	•	Authoritative evaluation
-	•	Scenario storage
-	•	Player analytics
-
-Shared Engine
-	•	WASM evaluation module
-	•	Guarantees client/server parity
+Excluded
+	•	Backend APIs
+	•	User accounts
+	•	Cloud persistence
+	•	Real-time analytics
+	•	Coach publishing tools (server-based)
+	•	Shared team content management
+	•	Live content editing in production
+	•	Online leaderboards
 
 ⸻
 
-3. Pitch & Coordinate System (Resolved)
+Target Platform
 
-3.1 Axis Definition
+Static web frontend hosted on GitHub Pages.
 
-Axis	Meaning
-x = 0	Home defending baseline
-x = 100	Home attacking baseline
-y = 0	Left sideline
-y = 100	Right sideline
+Supported devices
+	•	desktop browsers: primary target
+	•	tablets: supported
+	•	mobile phones: usable, but not primary MVP target
+
+Supported browsers
+	•	latest Chrome
+	•	latest Edge
+	•	latest Safari
+	•	latest Firefox
+
+Do not optimize first for legacy browsers.
+
+⸻
+
+High-Level User Flow
+	1.	User opens app
+	2.	App loads manifest and scenario packs
+	3.	User selects scenario or progression-recommended scenario
+	4.	Scenario board renders
+	5.	User optionally reads objective and reasoning prompt context
+	6.	User drags target player
+	7.	User submits answer
+	8.	App evaluates:
+	•	constraints
+	•	tactical scores
+	•	region fit
+	•	reasoning alignment
+	9.	User receives:
+	•	score
+	•	explanation
+	•	visual overlays
+	•	alternate-valid acknowledgement if applicable
+	10.	Progress stored locally
+	11.	User can retry or continue
+
+⸻
+
+Primary UX Modes
+
+1. Training Mode
+
+Default user mode.
+	•	choose scenario
+	•	answer once
+	•	see result
+	•	save progress
+
+2. Review Mode
+
+Visible after submission.
+	•	shows ideal/acceptable regions
+	•	shows player placement
+	•	shows passing lanes / support angles
+	•	explains tactical logic
+
+3. Retry Mode
+
+Replays same scenario without altering prior saved attempt unless user explicitly resubmits.
+
+4. Debug Mode
+
+Development-only mode.
+	•	exposes raw scoring breakdown
+	•	shows geometry helpers
+	•	shows region outlines before submit
+	•	not enabled in normal production UI
+
+⸻
+
+Core Data Sources
+	•	Scenarios: /public/scenarios/**/*.json
+	•	Weight profiles: /public/weights/*.json
+	•	Manifest: /public/scenario-packs.json
+	•	Static diagrams/icons: /public/assets/**
+
+The app must treat these files as the canonical content source.
+
+⸻
+
+Repository Expectations
+
+The AI agent building this should assume the repo contains or will contain:
+
+/public
+  /scenarios
+    /build-out
+    /defence
+    /attack
+    /transition
+  /weights
+  /assets
+  scenario-packs.json
+
+/src
+  /app
+  /components
+  /board
+  /evaluation
+  /scenarios
+  /storage
+  /types
+  /utils
+  /pages
+
+
+⸻
+
+Persistence Model
+
+Stored locally:
+	•	scores
+	•	attempts
+	•	reasoning answers
+	•	progression
+	•	settings
+	•	recently played scenarios
+
+Storage choice
+	•	MVP: localStorage
+	•	Optional richer attempt history: IndexedDB
+
+Required local keys
+
+Suggested names:
+	•	fhtt.progress.v1
+	•	fhtt.attempts.v1
+	•	fhtt.settings.v1
+	•	fhtt.contentVersion.v1
+
+Persistence rules
+	•	scenario attempts must include scenario id and version
+	•	if scenario version changes, historical attempts remain valid but are not merged with newer version attempts
+	•	corrupted local state must fail gracefully and reset only the corrupted store, not crash the app
+
+⸻
+
+Success Criteria
+	•	Users understand positioning decisions
+	•	Feedback is clear and actionable
+	•	Multiple valid solutions are accepted
+	•	System is responsive (<100ms scoring on normal scenario sizes)
+	•	Load time is fast on static hosting
+	•	Broken scenario files do not crash the app
+	•	Deterministic scoring produces same result for same input every time
+
+⸻
+
+Tactical Model
+
+Core Tactical Concepts
+
+The evaluation model is based on:
+	•	support
+	•	transfer
+	•	cover
+	•	ball-side vs weak-side
+	•	width and depth
+	•	spacing
+	•	pressure response
+
+The app should not try to encode every coaching philosophy. It should implement a clear default tactical framework with configurable scenario weights.
+
+⸻
+
+Ball-Relative Logic
+
+The correct move depends on:
+	•	ball location
+	•	pressure direction
+	•	target player role
+	•	teammate spacing
+	•	opponent pressure
+	•	scenario objective
+
+The app should never assume one perfect coordinate is the only correct answer.
+
+⸻
+
+Static App Architecture
+
+Runtime Architecture
+
+Entirely client-side:
+	•	React UI layer
+	•	Board rendering layer
+	•	Scenario loading layer
+	•	Evaluation engine
+	•	Feedback generation layer
+	•	Local persistence layer
+	•	Progression engine
+
+No server calls are required after static assets are loaded.
+
+⸻
+
+Preferred Stack
+	•	React
+	•	TypeScript
+	•	Vite
+	•	Zod for runtime validation
+	•	Canvas or Konva for board rendering
+	•	localStorage for MVP persistence
+
+If a rendering library is used, it must support:
+	•	dragging entities
+	•	overlays
+	•	hit testing
+	•	responsive resizing
+
+⸻
+
+Performance Constraints
+
+The app should:
+	•	load quickly on GitHub Pages
+	•	keep initial JS bundle moderate
+	•	avoid unnecessary libraries
+	•	evaluate a scenario in under 100ms
+	•	remain interactive at 60fps during drag on common laptops/tablets
+
+⸻
+
+Coordinate System
+
+Canonical Pitch Space
+
+Use normalized pitch coordinates.
+	•	x = 0 → home defending baseline
+	•	x = 100 → home attacking baseline
+	•	y = 0 → left sideline
+	•	y = 100 → right sideline
 
 Direction
-	•	Home team attacks +X
+
+Home team attacks in the positive X direction.
+
+All scenario files must use this orientation.
 
 ⸻
 
-3.2 Pitch Bands
+Pitch Bands
 
-Band	Range	Meaning
+Use these default longitudinal bands:
+
+Band	X Range	Meaning
 B1	0–16	DEF_CIRCLE
 B2	16–33	DEF_23
 B3	33–50	DEF_HALF
@@ -82,330 +335,674 @@ B4	50–67	ATT_HALF
 B5	67–84	ATT_23
 B6	84–100	ATT_CIRCLE
 
+Optional lateral bands may also be used internally:
+	•	LW
+	•	LI
+	•	C
+	•	RI
+	•	RW
+
+These are not required in base scenario files, but may be derived.
 
 ⸻
 
-4. Scenario System (Fully Defined)
+Scenario Model
 
-4.1 Scenario Schema
+Scenario File Purpose
+
+A scenario describes:
+	•	current board state
+	•	objective
+	•	movable player
+	•	valid solution regions
+	•	evaluation thresholds
+	•	difficulty metadata
+
+⸻
+
+Required Scenario Fields
+
+Every scenario must include:
 
 {
-  "scenario_id": "S03",
+  "scenario_id": "S01",
   "version": 1,
+  "title": "CM support under right-side pressure",
+  "description": "Move the CM to support the ball carrier safely.",
   "team_orientation": "home_attacks_positive_x",
-
-  "ball": { "x": 54, "y": 32 },
-
-  "teammates": [
-    { "id": "LB", "x": 40, "y": 20 },
-    { "id": "CB", "x": 35, "y": 32 },
-    { "id": "RB", "x": 42, "y": 50 }
-  ],
-
-  "opponents": [
-    { "id": "F1", "x": 52, "y": 34 },
-    { "id": "F2", "x": 55, "y": 28 },
-    { "id": "M1", "x": 60, "y": 35 }
-  ],
-
+  "phase": "attack",
+  "target_player": "CM",
+  "ball": { "x": 58, "y": 68 },
+  "teammates": [],
+  "opponents": [],
   "pressure": {
     "direction": "inside_out",
     "intensity": "medium"
   },
-
-  "target_player": "CM",
-
-  "ideal_regions": [
-    { "x": 48, "y": 35, "r": 8, "weight": 1.0 }
-  ],
-
-  "acceptable_regions": [
-    { "x": 45, "y": 38, "r": 10 }
-  ],
-
+  "ideal_regions": [],
+  "acceptable_regions": [],
   "weight_profile": "build_out_v1",
-
   "constraint_thresholds": {
     "support": 0.7,
     "passing_lane": 0.7,
     "pressure_relief": 0.6
   },
-
   "difficulty": 2,
-  "tags": ["support", "build_out"]
+  "tags": ["support", "build_out", "cm"]
 }
 
 
 ⸻
 
-4.2 Validation Rules
-	•	Opponents required (>0)
-	•	Minimum total entities ≥ 10
-	•	Coordinates within bounds
-	•	Cannot save invalid scenarios
+Required Validation Rules
+
+A scenario is invalid if:
+	•	scenario_id missing
+	•	version missing
+	•	ball missing
+	•	target player missing
+	•	teammates missing
+	•	opponents missing
+	•	pressure missing
+	•	weight profile missing
+	•	coordinates out of range
+	•	fewer than one opponent
+	•	fewer than one teammate besides target where scenario depends on relationship
+	•	no ideal and no acceptable regions
+	•	unknown pressure direction
+	•	unknown phase
+	•	duplicate entity ids
+
+The app must reject invalid scenarios cleanly.
 
 ⸻
 
-5. Evaluation Engine (Final)
+Entity Format
 
-5.1 Evaluation Order
-	1.	Constraint validation
-	2.	Tactical scoring
-	3.	Region scoring
-	4.	Reasoning bonus
+Suggested entity structure:
 
-⸻
+{
+  "id": "CM",
+  "role": "CM",
+  "team": "home",
+  "x": 48,
+  "y": 52
+}
 
-5.2 Alternate Valid Solution Path (Fixed)
+Required entity fields
+	•	id
+	•	role
+	•	team
+	•	x
+	•	y
 
-if constraints_pass():
-    if not in_regions():
-        result = ALTERNATE_VALID
-
-
-⸻
-
-5.3 Tactical Metrics
-
-In Possession
-	•	Support angle
-	•	Passing lane quality
-	•	Distance to ball
-	•	Spacing
-	•	Width / depth
-
-Out of Possession
-	•	Pressure role
-	•	Cover position
-	•	Central protection
-	•	Recovery angle
+Allowed team values
+	•	home
+	•	away
 
 ⸻
 
-5.4 Support Angle (Resolved)
+Regions
 
-support_angle = angle between:
-(player - ball) and perpendicular to pressure direction
+Two region types:
 
-Scoring
+Ideal regions
 
-Angle	Result
-30–60°	Optimal
-15–75°	Acceptable
-Otherwise	Poor
+Best answers.
+May contain multiple regions.
 
+Acceptable regions
+
+Still valid answers.
+May contain multiple regions.
+
+Shape support
+
+MVP should support:
+	•	circle
+
+Optional later:
+	•	ellipse
+	•	polygon
+
+To reduce build complexity, MVP should start with circles only.
 
 ⸻
 
-6. Pressure Model (Added)
+Evaluation Engine
 
-"pressure": {
+Evaluation Order
+
+The engine must evaluate in this order:
+	1.	Hard validation
+	2.	Constraint scoring
+	3.	Tactical component scoring
+	4.	Region fit scoring
+	5.	Reasoning bonus
+	6.	Final feedback selection
+
+This order matters and must not be changed casually.
+
+⸻
+
+Determinism Rules
+
+The evaluator must be deterministic.
+
+Required:
+	•	no randomness
+	•	fixed decimal handling
+	•	stable sort order
+	•	no time-based influence
+	•	same inputs produce same outputs
+
+Round displayed values separately from internal scoring to avoid drift.
+
+⸻
+
+Constraint-Based Model
+
+A move can be valid even if outside ideal/acceptable region if it satisfies tactical thresholds strongly enough.
+
+Alternate-valid rule
+
+If all defined constraints pass minimum thresholds, and region fit is low or zero:
+	•	mark result as ALTERNATE_VALID
+	•	do not classify as wrong
+	•	show special feedback acknowledging a different valid solution
+
+This is required.
+
+⸻
+
+Tactical Scoring Components
+
+The engine should support these component scores:
+	•	support
+	•	passing_lane
+	•	spacing
+	•	pressure_relief
+	•	width_depth
+	•	cover
+	•	region_fit
+	•	reasoning_bonus
+
+Not all scenarios need all components.
+
+⸻
+
+Pressure Model
+
+Pressure is structured, not implied.
+
+Pressure object
+
+{
   "direction": "inside_out",
   "intensity": "medium"
 }
 
-
-⸻
-
-Values
-
-Direction
+Allowed directions
 	•	inside_out
 	•	outside_in
 	•	central
 	•	none
 
-Intensity
-	•	low / medium / high
+Allowed intensity
+	•	low
+	•	medium
+	•	high
 
 ⸻
 
-7. Weight System (Governed)
+Support Angle
 
-7.1 Decoupled Profiles
+Support angle is a defined geometric concept.
 
-"weight_profile": "build_out_v1"
+Definition
 
+Angle between:
+	•	the vector from ball to player
+	•	the vector perpendicular to pressure direction
 
-⸻
+Default interpretation
+	•	30°–60° → optimal
+	•	15°–75° → acceptable
+	•	outside that → poor
 
-7.2 Example
+Implementation note
 
-{
-  "support": 0.35,
-  "passing_lane": 0.25,
-  "spacing": 0.2,
-  "pressure_relief": 0.2
-}
-
-
-⸻
-
-7.3 Governance
-	•	Defined by lead coach
-	•	Validated via playtesting
-	•	Version-controlled
-	•	Shared across scenarios
+The evaluator must define pressure direction as a unit vector before angle computations.
 
 ⸻
 
-8. Client / Server Parity (Resolved)
+Passing Lane
 
-8.1 Deterministic Engine
-	•	Shared WASM logic
-	•	Same math, same weights
+Measures whether the player is realistically available.
 
-⸻
+MVP approximation
 
-8.2 Reconciliation
+Use geometric blocking against opponent positions:
+	•	if an opponent lies close to the line segment from ball to player, lane is degraded
+	•	closeness threshold configurable per scenario or profile
 
-Case	Behaviour
-Match	No change
-<2% diff	Silent
-≥2% diff	UI correction + flag
-
+No full occlusion physics needed.
 
 ⸻
 
-8.3 Testing
-	•	Golden test fixtures
-	•	CI parity enforcement
+Distance to Ball
+
+Useful support positions should not be:
+	•	too close
+	•	too far
+
+Distance scoring should be profile-based, not hardcoded globally.
 
 ⸻
 
-9. Interactive Board
+Spacing
 
-9.1 Core Interaction
-	•	Drag player
-	•	Snap to coordinates
-	•	Submit
+Reward positions that do not overcrowd nearby teammates.
+
+MVP approximation
+
+Penalty when nearest friendly player distance is below threshold.
 
 ⸻
 
-9.2 Feedback
+Pressure Relief
+
+Reward moves that:
+	•	create escape angle
+	•	open safer option away from pressure
+	•	avoid trapping the ball carrier
+
+⸻
+
+Width / Depth
+
+Reward roles that preserve structure:
+	•	wide players staying wide when appropriate
+	•	support players offering depth behind or ahead of ball
+
+⸻
+
+Final Score
+
+Use weighted sum from the referenced weight profile.
+
+Suggested output:
+	•	integer 0–100 for display
+	•	raw float internally if needed
+
+⸻
+
+Weight Profiles
+
+Scenarios must reference a named profile.
 
 Example:
 
-Score: 78
-
-Good:
-	•	Strong support angle
-	•	Maintained triangle
-
-Improve:
-	•	Too high → no recycle option
-	•	Central lane exposed
-
-⸻
-
-9.3 Visual Overlays
-	•	Passing lanes
-	•	Ideal zones
-	•	Player vs optimal comparison
-
-⸻
-
-10. Scenario Authoring (Realistic)
-
-10.1 Time Cost
-
-User	Time
-Expert	20–40 min
-New	60–90 min
-
-
-⸻
-
-10.2 Required MVP Tools
-	•	Formation templates
-	•	Scenario duplication
-	•	Snap-to-zone placement
-	•	Auto opponent generation
-
-⸻
-
-10.3 MVP Scope
-	•	20 scenarios (reduced from 50)
-
-⸻
-
-11. Progression System (Defined)
-
-11.1 Metadata
-
 {
-  "difficulty": 2,
-  "tags": ["support"]
+  "profile_id": "build_out_v1",
+  "weights": {
+    "support": 0.35,
+    "passing_lane": 0.25,
+    "spacing": 0.2,
+    "pressure_relief": 0.2
+  }
 }
 
+Rule
+
+Scenario files should not duplicate weight tables inline in MVP unless necessary for special cases.
 
 ⸻
 
-11.2 Rules
-	•	Unlock at ≥80%
-	•	Weakest skill drives next scenario
+Feedback System
+
+Feedback Goals
+
+Feedback must:
+	•	explain the result
+	•	identify what was good
+	•	identify what to improve
+	•	be concise
+	•	be scenario-specific enough to feel useful
 
 ⸻
 
-12. Reasoning Capture (Added)
+Feedback Structure
 
-Prompt
+Recommended structure:
+	•	headline
+	•	score
+	•	validity type
+	•	positives
+	•	improvement points
+	•	tactical reason
+	•	optional reasoning comparison
+
+Example
+	•	Score: 78
+	•	Result: Valid
+	•	Good: You created a usable support angle and stayed available outside the pressure line.
+	•	Improve: You were slightly too high, leaving less safe depth behind the ball.
+	•	Why: In this scenario the CM should support and relieve inside-out pressure.
+
+⸻
+
+Result Types
+
+Use one of:
+	•	IDEAL
+	•	VALID
+	•	ALTERNATE_VALID
+	•	PARTIAL
+	•	INVALID
+
+⸻
+
+Reasoning Capture
+
+Purpose
+
+Encourage tactical thinking, not just guessing positions.
+
+Flow
+
+Before feedback reveal, optionally ask:
 
 Why did you move here?
 
-Options:
-	•	Passing angle
-	•	Cover
-	•	Switch
-	•	Support
-
-⸻
+MVP answers
+	•	Create a passing angle
+	•	Provide cover
+	•	Enable switch
+	•	Support under pressure
 
 Scoring
-	•	Correct reasoning = +10%
+
+Add small bonus for aligned reasoning:
+	•	suggested max +10%
+
+Do not let reasoning overpower movement scoring.
 
 ⸻
 
-13. Versioning (Enforced)
+Progression Model
+
+Difficulty
+
+Each scenario has:
+	•	difficulty integer, suggested range 1–5
+
+Recommendation logic
+
+MVP should support basic progression:
+	•	unlock next difficulty when average score threshold is met
+	•	recommend scenarios from weakest tag category
+
+Example
+
+If player consistently scores low on cover, recommend more cover scenarios.
+
+⸻
+
+Local Progress Record
+
+Suggested structure:
 
 {
-  "scenario_id": "S03",
-  "version": 3
+  "scenario_id": "S01",
+  "version": 1,
+  "best_score": 82,
+  "last_score": 78,
+  "attempt_count": 3,
+  "reasoning_history": ["support_under_pressure"]
 }
 
 
 ⸻
 
-Attempt Record
+Board UI Requirements
+
+Required Visual Elements
+	•	pitch background
+	•	ball marker
+	•	teammates
+	•	opponents
+	•	target player highlight
+	•	submit button
+	•	reset button
+	•	optional objective panel
+	•	feedback panel
+	•	overlay layer
+
+⸻
+
+Drag Behaviour
+	•	only target player is draggable in MVP
+	•	drag constrained to pitch bounds
+	•	movement should feel immediate
+	•	on release, player remains where dropped
+	•	reset returns to scenario start position
+
+⸻
+
+Overlays After Submit
+
+Show at least:
+	•	player final position
+	•	ideal/acceptable regions
+	•	line from ball to player
+	•	optional pressure direction indicator
+
+Do not reveal ideal regions before submit in standard mode.
+
+⸻
+
+Responsive Behaviour
+
+Desktop first.
+For narrow screens:
+	•	stack controls vertically
+	•	keep pitch visible without impossible small touch targets
+	•	do not hide submit button
+
+⸻
+
+Error Handling
+
+Required Non-Crash Behaviours
+
+If something goes wrong:
+	•	bad scenario file → show scenario load error, skip scenario
+	•	bad weight profile → show content error
+	•	corrupt local storage → reset affected store only
+	•	missing manifest entry → ignore broken entry, continue loading remaining content
+
+The app must never white-screen due to one bad scenario file.
+
+⸻
+
+Content Loading Rules
+
+Manifest
+
+The app should use a manifest file to know what exists.
+
+Example:
 
 {
-  "scenario_id": "S03",
-  "version": 3,
-  "score": 82
+  "packs": [
+    {
+      "id": "core-mvp",
+      "title": "Core MVP Scenarios",
+      "scenarios": [
+        "/scenarios/build-out/S01.json",
+        "/scenarios/defence/S02.json"
+      ]
+    }
+  ]
 }
 
 
 ⸻
 
-14. Determinism
-	•	No randomness
-	•	Fixed precision
-	•	Same results everywhere
+Loading Strategy
+	•	load manifest first
+	•	lazy-load scenario files as needed
+	•	preload only the next likely scenario if useful
+
+Do not preload all scenarios if unnecessary.
 
 ⸻
 
-15. Implementation Phases
+Import / Export
 
-Phase 1 (MVP)
-	•	Board
-	•	Scenarios
-	•	Rule engine
-	•	Feedback
+MVP support
+
+Users should be able to:
+	•	export progress as JSON
+	•	import progress from JSON
+
+This is important because there is no backend.
+
+Validation
+
+Imported files must be validated before applying.
+
+⸻
+
+Testing Expectations
+
+Unit tests
+
+Must cover:
+	•	geometry helpers
+	•	pressure vector conversion
+	•	support angle calculation
+	•	region inclusion
+	•	scoring functions
+	•	alternate-valid logic
+	•	progression logic
+	•	storage migration logic
+
+Golden tests
+
+Provide fixed scenario + position + expected score outputs.
+
+These are required so future changes do not alter scoring accidentally.
+
+UI tests
+
+At minimum:
+	•	scenario loads
+	•	target player drags
+	•	submit works
+	•	feedback appears
+	•	progress persists
+
+⸻
+
+Accessibility Requirements
+
+MVP should include:
+	•	keyboard-accessible buttons
+	•	readable color contrast
+	•	text labels for major actions
+	•	no feedback that relies only on color
+	•	clear touch targets
+
+Full keyboard drag interaction is optional in MVP, but buttons and navigation should be keyboard-usable.
+
+⸻
+
+Deployment Assumptions
+
+Hosting
+
+GitHub Pages
+
+Build
+
+A static build pipeline should output deployable assets.
+
+CI
+
+At minimum:
+	•	install
+	•	type check
+	•	test
+	•	build
+	•	deploy to Pages on main branch
+
+⸻
+
+Assumptions for the AI Agent Building This
+
+The AI agent should assume:
+	•	no backend should be introduced unless explicitly requested
+	•	MVP must remain GitHub Pages compatible
+	•	simplicity is preferred over extensibility when both satisfy requirements
+	•	circle regions are enough for MVP
+	•	localStorage is enough for MVP unless attempt history becomes unwieldy
+	•	scenario files are human-editable and should remain readable
+	•	deterministic evaluation is more important than elaborate realism
+	•	the tactical framework should be configurable via weight profiles, not rewritten per scenario
+
+⸻
+
+Build Priorities
+
+Phase 1
+	•	app shell
+	•	scenario manifest loading
+	•	board rendering
+	•	single draggable player
+	•	submit/reset
+	•	deterministic evaluator
+	•	feedback panel
+	•	local progress persistence
 
 Phase 2
-	•	Authoring tools
-	•	Analytics
+	•	progression view
+	•	reasoning capture
+	•	import/export
+	•	richer overlays
+	•	content validation UX
 
 Phase 3
-	•	ML refinement
-	•	Adaptive learning
+	•	authoring helper mode
+	•	more scenario packs
+	•	better analytics summaries
+	•	IndexedDB migration if needed
+
+⸻
+
+Acceptance Criteria for MVP
+
+The MVP is complete when:
+	•	app loads from GitHub Pages
+	•	user can select a scenario
+	•	target player can be dragged
+	•	submission returns deterministic score and feedback
+	•	alternate-valid moves are supported
+	•	reasoning can be captured
+	•	progress persists locally
+	•	invalid content fails gracefully
+	•	build and deploy run automatically
+
+⸻
+
+Open Decisions Left Intentionally Small
+
+These may be adjusted during implementation without breaking the design:
+	•	exact rendering library
+	•	exact styling system
+	•	localStorage vs IndexedDB for attempts
+	•	specific folder naming under /public/scenarios
+	•	exact difficulty thresholds
+
+These should not delay implementation.

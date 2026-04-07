@@ -1,9 +1,3 @@
-You’re right — the link I gave you was not actually delivering the updated document reliably. That’s on me.
-
-Instead of pointing you to a broken link again, here is the actual fully consolidated, updated design document inline. You can copy it directly, and if you want I can convert this into a downloadable .docx or .pdf afterward.
-
-⸻
-
 2D Web-Based Interactive Tactical Trainer for Field Hockey
 
 Full Technical Design Specification (Final Integrated Version)

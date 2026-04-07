@@ -1,0 +1,39 @@
+{
+  "scenario_id": "S04",
+  "version": 1,
+  "title": "Counter-Attack Transition",
+  "description": "Your team just won the ball in midfield. You are a midfielder tasked with making a quick forward run to support the counter-attack.",
+  "phase": "transition",
+  "team_orientation": "home_attacks_positive_x",
+  "target_player": "mf2",
+  "ball": { "x": 50, "y": 50 },
+  "teammates": [
+    { "id": "gk", "role": "GK", "team": "home", "x": 5, "y": 50 },
+    { "id": "df1", "role": "DF", "team": "home", "x": 35, "y": 45 },
+    { "id": "mf1", "role": "MF", "team": "home", "x": 50, "y": 50 },
+    { "id": "mf2", "role": "MF", "team": "home", "x": 55, "y": 40 },
+    { "id": "fw1", "role": "FW", "team": "home", "x": 70, "y": 55 }
+  ],
+  "opponents": [
+    { "id": "opp1", "role": "MF", "team": "away", "x": 55, "y": 55 },
+    { "id": "opp2", "role": "DF", "team": "away", "x": 65, "y": 40 },
+    { "id": "opp3", "role": "DF", "team": "away", "x": 70, "y": 60 }
+  ],
+  "pressure": { "direction": "none", "intensity": "low" },
+  "ideal_regions": [
+    { "x": 65, "y": 35, "r": 8 },
+    { "x": 68, "y": 48, "r": 8 }
+  ],
+  "acceptable_regions": [
+    { "x": 62, "y": 38, "r": 12 },
+    { "x": 65, "y": 52, "r": 12 }
+  ],
+  "weight_profile": "transition_v1",
+  "constraint_thresholds": {
+    "support": 0.3,
+    "passing_lane": 0.3,
+    "width_depth": 0.3
+  },
+  "difficulty": 2,
+  "tags": ["transition", "support", "counter_attack"]
+}

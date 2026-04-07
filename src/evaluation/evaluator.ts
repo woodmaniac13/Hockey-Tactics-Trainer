@@ -113,8 +113,7 @@ function computeWidthDepthScore(
   } else {
     yScore = clamp(1 - (yDiff - optimalMax) / optimalMax, 0, 1);
   }
-  if (scenario.phase === 'attack') return lerp(0.5, xScore, yScore);
-  if (scenario.phase === 'defence') return lerp(0.5, xScore, yScore);
+  if (scenario.phase === 'attack' || scenario.phase === 'defence') return lerp(0.5, xScore, yScore);
   return (xScore + yScore) / 2;
 }
 

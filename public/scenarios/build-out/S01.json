@@ -1,0 +1,38 @@
+{
+  "scenario_id": "S01",
+  "version": 1,
+  "title": "CM Build-Out Support",
+  "description": "You are the central midfielder. The goalkeeper has the ball and is looking to play out. Find a support position that relieves pressure and creates a passing option.",
+  "phase": "attack",
+  "team_orientation": "home_attacks_positive_x",
+  "target_player": "cm1",
+  "ball": { "x": 5, "y": 50 },
+  "teammates": [
+    { "id": "gk", "role": "GK", "team": "home", "x": 5, "y": 50 },
+    { "id": "cb1", "role": "CB", "team": "home", "x": 15, "y": 35 },
+    { "id": "cb2", "role": "CB", "team": "home", "x": 15, "y": 65 },
+    { "id": "cm1", "role": "CM", "team": "home", "x": 30, "y": 50 },
+    { "id": "fw1", "role": "FW", "team": "home", "x": 70, "y": 50 }
+  ],
+  "opponents": [
+    { "id": "opp1", "role": "CF", "team": "away", "x": 20, "y": 48 },
+    { "id": "opp2", "role": "CM", "team": "away", "x": 35, "y": 40 }
+  ],
+  "pressure": { "direction": "outside_in", "intensity": "medium" },
+  "ideal_regions": [
+    { "x": 28, "y": 62, "r": 8 },
+    { "x": 32, "y": 38, "r": 8 }
+  ],
+  "acceptable_regions": [
+    { "x": 25, "y": 55, "r": 12 },
+    { "x": 35, "y": 42, "r": 12 }
+  ],
+  "weight_profile": "build_out_v1",
+  "constraint_thresholds": {
+    "support": 0.4,
+    "passing_lane": 0.3,
+    "spacing": 0.3
+  },
+  "difficulty": 1,
+  "tags": ["support", "build_out"]
+}

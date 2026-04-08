@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "packs": [
+    {
+      "id": "core-mvp",
+      "title": "Core Scenarios",
+      "description": "Foundational tactical scenarios covering the key phases of field hockey play.",
+      "order": 1,
+      "scenarios": [
+        "scenarios/build-out/S01.json",
+        "scenarios/defence/S02.json",
+        "scenarios/attack/S03.json",
+        "scenarios/transition/S04.json"
+      ]
+    }
+  ]
+}

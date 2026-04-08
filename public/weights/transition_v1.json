@@ -1,0 +1,20 @@
+{
+  "profile_id": "transition_v1",
+  "version": 1,
+  "description": "Weight profile for transition scenarios",
+  "weights": {
+    "support": 0.20,
+    "passing_lane": 0.20,
+    "spacing": 0.10,
+    "pressure_relief": 0.10,
+    "width_depth": 0.20,
+    "cover": 0.10,
+    "region_fit": 0.08,
+    "reasoning_bonus": 0.02
+  },
+  "component_config": {
+    "distance_to_ball": { "optimal_min": 10, "optimal_max": 22 },
+    "spacing": { "min_distance": 8 },
+    "passing_lane": { "block_threshold": 5 }
+  }
+}

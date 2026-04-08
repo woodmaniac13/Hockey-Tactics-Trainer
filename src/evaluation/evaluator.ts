@@ -6,6 +6,7 @@ import type {
   ComponentScores,
   ResultType,
   ReasoningOption,
+  TacticalRegion,
 } from '../types';
 import {
   distance,
@@ -27,21 +28,49 @@ function lerp(t: number, lo: number, hi: number): number {
   return lo + t * (hi - lo);
 }
 
+/** Score player distance to ball against an optimal band. Returns 0–1. */
+function computeDistanceToBallScore(
+  dist: number,
+  optimalMin: number,
+  optimalMax: number,
+): number {
+  if (dist >= optimalMin && dist <= optimalMax) return 1.0;
+  if (dist < optimalMin) return clamp(dist / optimalMin, 0, 1);
+  return clamp(1 - (dist - optimalMax) / optimalMax, 0, 1);
+}
+
 function computeSupportScore(
   playerPos: Point,
   ball: Point,
   scenario: Scenario,
+  weightProfile: WeightProfile,
 ): number {
   const toBall = normalize({ x: ball.x - playerPos.x, y: ball.y - playerPos.y });
   const pressureVec = pressureToVector(scenario.pressure.direction);
-  if (pressureVec.x === 0 && pressureVec.y === 0) return 0.8;
-  const perpPressure = perpendicular(pressureVec);
-  const angle = angleBetween(toBall, perpPressure);
-  if (angle >= 30 && angle <= 60) return 1.0;
-  if (angle >= 15 && angle < 30) return lerp((angle - 15) / 15, 0.6, 1.0);
-  if (angle > 60 && angle <= 75) return lerp((75 - angle) / 15, 0.6, 1.0);
-  if (angle < 15) return lerp(angle / 15, 0.0, 0.6);
-  return lerp(clamp((90 - angle) / 15, 0, 1), 0.0, 0.6);
+
+  // Angle-based component
+  let angleScore: number;
+  if (pressureVec.x === 0 && pressureVec.y === 0) {
+    angleScore = 0.8;
+  } else {
+    const perpPressure = perpendicular(pressureVec);
+    const angle = angleBetween(toBall, perpPressure);
+    if (angle >= 30 && angle <= 60) angleScore = 1.0;
+    else if (angle >= 15 && angle < 30) angleScore = lerp((angle - 15) / 15, 0.6, 1.0);
+    else if (angle > 60 && angle <= 75) angleScore = lerp((75 - angle) / 15, 0.6, 1.0);
+    else if (angle < 15) angleScore = lerp(angle / 15, 0.0, 0.6);
+    else angleScore = lerp(clamp((90 - angle) / 15, 0, 1), 0.0, 0.6);
+  }
+
+  // Distance-to-ball band component
+  const distConfig = weightProfile.component_config?.distance_to_ball;
+  const optimalMin = distConfig?.optimal_min ?? 8;
+  const optimalMax = distConfig?.optimal_max ?? 25;
+  const dist = distance(playerPos, ball);
+  const distScore = computeDistanceToBallScore(dist, optimalMin, optimalMax);
+
+  // Blend: angle is primary (70%), distance-to-ball band is secondary (30%)
+  return clamp(0.7 * angleScore + 0.3 * distScore, 0, 1);
 }
 
 function computePassingLaneScore(
@@ -133,19 +162,97 @@ function computeCoverScore(
   return (xScore + yScore) / 2;
 }
 
+/** Returns true if playerPos is inside a circle-shaped region (legacy or tagged). */
+function isInsideCircle(playerPos: Point, x: number, y: number, r: number): boolean {
+  return distance(playerPos, { x, y }) <= r;
+}
+
+/** Returns true if playerPos is inside an axis-aligned or rotated rectangle region. */
+function isInsideRectangle(
+  playerPos: Point,
+  rx: number,
+  ry: number,
+  width: number,
+  height: number,
+  rotation?: number,
+): boolean {
+  if (!rotation) {
+    return playerPos.x >= rx && playerPos.x <= rx + width &&
+           playerPos.y >= ry && playerPos.y <= ry + height;
+  }
+  const cx = rx + width / 2;
+  const cy = ry + height / 2;
+  const cos = Math.cos(-rotation);
+  const sin = Math.sin(-rotation);
+  const localX = cos * (playerPos.x - cx) - sin * (playerPos.y - cy);
+  const localY = sin * (playerPos.x - cx) + cos * (playerPos.y - cy);
+  return Math.abs(localX) <= width / 2 && Math.abs(localY) <= height / 2;
+}
+
+/** Returns true if playerPos is inside a polygon using the ray-casting algorithm. */
+function isInsidePolygon(playerPos: Point, vertices: Point[]): boolean {
+  let inside = false;
+  for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+    const xi = vertices[i].x, yi = vertices[i].y;
+    const xj = vertices[j].x, yj = vertices[j].y;
+    const intersect =
+      yi > playerPos.y !== yj > playerPos.y &&
+      playerPos.x < ((xj - xi) * (playerPos.y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/** Returns true if playerPos is within width/2 of the lane spine segment. */
+function isInsideLane(
+  playerPos: Point,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  width: number,
+): boolean {
+  const dist = pointToLineDistance(playerPos, { x: x1, y: y1 }, { x: x2, y: y2 });
+  return dist <= width / 2;
+}
+
 function computeRegionFitScore(playerPos: Point, scenario: Scenario): number {
   for (const region of scenario.ideal_regions) {
-    const d = distance(playerPos, { x: region.x, y: region.y });
-    if (d <= region.r) return 1.0;
+    if (isRegionHit(playerPos, region)) return 1.0;
   }
   for (const region of scenario.acceptable_regions) {
-    const d = distance(playerPos, { x: region.x, y: region.y });
-    if (d <= region.r) {
-      const ratio = 1 - d / region.r;
-      return lerp(ratio, 0.6, 0.9);
+    if (isRegionHit(playerPos, region)) {
+      // For circles, apply a distance-based gradient so the score tapers toward the boundary.
+      if (!('type' in region) || region.type === 'circle') {
+        const cr = region as { x: number; y: number; r: number };
+        const d = distance(playerPos, { x: cr.x, y: cr.y });
+        const ratio = 1 - d / cr.r;
+        return lerp(ratio, 0.6, 0.9);
+      }
+      // For non-circle shapes, return a fixed mid-range acceptable score.
+      return 0.75;
     }
   }
   return 0.0;
+}
+
+function isRegionHit(playerPos: Point, region: TacticalRegion): boolean {
+  if (!('type' in region)) {
+    // Legacy circle: { x, y, r }
+    return isInsideCircle(playerPos, region.x, region.y, region.r);
+  }
+  switch (region.type) {
+    case 'circle':
+      return isInsideCircle(playerPos, region.x, region.y, region.r);
+    case 'rectangle':
+      return isInsideRectangle(playerPos, region.x, region.y, region.width, region.height, region.rotation);
+    case 'polygon':
+      return isInsidePolygon(playerPos, region.vertices);
+    case 'lane':
+      return isInsideLane(playerPos, region.x1, region.y1, region.x2, region.y2, region.width);
+    default:
+      return false;
+  }
 }
 
 function computeReasoningBonus(
@@ -204,7 +311,7 @@ export function evaluate(
   try {
     const ball = scenario.ball;
 
-    const support = computeSupportScore(playerPos, ball, scenario);
+    const support = computeSupportScore(playerPos, ball, scenario, weightProfile);
     const passing_lane = computePassingLaneScore(playerPos, ball, scenario, weightProfile);
     const spacing = computeSpacingScore(playerPos, scenario, weightProfile);
     const pressure_relief = computePressureReliefScore(playerPos, ball, scenario);
@@ -223,6 +330,16 @@ export function evaluate(
       cover: weights.cover ?? 0,
       region_fit: weights.region_fit ?? 0,
     };
+
+    // Warn when the authored weights do not sum to 1.0 — the evaluator normalizes
+    // at runtime so scoring is unaffected, but the log helps catch authoring mistakes.
+    const scoringWeightSum = Object.values(w).reduce((a, b) => a + b, 0);
+    if (scoringWeightSum > 0 && Math.abs(scoringWeightSum - 1.0) > 0.001) {
+      console.warn(
+        `Weight profile "${weightProfile.profile_id}" scoring weights sum to ` +
+        `${scoringWeightSum.toFixed(4)} (expected 1.0); normalizing at evaluation time.`,
+      );
+    }
 
     const weightedSum =
       support * w.support +

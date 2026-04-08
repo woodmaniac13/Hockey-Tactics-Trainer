@@ -10,6 +10,14 @@ export type Entity = {
 
 export type CircleRegion = { x: number; y: number; r: number };
 
+export type TaggedCircleRegion = { type: 'circle'; x: number; y: number; r: number };
+export type RectangleRegion = { type: 'rectangle'; x: number; y: number; width: number; height: number; rotation?: number };
+export type PolygonRegion = { type: 'polygon'; vertices: Point[] };
+export type LaneRegion = { type: 'lane'; x1: number; y1: number; x2: number; y2: number; width: number };
+
+/** Union of all supported tactical region primitives. */
+export type TacticalRegion = CircleRegion | TaggedCircleRegion | RectangleRegion | PolygonRegion | LaneRegion;
+
 export type PressureDirection = 'inside_out' | 'outside_in' | 'central' | 'none';
 export type PressureIntensity = 'low' | 'medium' | 'high';
 
@@ -39,8 +47,8 @@ export type Scenario = {
   teammates: Entity[];
   opponents: Entity[];
   pressure: Pressure;
-  ideal_regions: CircleRegion[];
-  acceptable_regions: CircleRegion[];
+  ideal_regions: TacticalRegion[];
+  acceptable_regions: TacticalRegion[];
   weight_profile: string;
   constraint_thresholds: ConstraintThresholds;
   difficulty: number;

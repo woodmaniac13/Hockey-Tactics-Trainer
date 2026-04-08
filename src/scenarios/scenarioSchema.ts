@@ -13,11 +13,57 @@ export const EntitySchema = z.object({
   y: z.number(),
 }).strict();
 
+// Legacy circle region: backward-compatible format { x, y, r } with no type discriminator
 export const CircleRegionSchema = z.object({
   x: z.number(),
   y: z.number(),
   r: z.number().positive(),
 }).strict();
+
+// Tagged region primitives (new format, each carries a `type` discriminator)
+export const TaggedCircleRegionSchema = z.object({
+  type: z.literal('circle'),
+  x: z.number(),
+  y: z.number(),
+  r: z.number().positive(),
+}).strict();
+
+export const RectangleRegionSchema = z.object({
+  type: z.literal('rectangle'),
+  x: z.number(),
+  y: z.number(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+  rotation: z.number().optional(),
+}).strict();
+
+export const PolygonRegionSchema = z.object({
+  type: z.literal('polygon'),
+  vertices: z.array(PointSchema).min(3),
+}).strict();
+
+export const LaneRegionSchema = z.object({
+  type: z.literal('lane'),
+  x1: z.number(),
+  y1: z.number(),
+  x2: z.number(),
+  y2: z.number(),
+  width: z.number().positive(),
+}).strict();
+
+/**
+ * Tactical region — a discriminated union of all supported region primitives.
+ *
+ * The legacy circle format `{ x, y, r }` (no `type` field) is tried first so
+ * that existing scenario files continue to validate without modification.
+ */
+export const TacticalRegionSchema = z.union([
+  CircleRegionSchema,         // legacy: { x, y, r }
+  TaggedCircleRegionSchema,   // { type: "circle", x, y, r }
+  RectangleRegionSchema,      // { type: "rectangle", x, y, width, height, rotation? }
+  PolygonRegionSchema,        // { type: "polygon", vertices: [...] }
+  LaneRegionSchema,           // { type: "lane", x1, y1, x2, y2, width }
+]);
 
 export const PressureDirectionSchema = z.enum(['inside_out', 'outside_in', 'central', 'none']);
 export const PressureIntensitySchema = z.enum(['low', 'medium', 'high']);
@@ -48,8 +94,8 @@ export const ScenarioSchema = z.object({
   teammates: z.array(EntitySchema),
   opponents: z.array(EntitySchema),
   pressure: PressureSchema,
-  ideal_regions: z.array(CircleRegionSchema),
-  acceptable_regions: z.array(CircleRegionSchema),
+  ideal_regions: z.array(TacticalRegionSchema),
+  acceptable_regions: z.array(TacticalRegionSchema),
   weight_profile: z.string(),
   constraint_thresholds: ConstraintThresholdsSchema,
   difficulty: z.number().int().min(1).max(5),
@@ -57,14 +103,14 @@ export const ScenarioSchema = z.object({
 }).strict();
 
 export const WeightProfileWeightsSchema = z.object({
-  support: z.number().min(0).max(1).optional(),
-  passing_lane: z.number().min(0).max(1).optional(),
-  spacing: z.number().min(0).max(1).optional(),
-  pressure_relief: z.number().min(0).max(1).optional(),
-  width_depth: z.number().min(0).max(1).optional(),
-  cover: z.number().min(0).max(1).optional(),
-  region_fit: z.number().min(0).max(1).optional(),
-  reasoning_bonus: z.number().min(0).max(1).optional(),
+  support: z.number().min(0).optional(),
+  passing_lane: z.number().min(0).optional(),
+  spacing: z.number().min(0).optional(),
+  pressure_relief: z.number().min(0).optional(),
+  width_depth: z.number().min(0).optional(),
+  cover: z.number().min(0).optional(),
+  region_fit: z.number().min(0).optional(),
+  reasoning_bonus: z.number().min(0).optional(),
 }).strict();
 
 export const WeightProfileComponentConfigSchema = z.object({
@@ -154,3 +200,15 @@ export const ScenarioPackManifestSchema = z.object({
     });
   });
 });
+
+/**
+ * Weights manifest — data-driven list of all available weight profile IDs.
+ *
+ * Stored at /public/weights/weights-manifest.json.
+ * Replaces the hardcoded profile list in the loader so that adding a new profile
+ * only requires adding the JSON file and updating the manifest — no code change needed.
+ */
+export const WeightsManifestSchema = z.object({
+  version: z.number().int().positive(),
+  profiles: z.array(z.string()).min(1),
+}).strict();

@@ -108,15 +108,31 @@ Core Components
 3.1 Support Angle
 Measures quality of support relative to pressure.
 
-Definition
+The support score is a blend of two components:
 
+**Angle component (70%)**
+
+```
 support_angle = angle between:
 (player - ball) and perpendicular(pressure_vector)
+```
 
-Scoring
-	•	30°–60° → 1.0
-	•	15°–75° → 0.6–0.9 (linear scale)
-	•	outside → <0.6
+Scoring:
+- 30°–60° → 1.0
+- 15°–75° → 0.6–0.9 (linear scale)
+- outside → < 0.6
+
+**Distance-to-ball band component (30%)**
+
+Rewards positions within the profile's `optimal_min`–`optimal_max` range (from `component_config.distance_to_ball`):
+- within band → 1.0
+- outside band → degrades linearly toward 0
+
+**Final support score**
+
+```
+support_score = 0.7 × angle_score + 0.3 × distance_score
+```
 
 ⸻
 
@@ -181,21 +197,29 @@ Measures ability to:
 4. Region Scoring
 
 Region Types
-	•	ideal_regions
-	•	acceptable_regions
+- `ideal_regions`
+- `acceptable_regions`
 
-Region Shape (MVP)
+Region Shapes
 
-Circle:
+Regions use the polymorphic `TacticalRegion` type. Supported shapes:
 
-distance(player, region_center) <= radius
+| Shape | Key fields |
+|---|---|
+| Legacy circle | `{ x, y, r }` |
+| Tagged circle | `{ type: "circle", x, y, r }` |
+| Rectangle | `{ type: "rectangle", x, y, width, height, rotation? }` |
+| Polygon | `{ type: "polygon", vertices: [{x,y}...] }` |
+| Lane | `{ type: "lane", x1, y1, x2, y2, width }` |
 
 Output
 
+```
 region_fit_score:
 - inside ideal → 1.0
 - inside acceptable → 0.6–0.9
 - outside → 0
+```
 
 
 ⸻
@@ -237,23 +261,27 @@ Must not exceed defined cap.
 
 Weighted Sum
 
-score = Σ(component_score * weight)
+```
+score = Σ(component_score × weight)
+```
 
-Weights come from weight profile.
+Weights come from the weight profile.
+
+**Weight normalization:** If the scoring weights in the profile do not sum to 1.0, the evaluator normalizes them at runtime by dividing each weight by their sum. A `console.warn` is emitted identifying the profile and the actual sum. This allows profiles with raw (un-normalized) weights to be used without rejection.
 
 Include:
-	•	support
-	•	passing_lane
-	•	spacing
-	•	pressure_relief
-	•	width_depth
-	•	cover
-	•	region_fit
-	•	reasoning_bonus
+- support
+- passing_lane
+- spacing
+- pressure_relief
+- width_depth
+- cover
+- region_fit
+- reasoning_bonus
 
 Output format
-	•	internal: float
-	•	display: integer 0–100
+- internal: float
+- display: integer 0–100
 
 ⸻
 
@@ -363,9 +391,9 @@ Must not change unless intentional.
 15. Extensibility
 
 Future enhancements may include:
-	•	ML-assisted scoring
-	•	dynamic weighting
-	•	advanced geometry
-	•	multi-player evaluation
+- ML-assisted scoring
+- dynamic weighting
+- advanced geometry
+- multi-player evaluation
 
-These must not break determinism in MVP.
+These must not break determinism.

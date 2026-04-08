@@ -159,7 +159,7 @@ Must be:
 
 home_attacks_positive_x
 
-No alternatives allowed in MVP.
+No alternatives are defined.
 
 ⸻
 
@@ -235,31 +235,74 @@ intensity values
 
 Regions
 
-Ideal Regions
+Regions use a polymorphic `TacticalRegion` type. All four formats may be mixed freely within the same scenario. Existing scenarios that only use the legacy circle format continue to work unchanged.
 
-Best solutions.
+### Legacy circle (backward compatible)
 
-{
-  "x": number,
-  "y": number,
-  "r": number
-}
+```json
+{ "x": 52, "y": 64, "r": 6 }
+```
 
+The legacy `{ x, y, r }` object is still fully supported and does not need to be migrated.
 
-⸻
+---
 
-Acceptable Regions
+### Tagged circle
 
-Valid but less optimal solutions.
+```json
+{ "type": "circle", "x": 52, "y": 64, "r": 6 }
+```
 
-Same structure as ideal.
+---
 
-⸻
+### Rectangle
+
+```json
+{ "type": "rectangle", "x": 48, "y": 60, "width": 10, "height": 8 }
+{ "type": "rectangle", "x": 48, "y": 60, "width": 10, "height": 8, "rotation": 0.3927 }
+```
+
+`rotation` is optional (radians, counter-clockwise). Omit or set to `0` for axis-aligned.
+
+---
+
+### Polygon
+
+```json
+{ "type": "polygon", "vertices": [{"x":48,"y":60},{"x":58,"y":60},{"x":55,"y":70}] }
+```
+
+Any convex or concave polygon with ≥ 3 vertices. Point-in-polygon is evaluated with the ray-casting algorithm.
+
+---
+
+### Lane
+
+```json
+{ "type": "lane", "x1": 40, "y1": 50, "x2": 70, "y2": 50, "width": 8 }
+```
+
+A rectangular corridor of constant width centred on the line segment (`x1,y1`) → (`x2,y2`).
+
+---
+
+### Ideal Regions
+
+Best solutions. Use whichever shape best describes the intended area.
+
+### Acceptable Regions
+
+Valid but less optimal solutions. Same polymorphic type.
+
+---
 
 Rules
-	•	at least one region must exist across both arrays
-	•	regions must be within pitch bounds
-	•	radius must be > 0
+- at least one region must exist across both arrays
+- regions must be within pitch bounds
+- circles: radius must be > 0
+- rectangles: `width` and `height` must be > 0
+- polygons: must have ≥ 3 vertices
+- lanes: `width` must be > 0
 
 ⸻
 
@@ -349,13 +392,13 @@ If scenario fails validation:
 
 Version Compatibility
 
-When loading progress:
-	•	match scenario_id + version
-	•	if version mismatch:
-	•	treat as new scenario
-	•	do not merge attempts
+The `version` field tracks changes to scoring layout. When loading stored progress:
+- match on `scenario_id` only
+- version mismatches do not invalidate attempts; they are surfaced to the user as informational
 
-⸻
+Historical score comparability across versions is not guaranteed and is out of scope.
+
+---
 
 Best Practices
 	•	keep scenarios focused on one concept
@@ -370,11 +413,10 @@ Best Practices
 Future Extensions
 
 Potential additions:
-	•	polygon regions
-	•	multiple movable players
-	•	dynamic objectives
-	•	scenario scripting
-	•	role-specific constraints
+- multiple movable players
+- dynamic objectives
+- scenario scripting
+- role-specific constraints
 
 These must not break existing schema.
 

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "profiles": [
+    "build_out_v1",
+    "defence_v1",
+    "attack_v1",
+    "transition_v1"
+  ]
+}

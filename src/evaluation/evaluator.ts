@@ -5,6 +5,7 @@ import type {
   EvaluationResult,
   ComponentScores,
   ResultType,
+  ReasoningOption,
 } from '../types';
 import {
   distance,
@@ -18,6 +19,9 @@ import {
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
+
+/** Maximum additive bonus from reasoning alignment (10% of max normalized score). */
+const REASONING_BONUS_CAP = 0.1;
 
 function lerp(t: number, lo: number, hi: number): number {
   return lo + t * (hi - lo);
@@ -145,7 +149,7 @@ function computeRegionFitScore(playerPos: Point, scenario: Scenario): number {
 }
 
 function computeReasoningBonus(
-  reasoning: string | undefined,
+  reasoning: ReasoningOption | undefined,
   scenario: Scenario,
 ): number {
   if (!reasoning) return 0;
@@ -184,10 +188,10 @@ function classifyResult(
   regionFitScore: number,
   constraintsPassed: boolean,
 ): ResultType {
-  if (regionFitScore === 1.0 && finalScore >= 80) return 'IDEAL';
-  if (regionFitScore > 0 || finalScore >= 65) return 'VALID';
+  if (constraintsPassed && regionFitScore === 1.0 && finalScore >= 80) return 'IDEAL';
   if (constraintsPassed && regionFitScore === 0) return 'ALTERNATE_VALID';
-  if (finalScore >= 40) return 'PARTIAL';
+  if (constraintsPassed && (regionFitScore > 0 || finalScore >= 65)) return 'VALID';
+  if (constraintsPassed && finalScore >= 40) return 'PARTIAL';
   return 'INVALID';
 }
 
@@ -195,7 +199,7 @@ export function evaluate(
   scenario: Scenario,
   playerPos: Point,
   weightProfile: WeightProfile,
-  reasoning?: string,
+  reasoning?: ReasoningOption,
 ): EvaluationResult {
   try {
     const ball = scenario.ball;
@@ -207,30 +211,17 @@ export function evaluate(
     const width_depth = computeWidthDepthScore(playerPos, ball, scenario);
     const cover = computeCoverScore(playerPos, scenario);
     const region_fit = computeRegionFitScore(playerPos, scenario);
-    const reasoning_bonus = computeReasoningBonus(reasoning, scenario);
-
-    const componentScores: ComponentScores = {
-      support,
-      passing_lane,
-      spacing,
-      pressure_relief,
-      width_depth,
-      cover,
-      region_fit,
-      reasoning_bonus,
-    };
+    const reasoning_bonus_raw = computeReasoningBonus(reasoning, scenario);
 
     const weights = weightProfile.weights;
-    const defaultWeight = 0.1;
     const w = {
-      support: weights.support ?? defaultWeight,
-      passing_lane: weights.passing_lane ?? defaultWeight,
-      spacing: weights.spacing ?? defaultWeight,
-      pressure_relief: weights.pressure_relief ?? defaultWeight,
-      width_depth: weights.width_depth ?? defaultWeight,
-      cover: weights.cover ?? defaultWeight,
-      region_fit: weights.region_fit ?? 0.3,
-      reasoning_bonus: weights.reasoning_bonus ?? 0.05,
+      support: weights.support ?? 0,
+      passing_lane: weights.passing_lane ?? 0,
+      spacing: weights.spacing ?? 0,
+      pressure_relief: weights.pressure_relief ?? 0,
+      width_depth: weights.width_depth ?? 0,
+      cover: weights.cover ?? 0,
+      region_fit: weights.region_fit ?? 0,
     };
 
     const weightedSum =
@@ -240,13 +231,29 @@ export function evaluate(
       pressure_relief * w.pressure_relief +
       width_depth * w.width_depth +
       cover * w.cover +
-      region_fit * w.region_fit +
-      reasoning_bonus * w.reasoning_bonus;
+      region_fit * w.region_fit;
 
     const totalWeight = Object.values(w).reduce((a, b) => a + b, 0);
     const normalizedScore = totalWeight > 0 ? weightedSum / totalWeight : 0;
     const safeScore = isNaN(normalizedScore) ? 0 : normalizedScore;
-    const score = Math.round(clamp(safeScore * 100, 0, 100));
+
+    // Reasoning bonus: additive, capped at +10% of max score
+    const reasoningBonusWeight = weights.reasoning_bonus ?? 0;
+    const reasoningBonusCapped = Math.min(reasoning_bonus_raw * reasoningBonusWeight, REASONING_BONUS_CAP);
+    const scoredWithBonus = clamp(safeScore + reasoningBonusCapped, 0, 1);
+    const score = Math.round(clamp(scoredWithBonus * 100, 0, 100));
+
+    // Store reasoning_bonus as the raw 0/1 alignment signal for feedback
+    const componentScores: ComponentScores = {
+      support,
+      passing_lane,
+      spacing,
+      pressure_relief,
+      width_depth,
+      cover,
+      region_fit,
+      reasoning_bonus: reasoning_bonus_raw,
+    };
 
     const failed_constraints = checkConstraints(componentScores, scenario);
     const constraints_passed = failed_constraints.length === 0;

@@ -1,11 +1,16 @@
 import type { Scenario, WeightProfile, ScenarioPackManifest } from '../types';
 import { ScenarioSchema, WeightProfileSchema, ScenarioPackManifestSchema } from './scenarioSchema';
 
-const BASE_URL = '/Hockey-Tactics-Trainer';
-const WEIGHT_PROFILES_DIR = `${BASE_URL}/weights`;
+const BASE_URL = import.meta.env.BASE_URL;
+
+function buildUrl(path: string): string {
+  return `${BASE_URL}${path.replace(/^\/+/, '')}`;
+}
+
+const WEIGHT_PROFILES_DIR = buildUrl('weights');
 
 export async function loadManifest(): Promise<ScenarioPackManifest> {
-  const response = await fetch(`${BASE_URL}/scenario-packs.json`);
+  const response = await fetch(buildUrl('scenario-packs.json'));
   if (!response.ok) throw new Error(`Failed to load manifest: ${response.status}`);
   const data: unknown = await response.json();
   return ScenarioPackManifestSchema.parse(data);
@@ -13,7 +18,7 @@ export async function loadManifest(): Promise<ScenarioPackManifest> {
 
 export async function loadScenario(path: string): Promise<Scenario | null> {
   try {
-    const response = await fetch(path);
+    const response = await fetch(buildUrl(path));
     if (!response.ok) return null;
     const data: unknown = await response.json();
     const result = ScenarioSchema.safeParse(data);

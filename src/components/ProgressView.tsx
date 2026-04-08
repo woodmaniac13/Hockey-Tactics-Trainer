@@ -48,6 +48,7 @@ export default function ProgressView({ scenarios, progress, onSelectScenario, on
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
+        if (!confirm('Importing will overwrite your current progress. Continue?')) return;
         const result = importData(reader.result as string);
         if (result) {
           onProgressChange();

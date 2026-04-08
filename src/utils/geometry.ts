@@ -43,5 +43,6 @@ export function pressureToVector(direction: PressureDirection): Point {
     case 'outside_in': return { x: 1, y: 0 };
     case 'central':    return { x: 0, y: -1 };
     case 'none':       return { x: 0, y: 0 };
+    default:           return { x: 0, y: 0 };
   }
 }

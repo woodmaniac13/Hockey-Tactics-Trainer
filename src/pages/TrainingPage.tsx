@@ -149,7 +149,7 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
           )}
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
-              onClick={() => { setActiveTab('training'); if (mobileScreen === 'play' && !scenario) setMobileScreen('list'); }}
+              onClick={() => { setActiveTab('training'); setMobileScreen('list'); }}
               style={{ padding: '5px 12px', borderRadius: '20px', border: 'none', background: activeTab === 'training' ? '#3498db' : '#2c3e50', color: '#fff', cursor: 'pointer', fontSize: '0.85rem' }}
             >
               Training
@@ -217,7 +217,6 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
             </button>
             {detailsExpanded && (
               <div style={{ padding: '8px 16px', background: '#16213e', borderTop: '1px solid #2c3e50', fontSize: '0.8rem', color: '#aaa', flexShrink: 0 }}>
-                <div style={{ marginBottom: '6px' }}>{scenario.description}</div>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: '#2c3e50', color: '#aaa' }}>
                     {formatTag(scenario.phase)}

@@ -8,6 +8,5 @@ It presents tactical scenarios, lets the user place the target player, and gives
 
 [Hockey Tactics Trainer on GitHub Pages](https://woodmaniac13.github.io/Hockey-Tactics-Trainer/)
 
-## Repository
-
+## Repository  
 [woodmaniac13/Hockey-Tactics-Trainer](https://github.com/woodmaniac13/Hockey-Tactics-Trainer)

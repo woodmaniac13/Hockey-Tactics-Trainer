@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.vite/
+*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test results
+coverage/

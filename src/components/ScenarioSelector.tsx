@@ -10,17 +10,24 @@ interface ScenarioSelectorProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onPackExpand?: (packId: string) => void;
+  /** When true, renders mobile-optimized cards with reduced density */
+  isMobile?: boolean;
 }
 
-function DifficultyStars({ difficulty }: { difficulty: number }) {
+function DifficultyStars({ difficulty, size }: { difficulty: number; size?: string }) {
   return (
-    <span style={{ color: '#f1c40f', fontSize: '0.75rem' }}>
+    <span style={{ color: '#f1c40f', fontSize: size ?? '0.75rem' }}>
       {'★'.repeat(difficulty)}{'☆'.repeat(5 - difficulty)}
     </span>
   );
 }
 
-export default function ScenarioSelector({ packs, scenarios, progress, scenarioStates, selectedId, onSelect, onPackExpand }: ScenarioSelectorProps) {
+/** Format tag names: build_out → "Build-out" */
+function formatTag(tag: string): string {
+  return tag.replace(/_/g, '-').replace(/^\w/, c => c.toUpperCase());
+}
+
+export default function ScenarioSelector({ packs, scenarios, progress, scenarioStates, selectedId, onSelect, onPackExpand, isMobile }: ScenarioSelectorProps) {
   // Trigger lazy loading for all visible packs when the selector mounts or packs change
   useEffect(() => {
     if (!onPackExpand) return;
@@ -30,10 +37,10 @@ export default function ScenarioSelector({ packs, scenarios, progress, scenarioS
   }, [packs, onPackExpand]);
 
   return (
-    <div style={{ overflowY: 'auto', maxHeight: '70vh' }}>
+    <div style={{ overflowY: 'auto', maxHeight: isMobile ? undefined : '70vh' }}>
       {packs.map(pack => (
-        <div key={pack.id} style={{ marginBottom: '16px' }}>
-          <div style={{ fontWeight: 'bold', color: '#aaa', fontSize: '0.85rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div key={pack.id} style={{ marginBottom: isMobile ? '20px' : '16px' }}>
+          <div style={{ fontWeight: 'bold', color: '#aaa', fontSize: '0.85rem', marginBottom: isMobile ? '10px' : '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {pack.title}
           </div>
           {pack.scenarios.map(path => {
@@ -45,6 +52,48 @@ export default function ScenarioSelector({ packs, scenarios, progress, scenarioS
             const isSelected = selectedId === scenario.scenario_id;
             const isLocked = state === 'LOCKED';
 
+            if (isMobile) {
+              /* ── Mobile card: increased size, reduced density ── */
+              return (
+                <button
+                  key={scenario.scenario_id}
+                  onClick={() => !isLocked && onSelect(scenario.scenario_id)}
+                  disabled={isLocked}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: '100%',
+                    padding: '14px 16px',
+                    marginBottom: '8px',
+                    borderRadius: '10px',
+                    border: '2px solid transparent',
+                    background: isLocked ? '#1a1a2e' : '#16213e',
+                    cursor: isLocked ? 'not-allowed' : 'pointer',
+                    opacity: isLocked ? 0.5 : 1,
+                    textAlign: 'left',
+                    color: '#e0e0e0',
+                  }}
+                >
+                  {/* Row 1: Title + state icon */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{scenario.title}</span>
+                    {state === 'COMPLETED' && <span style={{ color: '#27ae60', fontSize: '1rem' }}>✓</span>}
+                    {isLocked && <span style={{ fontSize: '1rem' }}>🔒</span>}
+                  </div>
+                  {/* Row 2: Category line */}
+                  <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '4px' }}>
+                    {formatTag(scenario.phase)}
+                  </div>
+                  {/* Row 3: Stars or best score */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                    <DifficultyStars difficulty={scenario.difficulty} size="0.85rem" />
+                    {rec && <span style={{ fontSize: '0.8rem', color: '#3498db', fontWeight: 'bold' }}>Best: {rec.best_score}</span>}
+                  </div>
+                </button>
+              );
+            }
+
+            /* ── Desktop card (unchanged) ── */
             return (
               <button
                 key={scenario.scenario_id}
@@ -75,7 +124,7 @@ export default function ScenarioSelector({ packs, scenarios, progress, scenarioS
                   {rec && <span style={{ fontSize: '0.75rem', color: '#aaa' }}>Best: {rec.best_score}</span>}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '2px' }}>
-                  {scenario.phase.charAt(0).toUpperCase() + scenario.phase.slice(1)} · {scenario.tags.join(', ')}
+                  {formatTag(scenario.phase)} · {scenario.tags.map(formatTag).join(', ')}
                 </div>
               </button>
             );

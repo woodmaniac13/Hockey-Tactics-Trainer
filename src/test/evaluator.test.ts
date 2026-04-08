@@ -90,3 +90,113 @@ describe('evaluate', () => {
     expect(Array.isArray(result.failed_constraints)).toBe(true);
   });
 });
+
+describe('evaluate — rich region types', () => {
+  it('detects player inside a tagged circle region', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{ type: 'circle' as const, x: 50, y: 50, r: 10 }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 50, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+
+  it('detects player inside a rectangle region', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{ type: 'rectangle' as const, x: 40, y: 40, width: 20, height: 20 }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 50, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+
+  it('rejects player outside a rectangle region', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{ type: 'rectangle' as const, x: 40, y: 40, width: 20, height: 20 }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 10, y: 10 }, baseProfile);
+    expect(result.region_fit_score).toBe(0.0);
+  });
+
+  it('detects player inside a polygon region', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        type: 'polygon' as const,
+        vertices: [{ x: 40, y: 40 }, { x: 60, y: 40 }, { x: 60, y: 60 }, { x: 40, y: 60 }],
+      }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 50, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+
+  it('rejects player outside a polygon region', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        type: 'polygon' as const,
+        vertices: [{ x: 40, y: 40 }, { x: 60, y: 40 }, { x: 60, y: 60 }, { x: 40, y: 60 }],
+      }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 10, y: 10 }, baseProfile);
+    expect(result.region_fit_score).toBe(0.0);
+  });
+
+  it('detects player inside a lane region', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        type: 'lane' as const,
+        x1: 30, y1: 50,
+        x2: 60, y2: 50,
+        width: 10,
+      }],
+      acceptable_regions: [],
+    };
+    // Player is on the spine midpoint — clearly inside the lane
+    const result = evaluate(scenario, { x: 45, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+
+  it('rejects player outside a lane region', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        type: 'lane' as const,
+        x1: 30, y1: 50,
+        x2: 60, y2: 50,
+        width: 10,
+      }],
+      acceptable_regions: [],
+    };
+    // Player is far from the lane
+    const result = evaluate(scenario, { x: 45, y: 80 }, baseProfile);
+    expect(result.region_fit_score).toBe(0.0);
+  });
+
+  it('returns acceptable-region score for non-circle region (fixed 0.75)', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [],
+      acceptable_regions: [{ type: 'rectangle' as const, x: 40, y: 40, width: 20, height: 20 }],
+    };
+    const result = evaluate(scenario, { x: 50, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBe(0.75);
+  });
+
+  it('legacy circle regions still work without type field', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{ x: 50, y: 50, r: 10 }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 50, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+});

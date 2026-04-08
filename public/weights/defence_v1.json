@@ -9,7 +9,7 @@
     "pressure_relief": 0.15,
     "width_depth": 0.15,
     "cover": 0.25,
-    "region_fit": 0.08,
+    "region_fit": 0.10,
     "reasoning_bonus": 0.02
   },
   "component_config": {

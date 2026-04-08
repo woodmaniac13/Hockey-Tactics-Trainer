@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import type { Scenario, Point } from '../types';
+import type { Scenario, Point, TacticalRegion } from '../types';
 
 interface BoardProps {
   scenario: Scenario;
@@ -25,6 +25,66 @@ function fromCanvas(cx: number, cy: number, canvasWidth: number, canvasHeight: n
     x: Math.max(0, Math.min(100, (cx / canvasWidth) * 100)),
     y: Math.max(0, Math.min(100, (cy / canvasHeight) * 100)),
   };
+}
+
+/** Draw a tactical region on the canvas using its native shape. */
+function drawRegion(
+  ctx: CanvasRenderingContext2D,
+  region: TacticalRegion,
+  width: number,
+  height: number,
+): void {
+  const scale = Math.min(width, height);
+  ctx.beginPath();
+
+  if (!('type' in region) || region.type === 'circle') {
+    const cr = region as { x: number; y: number; r: number };
+    const { cx, cy } = toCanvas({ x: cr.x, y: cr.y }, width, height);
+    const r = (cr.r / 100) * scale;
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  } else if (region.type === 'rectangle') {
+    const rx = (region.x / 100) * width;
+    const ry = (region.y / 100) * height;
+    const rw = (region.width / 100) * width;
+    const rh = (region.height / 100) * height;
+    if (region.rotation) {
+      const cx = rx + rw / 2;
+      const cy = ry + rh / 2;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(region.rotation);
+      ctx.rect(-rw / 2, -rh / 2, rw, rh);
+      ctx.restore();
+      return;
+    }
+    ctx.rect(rx, ry, rw, rh);
+  } else if (region.type === 'polygon') {
+    const [first, ...rest] = region.vertices;
+    if (!first) return;
+    const { cx: fx, cy: fy } = toCanvas(first, width, height);
+    ctx.moveTo(fx, fy);
+    for (const v of rest) {
+      const { cx: vx, cy: vy } = toCanvas(v, width, height);
+      ctx.lineTo(vx, vy);
+    }
+    ctx.closePath();
+  } else if (region.type === 'lane') {
+    const { cx: x1c, cy: y1c } = toCanvas({ x: region.x1, y: region.y1 }, width, height);
+    const { cx: x2c, cy: y2c } = toCanvas({ x: region.x2, y: region.y2 }, width, height);
+    const halfW = (region.width / 100) * scale / 2;
+    const dx = x2c - x1c;
+    const dy = y2c - y1c;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len === 0) return;
+    const px = (-dy / len) * halfW;
+    const py = (dx / len) * halfW;
+    ctx.moveTo(x1c + px, y1c + py);
+    ctx.lineTo(x2c + px, y2c + py);
+    ctx.lineTo(x2c - px, y2c - py);
+    ctx.lineTo(x1c - px, y1c - py);
+    ctx.closePath();
+  }
+  ctx.stroke();
 }
 
 export default function Board({ scenario, playerPosition, onPositionChange, submitted, showOverlays }: BoardProps) {
@@ -101,21 +161,13 @@ export default function Board({ scenario, playerPosition, onPositionChange, subm
       ctx.strokeStyle = 'rgba(255, 220, 50, 0.7)';
       ctx.lineWidth = 2;
       for (const region of scenario.acceptable_regions) {
-        const { cx, cy } = toCanvas({ x: region.x, y: region.y }, width, height);
-        const r = (region.r / 100) * Math.min(width, height);
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.stroke();
+        drawRegion(ctx, region, width, height);
       }
 
       // Ideal regions (green dashed)
       ctx.strokeStyle = 'rgba(100, 255, 100, 0.9)';
       for (const region of scenario.ideal_regions) {
-        const { cx, cy } = toCanvas({ x: region.x, y: region.y }, width, height);
-        const r = (region.r / 100) * Math.min(width, height);
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.stroke();
+        drawRegion(ctx, region, width, height);
       }
       ctx.setLineDash([]);
 

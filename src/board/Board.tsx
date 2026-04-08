@@ -228,7 +228,9 @@ export default function Board({ scenario, playerPosition, onPositionChange, subm
   const isNearPlayer = (cx: number, cy: number): boolean => {
     const { cx: ppx, cy: ppy } = toCanvas(playerPosition, dimensions.width, dimensions.height);
     const d = Math.sqrt((cx - ppx) ** 2 + (cy - ppy) ** 2);
-    return d < 30;
+    // Larger hit area for touch devices (44px recommended by Apple HIG)
+    const hitRadius = 'ontouchstart' in window ? 44 : 30;
+    return d < hitRadius;
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {

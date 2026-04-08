@@ -132,13 +132,23 @@ Avoid overly restrictive setups.
 
 6. Region Design
 
+Regions use the polymorphic `TacticalRegion` type. Choose whichever shape best fits the intended area:
+
+| Shape | When to use |
+|---|---|
+| `{ x, y, r }` (legacy circle) | Simple circular zone — most common |
+| `{ type: "circle", x, y, r }` | Same as legacy; explicit tag optional |
+| `{ type: "rectangle", x, y, width, height, rotation? }` | Corridor or box-shaped zones |
+| `{ type: "polygon", vertices: [{x,y}...] }` | Irregular or angled areas |
+| `{ type: "lane", x1, y1, x2, y2, width }` | Passing lanes or diagonal corridors |
+
 Ideal Regions
-	•	represent best tactical positioning
-	•	should not be too small
+- represent best tactical positioning
+- should not be too small
 
 Acceptable Regions
-	•	allow variation
-	•	capture reasonable alternatives
+- allow variation
+- capture reasonable alternatives
 
 ⸻
 
@@ -284,24 +294,17 @@ Bad scenarios:
 ⸻
 
 Versioning Rules
-	•	increment version when:
-	•	positions change
-	•	regions change
-	•	constraints change
-	•	scoring logic changes
+- increment version when:
+  - positions change
+  - regions change
+  - constraints change
+  - scoring logic changes
 
 Do NOT change version for:
-	•	spelling fixes
-	•	description text updates only
+- spelling fixes
+- description text updates only
 
-⸻
-
-Backward Compatibility
-	•	old attempts must remain valid
-	•	do not reuse scenario_id with different meaning
-	•	use version to track changes
-
-⸻
+---
 
 Future Authoring Improvements
 

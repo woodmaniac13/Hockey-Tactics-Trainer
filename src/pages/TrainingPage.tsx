@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Scenario, Point, WeightProfile, FeedbackResult, ProgressRecord, ScenarioPack, ScenarioState, ReasoningOption } from '../types';
 import Board from '../board/Board';
 import FeedbackPanel from '../components/FeedbackPanel';
@@ -11,10 +11,10 @@ import { getScenarioState } from '../progression/progression';
 import { getProgress, updateProgress, addAttempt, getSettings } from '../storage/storage';
 
 interface TrainingPageProps {
-  scenarios: Scenario[];
   scenarioMap: Record<string, Scenario>;
   weightProfiles: Record<string, WeightProfile>;
   packs: ScenarioPack[];
+  onLoadPack: (packId: string) => Promise<void>;
 }
 
 function getDefaultPosition(scenario: Scenario): Point {
@@ -23,8 +23,8 @@ function getDefaultPosition(scenario: Scenario): Point {
   return { x: 50, y: 50 };
 }
 
-export default function TrainingPage({ scenarios, scenarioMap, weightProfiles, packs }: TrainingPageProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(scenarios[0]?.scenario_id ?? null);
+export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoadPack }: TrainingPageProps) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playerPosition, setPlayerPosition] = useState<Point>({ x: 50, y: 50 });
   const [submitted, setSubmitted] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackResult | null>(null);
@@ -34,6 +34,7 @@ export default function TrainingPage({ scenarios, scenarioMap, weightProfiles, p
   const settings = getSettings();
 
   const scenario = selectedId ? scenarioMap[selectedId] : null;
+  const scenarios = useMemo(() => Object.values(scenarioMap), [scenarioMap]);
 
   useEffect(() => {
     if (scenario) {
@@ -49,6 +50,11 @@ export default function TrainingPage({ scenarios, scenarioMap, weightProfiles, p
     scenarioStates[s.scenario_id] = getScenarioState(s.scenario_id, progress, s.difficulty, progress, scenarios);
   }
 
+  const handleSelectScenario = (id: string) => {
+    setSelectedId(id);
+    setActiveTab('training');
+  };
+
   const handleSubmit = () => {
     if (!scenario || submitted) return;
     if (settings.enable_reasoning_prompt) {
@@ -59,8 +65,13 @@ export default function TrainingPage({ scenarios, scenarioMap, weightProfiles, p
   };
 
   const doEvaluate = (sc: Scenario, reasoning: ReasoningOption | undefined) => {
-    const profile = weightProfiles[sc.weight_profile] ?? Object.values(weightProfiles)[0];
-    if (!profile) return;
+    const profile = weightProfiles[sc.weight_profile];
+    if (!profile) {
+      console.error(`Scenario "${sc.scenario_id}" references missing weight profile "${sc.weight_profile}". Evaluation blocked.`);
+      alert(`This scenario cannot be evaluated because its weight profile "${sc.weight_profile}" is missing.`);
+      setShowReasoning(false);
+      return;
+    }
     const result = evaluate(sc, playerPosition, profile, reasoning);
     const fb = generateFeedback(result, sc, reasoning);
     setFeedback(fb);
@@ -132,13 +143,14 @@ export default function TrainingPage({ scenarios, scenarioMap, weightProfiles, p
               progress={progress}
               scenarioStates={scenarioStates}
               selectedId={selectedId}
-              onSelect={id => { setSelectedId(id); setActiveTab('training'); }}
+              onSelect={handleSelectScenario}
+              onPackExpand={onLoadPack}
             />
           ) : (
             <ProgressView
               scenarios={scenarios}
               progress={progress}
-              onSelectScenario={id => { setSelectedId(id); setActiveTab('training'); }}
+              onSelectScenario={id => { handleSelectScenario(id); }}
               onProgressChange={() => setProgress(getProgress())}
             />
           )}

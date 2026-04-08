@@ -107,10 +107,13 @@ export type WeightProfile = {
 export type ScenarioPack = {
   id: string;
   title: string;
+  description: string;
+  order: number;
   scenarios: string[];
 };
 
 export type ScenarioPackManifest = {
+  version: number;
   packs: ScenarioPack[];
 };
 
@@ -127,7 +130,7 @@ export type AttemptRecord = {
   score: number;
   result_type: ResultType;
   position: Point;
-  reasoning?: string;
+  reasoning?: ReasoningOption;
   timestamp: number;
 };
 

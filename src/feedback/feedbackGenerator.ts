@@ -1,4 +1,4 @@
-import type { EvaluationResult, FeedbackResult, Scenario, ResultType } from '../types';
+import type { EvaluationResult, FeedbackResult, Scenario, ResultType, ReasoningOption } from '../types';
 
 const SUMMARIES: Record<ResultType, string> = {
   IDEAL: 'Excellent positioning.',
@@ -42,7 +42,7 @@ function getTacticalExplanation(scenario: Scenario): string {
 }
 
 function getReasoningFeedback(
-  reasoning: string | undefined,
+  reasoning: ReasoningOption | undefined,
   result: EvaluationResult,
 ): string {
   if (!reasoning) return '';
@@ -55,7 +55,7 @@ function getReasoningFeedback(
 export function generateFeedback(
   result: EvaluationResult,
   scenario: Scenario,
-  reasoning?: string,
+  reasoning?: ReasoningOption,
 ): FeedbackResult {
   if (result.result_type === 'ERROR') {
     return {

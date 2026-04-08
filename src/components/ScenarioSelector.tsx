@@ -1,4 +1,5 @@
 
+import { useEffect } from 'react';
 import type { Scenario, ScenarioPack, ProgressRecord, ScenarioState } from '../types';
 
 interface ScenarioSelectorProps {
@@ -8,6 +9,7 @@ interface ScenarioSelectorProps {
   scenarioStates: Record<string, ScenarioState>;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onPackExpand?: (packId: string) => void;
 }
 
 function DifficultyStars({ difficulty }: { difficulty: number }) {
@@ -18,7 +20,15 @@ function DifficultyStars({ difficulty }: { difficulty: number }) {
   );
 }
 
-export default function ScenarioSelector({ packs, scenarios, progress, scenarioStates, selectedId, onSelect }: ScenarioSelectorProps) {
+export default function ScenarioSelector({ packs, scenarios, progress, scenarioStates, selectedId, onSelect, onPackExpand }: ScenarioSelectorProps) {
+  // Trigger lazy loading for all visible packs when the selector mounts or packs change
+  useEffect(() => {
+    if (!onPackExpand) return;
+    for (const pack of packs) {
+      onPackExpand(pack.id);
+    }
+  }, [packs, onPackExpand]);
+
   return (
     <div style={{ overflowY: 'auto', maxHeight: '70vh' }}>
       {packs.map(pack => (

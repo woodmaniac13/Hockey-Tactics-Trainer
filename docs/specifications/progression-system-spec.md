@@ -28,29 +28,44 @@ The progression system must:
 Each scenario has:
 
 ```json
+{ "difficulty": 1 }
+```
+
+### Scenario Tags
+
+Each scenario has tags used for grouping, recommendations, and weakness detection:
+
+```json
+{ "tags": ["support", "build_out"] }
+```
+
+### Curriculum Metadata
+
+Scenarios may optionally carry curriculum metadata:
+
+```json
 {
-  "difficulty": 1-5
+  "curriculum_group": "build_out_basics",
+  "learning_stage": 1,
+  "prerequisites": ["S01"],
+  "recommended_after": "S02"
 }
+```
 
-Scenario Tags
+| Field | Type | Description |
+|-------|------|-------------|
+| `curriculum_group` | string | Logical grouping (e.g. `build_out_basics`) |
+| `learning_stage` | number | Ordering within a group (1 = earliest) |
+| `prerequisites` | string[] | Scenario IDs that must be completed (≥80) before this unlocks |
+| `recommended_after` | string | Soft ordering hint (no hard gate) |
 
-Each scenario has tags:
+---
 
-{
-  "tags": ["support", "build_out"]
-}
-
-Used for:
-	•	grouping
-	•	recommendations
-	•	weakness detection
-
-⸻
-
-Progress Model
+## Progress Model
 
 Progress is tracked per scenario:
 
+```json
 {
   "scenario_id": "S01",
   "version": 1,
@@ -58,6 +73,122 @@ Progress is tracked per scenario:
   "last_score": 80,
   "attempt_count": 3
 }
+```
+
+---
+
+## Unlock Rules
+
+### Completion Threshold
+
+A scenario is considered completed when: `best_score ≥ 80`
+
+### Prerequisite Gating
+
+If a scenario defines `prerequisites`, **all listed scenarios must be completed** (best_score ≥ 80) before the scenario becomes AVAILABLE. This takes precedence over difficulty-based unlocking.
+
+### Difficulty Unlock
+
+A player unlocks the next difficulty level when:
+`average_score(current_difficulty) ≥ 80`
+
+Difficulty-1 scenarios without unmet prerequisites are always AVAILABLE.
+
+---
+
+## Recommendation System
+
+### Goal
+
+Suggest the next scenario based on the user's weakest skill area, then curriculum ordering, then unplayed status.
+
+### Weakness Detection
+
+Aggregate best scores by tag. The tag with the lowest average score is the weakest area.
+
+### Recommendation Priority
+
+1. **Weakness tag** — an unplayed or incomplete scenario that targets the weakest tag
+2. **Curriculum-ordered unplayed** — within curriculum groups, prefer lower `learning_stage` first; scenarios without a `curriculum_group` are lower priority within this step
+3. **Any unplayed scenario** — in scenario list order
+4. **Lowest-scored incomplete** — scenario with the worst best_score
+
+### Scenario States
+
+| State | Meaning |
+|-------|---------|
+| `LOCKED` | Prerequisites unmet or previous difficulty not passed |
+| `AVAILABLE` | Playable |
+| `COMPLETED` | `best_score ≥ 80` |
+
+---
+
+## UI Representation
+
+- **Scenario card**: title, difficulty, tags, best score, status (locked / available / completed)
+- **Locked scenarios**: lock icon shown; prerequisite IDs shown in scenario details if unmet prerequisites exist
+- **Curriculum context**: `curriculum_group` and `learning_stage` shown in scenario detail view
+- **Recommended next**: shown in Progress view
+
+---
+
+## Completion Thresholds
+
+| Score | Meaning |
+|-------|---------|
+| ≥90 | excellent |
+| 80–89 | complete |
+| 60–79 | partial |
+| <60 | poor |
+
+---
+
+## Data Storage
+
+Stored in `localStorage`:
+- `fhtt.progress.v1`
+- `fhtt.attempts.v1`
+
+---
+
+## Determinism
+
+Progression must:
+- produce same recommendations given same data
+- avoid randomness
+- be reproducible
+
+---
+
+## Testing
+
+Unit tests cover:
+- difficulty unlock logic
+- prerequisite gating (single and multiple prerequisites)
+- curriculum-ordered recommendation (lower `learning_stage` preferred)
+- weakness tag recommendation
+- tag aggregation
+- edge cases: no progress, all completed, no weakness data
+
+---
+
+## Acceptance Criteria
+
+Progression system is complete when:
+- scenarios unlock correctly based on both difficulty and prerequisites
+- weakest skill is detected
+- recommendations follow curriculum ordering when metadata is present
+- progress persists locally
+- system works offline
+
+---
+
+## Final Rule
+
+The progression system should always answer:
+
+> "What should I practice next to improve fastest?"
+
 
 
 ⸻

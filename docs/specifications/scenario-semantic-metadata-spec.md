@@ -25,6 +25,39 @@ For the core scenario schema (required fields, region types, validation rules), 
 
 ---
 
+## Field Classification
+
+Fields are classified by their runtime role:
+
+| Classification | Description |
+|---|---|
+| **Runtime-used** | Actively used by the evaluator, progression system, feedback engine, or UI at runtime |
+| **User-facing** | Shown directly to the player in the training UI |
+| **Authoring-only** | Validated and stored, but not used at runtime; serves content QA, AI generation, and future-facing work |
+
+| Field | Classification |
+|---|---|
+| `line_group` | Runtime-used (filtering), User-facing (badge) |
+| `primary_concept` | Runtime-used (feedback fallback enrichment, filtering), User-facing (badge) |
+| `secondary_concepts` | Authoring-only; reserved for future filtering |
+| `teaching_point` | Runtime-used — used verbatim as `tactical_explanation` in feedback |
+| `target_role_family` | Authoring-only |
+| `situation` | Runtime-used (filtering), User-facing (badge) |
+| `field_zone` | Authoring-only |
+| `game_state` | Authoring-only |
+| `curriculum_group` | Runtime-used (progression recommendation ordering), User-facing (scenario details) |
+| `learning_stage` | Runtime-used (progression recommendation ordering), User-facing (scenario details) |
+| `prerequisites` | Runtime-used (progression gating — hard lock), User-facing (warning in scenario details) |
+| `recommended_after` | Authoring-only (soft guidance, not yet wired into runtime) |
+| `scenario_archetype` | User-facing (badge in scenario details); Authoring-only at runtime |
+| `feedback_hints.*` | Runtime-used (feedback summary overrides) |
+| `pressure.primary_presser_id` | **Authoring-only** — not evaluated or scored |
+| `pressure.forced_side` | **Authoring-only** — not evaluated or scored |
+| `pressure.blocked_lane` | **Authoring-only** — not evaluated or scored |
+| `pressure.trap_zone` | **Authoring-only** — not evaluated or scored |
+
+---
+
 ## Tactical Semantics Fields
 
 These fields describe what the scenario is teaching and at what line-group level.
@@ -203,7 +236,7 @@ The game state at the time of the scenario.
 
 ## Pressure Detail Fields
 
-These extend the existing `pressure` object with optional authored detail.
+> **Authoring-only.** These fields extend the `pressure` object with optional authored detail for content QA, author intent documentation, and future integration. They are **not** used by the evaluator, scoring engine, or feedback system at runtime.
 
 The existing `direction` and `intensity` fields remain required and unchanged.
 
@@ -289,7 +322,7 @@ The step number within the curriculum group. Should be a positive integer.
 
 ### `prerequisites`
 
-An array of `scenario_id` values that the player should ideally complete before attempting this scenario.
+An array of `scenario_id` values that **must** be completed (best_score ≥ 80) before this scenario becomes available. This is a hard gate — the scenario will be `LOCKED` until all prerequisites are met. Unmet prerequisites are shown in the scenario details UI.
 
 **Example**
 ```json
@@ -340,7 +373,7 @@ If absent, the feedback system falls back to its standard generated output.
 
 ### `scenario_archetype`
 
-A lightweight label that identifies the high-level tactical pattern of the scenario. Used for authoring consistency, content QA, and AI generation prompts. Must be one of the values in the validated catalog below.
+A lightweight label that identifies the high-level tactical pattern of the scenario. Displayed as a badge in the scenario details UI. Also used for authoring consistency, content QA, and AI generation prompts. Must be one of the values in the validated catalog below. Not used by the evaluator at runtime.
 
 **Valid archetype values**
 

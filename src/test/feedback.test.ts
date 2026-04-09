@@ -76,9 +76,34 @@ describe('generateFeedback', () => {
     expect(fb.positives).toHaveLength(0);
   });
 
-  it('includes tactical explanation for attack+support', () => {
+  it('includes tactical explanation for attack+support (fallback path)', () => {
     const fb = generateFeedback(baseEvalResult, baseScenario);
     expect(fb.tactical_explanation).toContain('support the ball carrier');
+  });
+
+  it('uses authored teaching_point as tactical explanation when present', () => {
+    const scenarioWithTeachingPoint: Scenario = {
+      ...baseScenario,
+      teaching_point: 'Drop into the pocket between the press lines to give the CB a clean outlet.',
+    };
+    const fb = generateFeedback(baseEvalResult, scenarioWithTeachingPoint);
+    expect(fb.tactical_explanation).toBe(
+      'Drop into the pocket between the press lines to give the CB a clean outlet.',
+    );
+  });
+
+  it('teaching_point takes precedence over phase/tag fallback', () => {
+    // Even an attack+support scenario should use the teaching_point if authored
+    const scenarioWithTeachingPoint: Scenario = {
+      ...baseScenario,
+      tags: ['support'],
+      phase: 'attack',
+      teaching_point: 'Custom authored coaching point.',
+    };
+    const fb = generateFeedback(baseEvalResult, scenarioWithTeachingPoint);
+    expect(fb.tactical_explanation).toBe('Custom authored coaching point.');
+    // Confirm the generic fallback text is not present
+    expect(fb.tactical_explanation).not.toContain('support the ball carrier');
   });
 
   it('includes reasoning feedback when reasoning provided', () => {

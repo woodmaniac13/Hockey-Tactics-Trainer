@@ -1,0 +1,72 @@
+{
+  "scenario_id": "S05",
+  "version": 1,
+  "title": "Wide CB Outlet Support",
+  "description": "You are the right central midfielder. The right centre-back has the ball under pressure from a high press. Provide a strong-side outlet and an escape lane to relieve pressure and restart the build-out.",
+  "phase": "attack",
+  "team_orientation": "home_attacks_positive_x",
+  "target_player": "cm_right",
+  "ball": { "x": 18, "y": 30 },
+  "teammates": [
+    { "id": "gk", "role": "GK", "team": "home", "x": 5, "y": 50 },
+    { "id": "cb_right", "role": "CB", "team": "home", "x": 18, "y": 30 },
+    { "id": "cb_left", "role": "CB", "team": "home", "x": 18, "y": 70 },
+    { "id": "cm_right", "role": "CM", "team": "home", "x": 35, "y": 32 },
+    { "id": "cm_left", "role": "CM", "team": "home", "x": 35, "y": 68 },
+    { "id": "fw1", "role": "FW", "team": "home", "x": 65, "y": 50 }
+  ],
+  "opponents": [
+    { "id": "opp_press", "role": "FW", "team": "away", "x": 22, "y": 28 },
+    { "id": "opp_cm", "role": "CM", "team": "away", "x": 38, "y": 35 },
+    { "id": "opp_cf", "role": "CF", "team": "away", "x": 45, "y": 50 }
+  ],
+  "pressure": { "direction": "outside_in", "intensity": "high" },
+  "ideal_regions": [
+    {
+      "label": "strong_side_outlet_lane",
+      "purpose": "primary_support_option",
+      "reference_frame": "pitch",
+      "geometry": {
+        "type": "lane",
+        "x1": 26,
+        "y1": 32,
+        "x2": 44,
+        "y2": 32,
+        "width": 10
+      }
+    },
+    {
+      "label": "diagonal_escape_pocket",
+      "purpose": "pressure_relief",
+      "reference_frame": "pitch",
+      "geometry": {
+        "type": "rectangle",
+        "x": 24,
+        "y": 38,
+        "width": 14,
+        "height": 12
+      }
+    }
+  ],
+  "acceptable_regions": [
+    {
+      "label": "wide_support_area",
+      "purpose": "secondary_support_option",
+      "reference_frame": "pitch",
+      "geometry": {
+        "type": "circle",
+        "x": 36,
+        "y": 32,
+        "r": 14
+      }
+    }
+  ],
+  "weight_profile": "build_out_v1",
+  "constraint_thresholds": {
+    "support": 0.4,
+    "passing_lane": 0.3,
+    "pressure_relief": 0.4
+  },
+  "difficulty": 2,
+  "tags": ["build_out", "pressure_relief", "outlet"]
+}

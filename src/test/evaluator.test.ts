@@ -200,3 +200,217 @@ describe('evaluate — rich region types', () => {
     expect(result.region_fit_score).toBe(1.0);
   });
 });
+
+describe('evaluate — semantic region resolution', () => {
+  // ── pitch-relative (default) ────────────────────────────────────────────
+
+  it('pitch-relative semantic region with no reference_frame behaves like raw geometry', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        label: 'central_pocket',
+        purpose: 'primary_support_option' as const,
+        geometry: { type: 'circle' as const, x: 50, y: 50, r: 10 },
+      }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 50, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+
+  it('pitch-relative semantic region with explicit reference_frame: pitch behaves like raw geometry', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        label: 'strong_side_outlet_lane',
+        purpose: 'primary_support_option' as const,
+        reference_frame: 'pitch' as const,
+        geometry: {
+          type: 'lane' as const,
+          x1: 30, y1: 50,
+          x2: 60, y2: 50,
+          width: 10,
+        },
+      }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 45, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+
+  it('pitch-relative semantic region misses when player is outside', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        label: 'right_pocket',
+        reference_frame: 'pitch' as const,
+        geometry: { type: 'circle' as const, x: 70, y: 70, r: 8 },
+      }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 10, y: 10 }, baseProfile);
+    expect(result.region_fit_score).toBe(0.0);
+  });
+
+  // ── ball-relative ────────────────────────────────────────────────────────
+
+  it('ball-relative semantic region hits when player is at ball + offset', () => {
+    // ball is at { x: 30, y: 50 } in baseScenario
+    // geometry offset: { x: 10, y: 0 } → resolves to pitch { x: 40, y: 50 }
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        label: 'immediate_escape_lane',
+        purpose: 'pressure_relief' as const,
+        reference_frame: 'ball' as const,
+        geometry: { type: 'circle' as const, x: 10, y: 0, r: 8 },
+      }],
+      acceptable_regions: [],
+    };
+    // pitch-resolved center: (30+10, 50+0) = (40, 50)
+    const result = evaluate(scenario, { x: 40, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+
+  it('ball-relative semantic region misses when player is at original geometry coordinates (not resolved)', () => {
+    // geometry is at x:10, y:0 relative to ball; without translation player at (10,0) is far from resolved center (40,50)
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        reference_frame: 'ball' as const,
+        geometry: { type: 'circle' as const, x: 10, y: 0, r: 5 },
+      }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 10, y: 0 }, baseProfile);
+    expect(result.region_fit_score).toBe(0.0);
+  });
+
+  // ── target_player-relative ───────────────────────────────────────────────
+
+  it('target_player-relative semantic region resolves relative to the target player', () => {
+    // baseScenario: target_player = 'cm1' at { x: 45, y: 62 }
+    // geometry offset: { x: 5, y: 0 } → resolves to (50, 62)
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        label: 'support_pocket',
+        purpose: 'secondary_support_option' as const,
+        reference_frame: 'target_player' as const,
+        geometry: { type: 'circle' as const, x: 5, y: 0, r: 5 },
+      }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 50, y: 62 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+
+  it('target_player-relative semantic region misses when player is at raw offset (not resolved)', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        reference_frame: 'target_player' as const,
+        geometry: { type: 'circle' as const, x: 5, y: 0, r: 5 },
+      }],
+      acceptable_regions: [],
+    };
+    // Without resolution the circle center would be (5,0), but resolved it is (50,62)
+    const result = evaluate(scenario, { x: 5, y: 0 }, baseProfile);
+    expect(result.region_fit_score).toBe(0.0);
+  });
+
+  // ── entity-relative ──────────────────────────────────────────────────────
+
+  it('entity-relative semantic region resolves relative to a named opponent', () => {
+    // baseScenario: opp1 at { x: 40, y: 48 }
+    // geometry offset: { x: 0, y: 5 } → resolves to (40, 53)
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        label: 'cf_cover_shadow',
+        purpose: 'defensive_cover' as const,
+        reference_frame: 'entity' as const,
+        reference_entity_id: 'opp1',
+        geometry: { type: 'circle' as const, x: 0, y: 5, r: 5 },
+      }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 40, y: 53 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+
+  it('entity-relative semantic region returns 0 when reference entity does not exist', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        reference_frame: 'entity' as const,
+        reference_entity_id: 'nonexistent_entity',
+        geometry: { type: 'circle' as const, x: 50, y: 50, r: 20 },
+      }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 50, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBe(0.0);
+  });
+
+  // ── polygon and lane with translation ────────────────────────────────────
+
+  it('ball-relative polygon region resolves correctly', () => {
+    // ball at (30, 50); polygon offsets form a 10×10 square at +20,+0
+    // resolved vertices: (50,50),(60,50),(60,60),(50,60)
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        reference_frame: 'ball' as const,
+        geometry: {
+          type: 'polygon' as const,
+          vertices: [
+            { x: 20, y: 0 }, { x: 30, y: 0 },
+            { x: 30, y: 10 }, { x: 20, y: 10 },
+          ],
+        },
+      }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 55, y: 55 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+
+  it('ball-relative lane region resolves correctly', () => {
+    // ball at (30,50); lane offsets: (0,0) → (20,0) with width 10
+    // resolved: (30,50)→(50,50)
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [{
+        reference_frame: 'ball' as const,
+        geometry: {
+          type: 'lane' as const,
+          x1: 0, y1: 0,
+          x2: 20, y2: 0,
+          width: 10,
+        },
+      }],
+      acceptable_regions: [],
+    };
+    const result = evaluate(scenario, { x: 40, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBe(1.0);
+  });
+
+  // ── acceptable semantic region gradient ──────────────────────────────────
+
+  it('pitch-relative semantic acceptable circle uses gradient scoring', () => {
+    const scenario = {
+      ...baseScenario,
+      ideal_regions: [],
+      acceptable_regions: [{
+        label: 'wide_support_pocket',
+        reference_frame: 'pitch' as const,
+        geometry: { type: 'circle' as const, x: 50, y: 50, r: 10 },
+      }],
+    };
+    // Player exactly at center → ratio=1 → lerp(1, 0.6, 0.9) = 0.9
+    const result = evaluate(scenario, { x: 50, y: 50 }, baseProfile);
+    expect(result.region_fit_score).toBeGreaterThanOrEqual(0.6);
+    expect(result.region_fit_score).toBeLessThanOrEqual(0.9);
+  });
+});

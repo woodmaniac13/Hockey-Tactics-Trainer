@@ -12,6 +12,15 @@
         "scenarios/attack/S03.json",
         "scenarios/transition/S04.json"
       ]
+    },
+    {
+      "id": "semantic-regions-intro",
+      "title": "Semantic Region Examples",
+      "description": "Scenarios authored with semantic region wrappers — demonstrating the preferred pitch-relative authoring style.",
+      "order": 2,
+      "scenarios": [
+        "scenarios/build-out/S05.json"
+      ]
     }
   ]
 }

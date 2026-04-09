@@ -15,8 +15,49 @@ export type RectangleRegion = { type: 'rectangle'; x: number; y: number; width: 
 export type PolygonRegion = { type: 'polygon'; vertices: Point[] };
 export type LaneRegion = { type: 'lane'; x1: number; y1: number; x2: number; y2: number; width: number };
 
-/** Union of all supported tactical region primitives. */
-export type TacticalRegion = CircleRegion | TaggedCircleRegion | RectangleRegion | PolygonRegion | LaneRegion;
+/** Union of all supported geometric region primitives (no semantic metadata). */
+export type TacticalRegionGeometry =
+  | CircleRegion
+  | TaggedCircleRegion
+  | RectangleRegion
+  | PolygonRegion
+  | LaneRegion;
+
+/** Reference frame for resolving a semantic region into pitch-space geometry. */
+export type ReferenceFrame = 'pitch' | 'ball' | 'target_player' | 'entity';
+
+/** Controlled vocabulary of tactical purposes a region can serve. */
+export type SemanticRegionPurpose =
+  | 'primary_support_option'
+  | 'secondary_support_option'
+  | 'passing_lane_support'
+  | 'pressure_relief'
+  | 'switch_option'
+  | 'width_hold'
+  | 'depth_hold'
+  | 'defensive_cover'
+  | 'central_protection'
+  | 'recovery_run'
+  | 'press_trigger'
+  | 'screening_position'
+  | 'custom';
+
+/**
+ * Semantic wrapper that pairs tactical metadata with a geometric shape.
+ * `reference_frame` defaults to `'pitch'` when omitted.
+ */
+export type SemanticRegion = {
+  label?: string;
+  purpose?: SemanticRegionPurpose;
+  reference_frame?: ReferenceFrame;
+  /** Required only when `reference_frame === 'entity'`. */
+  reference_entity_id?: string;
+  notes?: string;
+  geometry: TacticalRegionGeometry;
+};
+
+/** Union of all supported tactical region forms — raw geometry or semantic wrapper. */
+export type TacticalRegion = TacticalRegionGeometry | SemanticRegion;
 
 export type PressureDirection = 'inside_out' | 'outside_in' | 'central' | 'none';
 export type PressureIntensity = 'low' | 'medium' | 'high';

@@ -8,8 +8,8 @@ import {
 // ── TacticalRegionGeometrySchema ────────────────────────────────────────────
 
 describe('TacticalRegionGeometrySchema', () => {
-  it('accepts a legacy circle { x, y, r }', () => {
-    expect(TacticalRegionGeometrySchema.safeParse({ x: 50, y: 50, r: 10 }).success).toBe(true);
+  it('rejects a legacy circle { x, y, r } without type discriminator', () => {
+    expect(TacticalRegionGeometrySchema.safeParse({ x: 50, y: 50, r: 10 }).success).toBe(false);
   });
 
   it('accepts a tagged circle', () => {
@@ -134,8 +134,8 @@ describe('SemanticRegionSchema', () => {
 // ── TacticalRegionSchema (union) ────────────────────────────────────────────
 
 describe('TacticalRegionSchema', () => {
-  it('accepts a raw geometry (legacy circle) without semantic wrapper', () => {
-    expect(TacticalRegionSchema.safeParse({ x: 50, y: 50, r: 10 }).success).toBe(true);
+  it('rejects a raw geometry (legacy circle) without type field', () => {
+    expect(TacticalRegionSchema.safeParse({ x: 50, y: 50, r: 10 }).success).toBe(false);
   });
 
   it('accepts a raw geometry (lane) without semantic wrapper', () => {

@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import type { Scenario, ScenarioPack, ProgressRecord, ScenarioState } from '../types';
+import type { Scenario, ScenarioPack, ProgressRecord, ScenarioState, LineGroup, PrimaryConceptVocab, SituationVocab } from '../types';
 
 interface ScenarioSelectorProps {
   packs: ScenarioPack[];
@@ -12,6 +12,15 @@ interface ScenarioSelectorProps {
   onPackExpand?: (packId: string) => void;
   /** When true, renders mobile-optimized cards with reduced density */
   isMobile?: boolean;
+  /** Active line group filter — undefined means show all */
+  filterLineGroup?: LineGroup;
+  /** Active primary concept filter — undefined means show all */
+  filterPrimaryConcept?: PrimaryConceptVocab;
+  /** Active situation filter — undefined means show all */
+  filterSituation?: SituationVocab;
+  onFilterLineGroupChange?: (v: LineGroup | undefined) => void;
+  onFilterPrimaryConceptChange?: (v: PrimaryConceptVocab | undefined) => void;
+  onFilterSituationChange?: (v: SituationVocab | undefined) => void;
 }
 
 function DifficultyStars({ difficulty, size }: { difficulty: number; size?: string }) {
@@ -27,7 +36,7 @@ function formatTag(tag: string): string {
   return tag.replace(/_/g, '-').replace(/^\w/, c => c.toUpperCase());
 }
 
-export default function ScenarioSelector({ packs, scenarios, progress, scenarioStates, selectedId, onSelect, onPackExpand, isMobile }: ScenarioSelectorProps) {
+export default function ScenarioSelector({ packs, scenarios, progress, scenarioStates, selectedId, onSelect, onPackExpand, isMobile, filterLineGroup, filterPrimaryConcept, filterSituation, onFilterLineGroupChange, onFilterPrimaryConceptChange, onFilterSituationChange }: ScenarioSelectorProps) {
   // Trigger lazy loading for all visible packs when the selector mounts or packs change
   useEffect(() => {
     if (!onPackExpand) return;
@@ -36,8 +45,77 @@ export default function ScenarioSelector({ packs, scenarios, progress, scenarioS
     }
   }, [packs, onPackExpand]);
 
+  const hasFilters = !!(onFilterLineGroupChange || onFilterPrimaryConceptChange || onFilterSituationChange);
+
   return (
     <div style={{ overflowY: 'auto', maxHeight: isMobile ? undefined : '70vh' }}>
+      {/* Filter controls — only rendered when change handlers are provided */}
+      {hasFilters && (
+        <div style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {onFilterLineGroupChange && (
+            <select
+              value={filterLineGroup ?? ''}
+              onChange={e => onFilterLineGroupChange(e.target.value as LineGroup || undefined)}
+              style={{ width: '100%', padding: '5px 8px', borderRadius: '6px', border: '1px solid #2c3e50', background: '#0f3460', color: '#e0e0e0', fontSize: '0.8rem', cursor: 'pointer' }}
+              aria-label="Filter by line group"
+            >
+              <option value="">All lines</option>
+              <option value="back">Back</option>
+              <option value="midfield">Midfield</option>
+              <option value="forward">Forward</option>
+            </select>
+          )}
+          {onFilterPrimaryConceptChange && (
+            <select
+              value={filterPrimaryConcept ?? ''}
+              onChange={e => onFilterPrimaryConceptChange(e.target.value as PrimaryConceptVocab || undefined)}
+              style={{ width: '100%', padding: '5px 8px', borderRadius: '6px', border: '1px solid #2c3e50', background: '#0f3460', color: '#e0e0e0', fontSize: '0.8rem', cursor: 'pointer' }}
+              aria-label="Filter by primary concept"
+            >
+              <option value="">All concepts</option>
+              <option value="support">Support</option>
+              <option value="cover">Cover</option>
+              <option value="transfer">Transfer</option>
+              <option value="spacing">Spacing</option>
+              <option value="pressure_response">Pressure response</option>
+              <option value="width_depth">Width &amp; depth</option>
+              <option value="recovery_shape">Recovery shape</option>
+              <option value="pressing_angle">Pressing angle</option>
+            </select>
+          )}
+          {onFilterSituationChange && (
+            <select
+              value={filterSituation ?? ''}
+              onChange={e => onFilterSituationChange(e.target.value as SituationVocab || undefined)}
+              style={{ width: '100%', padding: '5px 8px', borderRadius: '6px', border: '1px solid #2c3e50', background: '#0f3460', color: '#e0e0e0', fontSize: '0.8rem', cursor: 'pointer' }}
+              aria-label="Filter by situation"
+            >
+              <option value="">All situations</option>
+              <option value="build_out_under_press">Build-out under press</option>
+              <option value="settled_attack">Settled attack</option>
+              <option value="defensive_shape">Defensive shape</option>
+              <option value="high_press">High press</option>
+              <option value="recovery_defence">Recovery defence</option>
+              <option value="counter_attack">Counter attack</option>
+              <option value="sideline_trap">Sideline trap</option>
+              <option value="free_hit_shape">Free hit shape</option>
+              <option value="circle_entry_support">Circle entry support</option>
+            </select>
+          )}
+          {(filterLineGroup || filterPrimaryConcept || filterSituation) && (
+            <button
+              onClick={() => {
+                onFilterLineGroupChange?.(undefined);
+                onFilterPrimaryConceptChange?.(undefined);
+                onFilterSituationChange?.(undefined);
+              }}
+              style={{ alignSelf: 'flex-start', padding: '3px 10px', borderRadius: '12px', border: '1px solid #2c3e50', background: 'transparent', color: '#aaa', fontSize: '0.75rem', cursor: 'pointer' }}
+            >
+              ✕ Clear filters
+            </button>
+          )}
+        </div>
+      )}
       {packs.map(pack => (
         <div key={pack.id} style={{ marginBottom: isMobile ? '20px' : '16px' }}>
           <div style={{ fontWeight: 'bold', color: '#aaa', fontSize: '0.85rem', marginBottom: isMobile ? '10px' : '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -47,6 +125,12 @@ export default function ScenarioSelector({ packs, scenarios, progress, scenarioS
             const id = path.split('/').pop()?.replace('.json', '') ?? path;
             const scenario = Object.values(scenarios).find(s => s.scenario_id === id || path.includes(s.scenario_id));
             if (!scenario) return null;
+
+            // Apply active filters
+            if (filterLineGroup && scenario.line_group !== filterLineGroup) return null;
+            if (filterPrimaryConcept && scenario.primary_concept !== filterPrimaryConcept) return null;
+            if (filterSituation && scenario.situation !== filterSituation) return null;
+
             const state = scenarioStates[scenario.scenario_id] ?? 'AVAILABLE';
             const rec = progress[scenario.scenario_id];
             const isSelected = selectedId === scenario.scenario_id;

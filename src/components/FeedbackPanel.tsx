@@ -81,6 +81,13 @@ export default function FeedbackPanel({ feedback, onRetry, onNext, isMobile }: F
         </div>
       )}
 
+      {feedback.teaching_emphasis && (
+        <div style={{ marginBottom: '10px', padding: '8px 10px', background: 'rgba(52, 152, 219, 0.12)', borderLeft: '3px solid #3498db', borderRadius: '4px', color: '#a8d4f5', fontSize: isMobile ? '0.8rem' : '0.875rem' }}>
+          <div style={{ fontWeight: 'bold', color: '#3498db', marginBottom: '3px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📌 Coaching Point</div>
+          {feedback.teaching_emphasis}
+        </div>
+      )}
+
       {/* On mobile, actions are in the sticky bottom bar; on desktop, show inline */}
       {!isMobile && (
         <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>

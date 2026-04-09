@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import type { Scenario, Point, WeightProfile, FeedbackResult, ProgressRecord, ScenarioPack, ScenarioState, ReasoningOption } from '../types';
+import type { Scenario, Point, WeightProfile, FeedbackResult, ProgressRecord, ScenarioPack, ScenarioState, ReasoningOption, LineGroup, PrimaryConceptVocab, SituationVocab } from '../types';
 import Board from '../board/Board';
 import FeedbackPanel from '../components/FeedbackPanel';
 import ScenarioSelector from '../components/ScenarioSelector';
@@ -37,6 +37,9 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
   const [activeTab, setActiveTab] = useState<'training' | 'progress'>('training');
   const [mobileScreen, setMobileScreen] = useState<MobileScreen>('list');
   const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [filterLineGroup, setFilterLineGroup] = useState<LineGroup | undefined>();
+  const [filterPrimaryConcept, setFilterPrimaryConcept] = useState<PrimaryConceptVocab | undefined>();
+  const [filterSituation, setFilterSituation] = useState<SituationVocab | undefined>();
   const settings = getSettings();
   const isMobile = useIsMobile();
 
@@ -185,6 +188,12 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
               onSelect={handleSelectScenario}
               onPackExpand={onLoadPack}
               isMobile
+              filterLineGroup={filterLineGroup}
+              filterPrimaryConcept={filterPrimaryConcept}
+              filterSituation={filterSituation}
+              onFilterLineGroupChange={setFilterLineGroup}
+              onFilterPrimaryConceptChange={setFilterPrimaryConcept}
+              onFilterSituationChange={setFilterSituation}
             />
           </div>
         ) : scenario ? (
@@ -217,6 +226,7 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
             </button>
             {detailsExpanded && (
               <div style={{ padding: '8px 16px', background: '#16213e', borderTop: '1px solid #2c3e50', fontSize: '0.8rem', color: '#aaa', flexShrink: 0 }}>
+                {/* Phase / tag badges */}
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: '#2c3e50', color: '#aaa' }}>
                     {formatTag(scenario.phase)}
@@ -227,6 +237,32 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                     </span>
                   ))}
                 </div>
+                {/* Semantic metadata badges */}
+                {(scenario.line_group || scenario.primary_concept || scenario.situation) && (
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                    {scenario.line_group && (
+                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(52, 152, 219, 0.2)', color: '#3498db', border: '1px solid rgba(52,152,219,0.4)' }}>
+                        {formatTag(scenario.line_group)} line
+                      </span>
+                    )}
+                    {scenario.primary_concept && (
+                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(39, 174, 96, 0.2)', color: '#27ae60', border: '1px solid rgba(39,174,96,0.4)' }}>
+                        {formatTag(scenario.primary_concept)}
+                      </span>
+                    )}
+                    {scenario.situation && (
+                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(142, 68, 173, 0.2)', color: '#a97dc4', border: '1px solid rgba(142,68,173,0.4)' }}>
+                        {formatTag(scenario.situation)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {/* Teaching point */}
+                {scenario.teaching_point && (
+                  <div style={{ marginTop: '6px', padding: '5px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px', color: '#ccc', fontSize: '0.75rem', borderLeft: '2px solid #3498db' }}>
+                    {scenario.teaching_point}
+                  </div>
+                )}
               </div>
             )}
 
@@ -351,6 +387,12 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
               selectedId={selectedId}
               onSelect={handleSelectScenario}
               onPackExpand={onLoadPack}
+              filterLineGroup={filterLineGroup}
+              filterPrimaryConcept={filterPrimaryConcept}
+              filterSituation={filterSituation}
+              onFilterLineGroupChange={setFilterLineGroup}
+              onFilterPrimaryConceptChange={setFilterPrimaryConcept}
+              onFilterSituationChange={setFilterSituation}
             />
           ) : (
             <ProgressView
@@ -369,6 +411,7 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
               <div style={{ background: '#16213e', borderRadius: '8px', padding: '12px' }}>
                 <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#e0e0e0' }}>{scenario.title}</div>
                 <div style={{ color: '#aaa', fontSize: '0.9rem', marginTop: '4px' }}>{scenario.description}</div>
+                {/* Phase / tag badges */}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', background: '#2c3e50', color: '#aaa' }}>
                     {formatTag(scenario.phase)}
@@ -379,6 +422,32 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                     </span>
                   ))}
                 </div>
+                {/* Semantic metadata badges */}
+                {(scenario.line_group || scenario.primary_concept || scenario.situation) && (
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                    {scenario.line_group && (
+                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(52, 152, 219, 0.2)', color: '#3498db', border: '1px solid rgba(52,152,219,0.4)' }}>
+                        {formatTag(scenario.line_group)} line
+                      </span>
+                    )}
+                    {scenario.primary_concept && (
+                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(39, 174, 96, 0.2)', color: '#27ae60', border: '1px solid rgba(39,174,96,0.4)' }}>
+                        {formatTag(scenario.primary_concept)}
+                      </span>
+                    )}
+                    {scenario.situation && (
+                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(142, 68, 173, 0.2)', color: '#a97dc4', border: '1px solid rgba(142,68,173,0.4)' }}>
+                        {formatTag(scenario.situation)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {/* Teaching point */}
+                {scenario.teaching_point && (
+                  <div style={{ marginTop: '8px', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px', color: '#ccc', fontSize: '0.8rem', borderLeft: '2px solid #3498db' }}>
+                    {scenario.teaching_point}
+                  </div>
+                )}
               </div>
 
               <Board

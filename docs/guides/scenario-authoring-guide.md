@@ -86,6 +86,27 @@ For authored feedback, add:
 }
 ```
 
+To label the high-level tactical pattern of the scenario, add a `scenario_archetype` value. This improves authoring consistency and AI generation quality. Choose from the validated catalog:
+
+| Value | Tactical pattern |
+|---|---|
+| `back_outlet_support` | Back-line player offering an outlet pass option |
+| `fullback_escape_option` | Fullback creating an escape route under pressure |
+| `midfield_triangle_restore` | Midfield player reconnecting the passing triangle |
+| `interior_support_under_press` | Interior player supporting the ball carrier under press |
+| `forward_width_hold` | Forward maintaining wide position to stretch defence |
+| `forward_press_angle` | Forward positioning to apply a pressing angle |
+| `help_side_cover` | Player on the help side covering a central channel |
+| `central_recovery_cover` | Central player recovering into a covering shape |
+| `sideline_trap_support` | Support player assisting a sideline trap structure |
+| `weak_side_balance` | Weak-side player balancing the team shape |
+
+```json
+{
+  "scenario_archetype": "interior_support_under_press"
+}
+```
+
 See [specifications/scenario-semantic-metadata-spec.md](../specifications/scenario-semantic-metadata-spec.md) for the full list of available fields, controlled vocabulary values, and examples.
 
 ⸻

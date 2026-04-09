@@ -8,16 +8,13 @@ export type Entity = {
   y: number;
 };
 
-export type CircleRegion = { x: number; y: number; r: number };
-
 export type TaggedCircleRegion = { type: 'circle'; x: number; y: number; r: number };
 export type RectangleRegion = { type: 'rectangle'; x: number; y: number; width: number; height: number; rotation?: number };
 export type PolygonRegion = { type: 'polygon'; vertices: Point[] };
 export type LaneRegion = { type: 'lane'; x1: number; y1: number; x2: number; y2: number; width: number };
 
-/** Union of all supported geometric region primitives (no semantic metadata). */
+/** Union of all supported geometric region primitives. All regions must carry a type discriminator. */
 export type TacticalRegionGeometry =
-  | CircleRegion
   | TaggedCircleRegion
   | RectangleRegion
   | PolygonRegion
@@ -140,6 +137,19 @@ export type FeedbackHints = {
   teaching_emphasis?: string;
 };
 
+/** Typed catalog of scenario archetypes for authoring consistency and AI generation. */
+export type ScenarioArchetype =
+  | 'back_outlet_support'
+  | 'fullback_escape_option'
+  | 'midfield_triangle_restore'
+  | 'interior_support_under_press'
+  | 'forward_width_hold'
+  | 'forward_press_angle'
+  | 'help_side_cover'
+  | 'central_recovery_cover'
+  | 'sideline_trap_support'
+  | 'weak_side_balance';
+
 export type Scenario = {
   scenario_id: string;
   version: number;
@@ -190,7 +200,7 @@ export type Scenario = {
   feedback_hints?: FeedbackHints;
   // ── Scenario archetype (optional) ────────────────────────────────────────
   /** Lightweight archetype label for authoring consistency and LLM generation. */
-  scenario_archetype?: string;
+  scenario_archetype?: ScenarioArchetype;
 };
 
 export type ComponentScores = {
@@ -223,6 +233,8 @@ export type FeedbackResult = {
   improvements: string[];
   tactical_explanation: string;
   reasoning_feedback: string;
+  /** Authored coaching emphasis surfaced from `feedback_hints.teaching_emphasis`. */
+  teaching_emphasis?: string;
 };
 
 export type WeightProfileWeights = {

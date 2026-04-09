@@ -1,8 +1,8 @@
-# Proposed Schema Extensions and Roadmap
+# Schema Extensions and Roadmap
 
 ## Purpose
 
-This document proposes a practical evolution of the Hockey Tactics Trainer scenario model to improve:
+This document describes the evolution of the Hockey Tactics Trainer scenario model to improve:
 - tactical realism
 - scenario quality
 - authoring consistency
@@ -10,9 +10,9 @@ This document proposes a practical evolution of the Hockey Tactics Trainer scena
 - curriculum design
 - AI-assisted scenario generation
 
-The current schema is already strong for MVP use: it supports static JSON scenarios, clear validation rules, polymorphic regions, weight profiles, and a deterministic evaluation pipeline. However, the current model is still relatively generic. Many important hockey concepts are implied through positions, thresholds, and regions rather than being represented explicitly.
+The Phase 1 schema extension is complete. The system now enforces the strict tagged-region format, full semantic metadata, and typed archetype validation. All legacy compatibility shims have been removed.
 
-This proposal introduces a semantic layer on top of the existing scenario schema without breaking backward compatibility.
+This document describes what has been completed and what is planned for the remaining phases.
 
 ---
 
@@ -27,7 +27,7 @@ The current scenario system already provides:
 - static hosting compatibility
 - schema validation at load time
 
-These are good foundations. The proposed changes are meant to extend authoring power, not replace the existing model.
+These remain the foundation. All phases build on this core, not around it.
 
 ---
 
@@ -55,22 +55,29 @@ As a result:
 
 ## Design Goals
 
-Any schema evolution should preserve the project's existing strengths.
+Any schema evolution must preserve the project's existing strengths while actively removing legacy constraints.
 
 ### Goals
-- remain backward compatible
+- enforce strict tagged-region format (no untyped legacy regions)
 - keep JSON authoring simple
-- avoid adding evaluator complexity unnecessarily
-- improve scenario semantics without forcing all fields to become mandatory
-- allow incremental adoption
+- improve scenario semantics by requiring key metadata at authoring time
+- validate archetypes against a typed catalog
 - improve AI generation quality
 - improve future tooling and QA
+- enable curriculum-aware progression
 
 ### Non-goals
 - no move to dynamic scripting
 - no requirement for backend services
-- no breaking changes to current scenario loading
 - no replacement of the existing evaluator pipeline
+
+### Retired goals (removed to unblock progress)
+
+The following goals were appropriate during early MVP development but now actively limit the project. They have been retired:
+
+- ~~remain backward compatible~~ — the legacy untagged circle region format has been removed. All regions must use the typed format (`{ "type": "circle", ... }`). Existing scenarios have been upgraded.
+- ~~no breaking changes to current scenario loading~~ — the schema now enforces strict typed regions and validates archetype values. Scenarios that do not conform must be updated.
+- ~~allow incremental adoption~~ — all authored scenarios are expected to carry the full semantic metadata model.
 
 ---
 
@@ -457,77 +464,69 @@ Estimated impact: low engineering cost, high content value.
 
 ---
 
-### Phase 1 — Non-breaking schema extension ✅ (current phase)
+### Phase 1 — Schema extension and legacy removal ✅ (complete)
 
 **Goals**
-- add optional metadata fields
-- support richer authoring immediately
-- preserve all existing scenarios
+- add optional semantic metadata fields
+- add typed archetype catalog with enum validation
+- remove legacy untagged circle region format
+- upgrade all existing scenarios to strict format
 
 **Changes**
-- extend scenario TypeScript types
-- extend Zod schema
-- keep all new fields optional
-- do not change evaluator logic
-- update docs and templates
+- extended scenario TypeScript types (all semantic fields, `ScenarioArchetype` union)
+- extended Zod schema (archetype enum, strict validation throughout)
+- removed `CircleRegion` (untagged) from `TacticalRegionGeometry`; removed `CircleRegionSchema` from `TacticalRegionGeometrySchema`
+- removed legacy circle branches from evaluator, board renderer
+- upgraded all public scenarios (S01–S06) to tagged format with full semantic metadata
+- updated docs and templates
 
 **Success criteria**
-- existing scenarios still load unchanged
-- new scenarios validate successfully
-- authors can add semantic metadata without friction
+- all scenarios validate against the strict schema ✓
+- new scenarios carry full semantic metadata ✓
+- legacy scenarios have been upgraded ✓
 
 ---
 
-### Phase 2 — UI and content tooling support
+### Phase 2 — UI and content tooling support ✅ (complete)
 
 **Goals**
-- make new metadata visible and useful
+- make semantic metadata visible and useful to the player
 - improve authoring QA
 
 **Changes**
-- expose semantic metadata in debug or authoring views
-- add scenario browser filters using:
-  - line group
-  - primary concept
-  - situation
-  - curriculum group
-- add content QA tools and warnings
-
-**Suggested tooling**
-- duplicate scenario detector
-- field occupancy sanity checks
-- threshold sanity warnings
-- region-size warnings
-- scenario coverage dashboard
+- scenario detail panel shows semantic badges: line group, primary concept, situation, difficulty, teaching point
+- `ScenarioSelector` supports filtering by line group, primary concept, and situation
+- `TrainingPage` manages active filter state and passes it into the selector
 
 ---
 
-### Phase 3 — Feedback enrichment
+### Phase 3 — Feedback enrichment ✅ (complete)
 
 **Goals**
 - improve coaching quality without replacing current evaluator logic
 
 **Changes**
-- allow `feedback_hints` to shape generated feedback
-- scenario-specific success and error phrasing
-- alternate-valid explanation improvements
+- `feedback_hints.success` surfaces on IDEAL / VALID results
+- `feedback_hints.common_error` surfaces on PARTIAL / INVALID results
+- `feedback_hints.alternate_valid` surfaces on ALTERNATE_VALID results
+- `feedback_hints.teaching_emphasis` is always shown when present as a dedicated coaching point
+- `FeedbackResult` carries `teaching_emphasis` for rendering
+- `FeedbackPanel` displays the teaching emphasis block
 
 ---
 
-### Phase 4 — Archetype-aware authoring and generation
+### Phase 4 — Archetype-aware authoring and generation ✅ (complete)
 
 **Goals**
 - strengthen scenario consistency
 - improve AI scenario generation quality
 
 **Changes**
-- define scenario archetype catalog
-- provide recommended defaults per archetype:
-  - likely weight profile
-  - typical thresholds
-  - region shapes
-  - expected pressure patterns
-- use archetypes in templates and generation prompts
+- `ScenarioArchetype` TypeScript union type defined with all catalog entries
+- `ScenarioArchetypeSchema` Zod enum validates authored archetype values
+- `scenario_archetype` field in `ScenarioSchema` validates against the catalog
+- all public scenarios carry an archetype value
+- archetype values listed in scenario authoring guide
 
 ---
 

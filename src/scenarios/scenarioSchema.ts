@@ -13,14 +13,7 @@ export const EntitySchema = z.object({
   y: z.number(),
 }).strict();
 
-// Legacy circle region: backward-compatible format { x, y, r } with no type discriminator
-export const CircleRegionSchema = z.object({
-  x: z.number(),
-  y: z.number(),
-  r: z.number().positive(),
-}).strict();
-
-// Tagged region primitives (new format, each carries a `type` discriminator)
+// All region primitives require a `type` discriminator — no legacy untagged format.
 export const TaggedCircleRegionSchema = z.object({
   type: z.literal('circle'),
   x: z.number(),
@@ -52,11 +45,11 @@ export const LaneRegionSchema = z.object({
 }).strict();
 
 /**
- * Geometry-only union — all supported region primitives without semantic metadata.
+ * Geometry-only union — all supported region primitives.
+ * Every region must carry a `type` discriminator.
  * Used as the inner `geometry` field of a semantic region wrapper.
  */
-export const TacticalRegionGeometrySchema = z.union([
-  CircleRegionSchema,         // legacy: { x, y, r }
+export const TacticalRegionGeometrySchema = z.discriminatedUnion('type', [
   TaggedCircleRegionSchema,   // { type: "circle", x, y, r }
   RectangleRegionSchema,      // { type: "rectangle", x, y, width, height, rotation? }
   PolygonRegionSchema,        // { type: "polygon", vertices: [...] }
@@ -113,13 +106,10 @@ export const SemanticRegionSchema = z.object({
 });
 
 /**
- * Tactical region — accepts either a raw geometry primitive or a semantic wrapper.
- *
- * The legacy circle format `{ x, y, r }` (no `type` field) is tried first so
- * that existing scenario files continue to validate without modification.
+ * Tactical region — accepts either a raw typed geometry primitive or a semantic wrapper.
  */
 export const TacticalRegionSchema = z.union([
-  TacticalRegionGeometrySchema,  // raw geometry (legacy + tagged primitives)
+  TacticalRegionGeometrySchema,  // raw geometry (tagged primitives only)
   SemanticRegionSchema,          // semantic wrapper { label?, purpose?, reference_frame?, geometry }
 ]);
 
@@ -203,6 +193,20 @@ export const FeedbackHintsSchema = z.object({
   teaching_emphasis: z.string().optional(),
 }).strict();
 
+/** Typed catalog of scenario archetypes for authoring consistency and AI generation. */
+export const ScenarioArchetypeSchema = z.enum([
+  'back_outlet_support',
+  'fullback_escape_option',
+  'midfield_triangle_restore',
+  'interior_support_under_press',
+  'forward_width_hold',
+  'forward_press_angle',
+  'help_side_cover',
+  'central_recovery_cover',
+  'sideline_trap_support',
+  'weak_side_balance',
+]);
+
 export const ScenarioSchema = z.object({
   scenario_id: z.string(),
   version: z.number().int().positive(),
@@ -239,7 +243,7 @@ export const ScenarioSchema = z.object({
   // ── Authored feedback hints (optional) ────────────────────────────────
   feedback_hints: FeedbackHintsSchema.optional(),
   // ── Scenario archetype (optional) ──────────────────────────────────────
-  scenario_archetype: z.string().optional(),
+  scenario_archetype: ScenarioArchetypeSchema.optional(),
 }).strict();
 
 export const WeightProfileWeightsSchema = z.object({

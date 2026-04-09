@@ -256,10 +256,6 @@ function getReferencePointForRegion(region: SemanticRegion, scenario: Scenario):
  * Used to convert entity-relative / ball-relative regions into pitch-space.
  */
 function translateGeometry(geometry: TacticalRegionGeometry, origin: Point): TacticalRegionGeometry {
-  if (!('type' in geometry)) {
-    // Legacy circle
-    return { x: geometry.x + origin.x, y: geometry.y + origin.y, r: geometry.r };
-  }
   switch (geometry.type) {
     case 'circle':
       return { ...geometry, x: geometry.x + origin.x, y: geometry.y + origin.y };
@@ -311,7 +307,7 @@ function computeRegionFitScore(playerPos: Point, scenario: Scenario): number {
     if (isRegionHit(playerPos, region, scenario)) {
       // Resolve to geometry to determine whether to apply the circle gradient.
       const resolved = resolveRegionGeometry(region, scenario);
-      if (resolved && (!('type' in resolved) || resolved.type === 'circle')) {
+      if (resolved && resolved.type === 'circle') {
         const cr = resolved as { x: number; y: number; r: number };
         const d = distance(playerPos, { x: cr.x, y: cr.y });
         const ratio = 1 - d / cr.r;
@@ -332,10 +328,6 @@ function isRegionHit(playerPos: Point, region: TacticalRegion, scenario: Scenari
 
 /** Hit-tests a player position against an already-resolved pitch-space geometry. */
 function isResolvedGeometryHit(playerPos: Point, region: TacticalRegionGeometry): boolean {
-  if (!('type' in region)) {
-    // Legacy circle: { x, y, r }
-    return isInsideCircle(playerPos, region.x, region.y, region.r);
-  }
   switch (region.type) {
     case 'circle':
       return isInsideCircle(playerPos, region.x, region.y, region.r);

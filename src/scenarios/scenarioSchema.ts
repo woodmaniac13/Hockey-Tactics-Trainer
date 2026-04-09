@@ -52,17 +52,75 @@ export const LaneRegionSchema = z.object({
 }).strict();
 
 /**
- * Tactical region — a discriminated union of all supported region primitives.
- *
- * The legacy circle format `{ x, y, r }` (no `type` field) is tried first so
- * that existing scenario files continue to validate without modification.
+ * Geometry-only union — all supported region primitives without semantic metadata.
+ * Used as the inner `geometry` field of a semantic region wrapper.
  */
-export const TacticalRegionSchema = z.union([
+export const TacticalRegionGeometrySchema = z.union([
   CircleRegionSchema,         // legacy: { x, y, r }
   TaggedCircleRegionSchema,   // { type: "circle", x, y, r }
   RectangleRegionSchema,      // { type: "rectangle", x, y, width, height, rotation? }
   PolygonRegionSchema,        // { type: "polygon", vertices: [...] }
   LaneRegionSchema,           // { type: "lane", x1, y1, x2, y2, width }
+]);
+
+/** Reference frame options for semantic region resolution. */
+export const ReferenceFrameSchema = z.enum(['pitch', 'ball', 'target_player', 'entity']);
+
+/** Controlled vocabulary of tactical purposes a semantic region can serve. */
+export const SemanticRegionPurposeSchema = z.enum([
+  'primary_support_option',
+  'secondary_support_option',
+  'passing_lane_support',
+  'pressure_relief',
+  'switch_option',
+  'width_hold',
+  'depth_hold',
+  'defensive_cover',
+  'central_protection',
+  'recovery_run',
+  'press_trigger',
+  'screening_position',
+  'custom',
+]);
+
+/**
+ * Semantic region wrapper — pairs tactical metadata with a geometric shape.
+ * Validates reference-frame/entity-id consistency at parse time.
+ */
+export const SemanticRegionSchema = z.object({
+  label: z.string().optional(),
+  purpose: SemanticRegionPurposeSchema.optional(),
+  reference_frame: ReferenceFrameSchema.optional(),
+  reference_entity_id: z.string().optional(),
+  notes: z.string().optional(),
+  geometry: TacticalRegionGeometrySchema,
+}).strict().superRefine((region, ctx) => {
+  const frame = region.reference_frame ?? 'pitch';
+  if (frame === 'entity' && !region.reference_entity_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['reference_entity_id'],
+      message: 'reference_entity_id is required when reference_frame is "entity"',
+    });
+  }
+  if (frame !== 'entity' && region.reference_entity_id !== undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['reference_entity_id'],
+      message: 'reference_entity_id is only valid when reference_frame is "entity"',
+    });
+  }
+});
+
+/**
+ * Tactical region — accepts either a raw geometry primitive or a semantic wrapper.
+ *
+ * The legacy circle format `{ x, y, r }` (no `type` field) is tried first so
+ * that existing scenario files continue to validate without modification.
+ */
+export const TacticalRegionSchema = z.union([
+  TacticalRegionGeometrySchema,  // raw geometry (legacy + tagged primitives)
+  SemanticRegionSchema,          // semantic wrapper { label?, purpose?, reference_frame?, geometry }
 ]);
 
 export const PressureDirectionSchema = z.enum(['inside_out', 'outside_in', 'central', 'none']);

@@ -278,6 +278,11 @@ function translateGeometry(geometry: TacticalRegionGeometry, origin: Point): Tac
         x2: geometry.x2 + origin.x,
         y2: geometry.y2 + origin.y,
       };
+    default: {
+      // TypeScript exhaustiveness guard — should never be reached with a valid TacticalRegionGeometry.
+      const _exhaustive: never = geometry;
+      return _exhaustive;
+    }
   }
 }
 

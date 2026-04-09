@@ -19,8 +19,8 @@ const baseScenario: Scenario = {
     { id: 'opp1', role: 'CF', team: 'away', x: 40, y: 48 },
   ],
   pressure: { direction: 'outside_in', intensity: 'medium' },
-  ideal_regions: [{ x: 45, y: 62, r: 8 }],
-  acceptable_regions: [{ x: 45, y: 60, r: 14 }],
+  ideal_regions: [{ type: 'circle' as const, x: 45, y: 62, r: 8 }],
+  acceptable_regions: [{ type: 'circle' as const, x: 45, y: 60, r: 14 }],
   weight_profile: 'build_out_v1',
   constraint_thresholds: { support: 0.3, passing_lane: 0.2 },
   difficulty: 1,
@@ -190,10 +190,10 @@ describe('evaluate — rich region types', () => {
     expect(result.region_fit_score).toBe(0.75);
   });
 
-  it('legacy circle regions still work without type field', () => {
+  it('typed circle regions work with type field', () => {
     const scenario = {
       ...baseScenario,
-      ideal_regions: [{ x: 50, y: 50, r: 10 }],
+      ideal_regions: [{ type: 'circle' as const, x: 50, y: 50, r: 10 }],
       acceptable_regions: [],
     };
     const result = evaluate(scenario, { x: 50, y: 50 }, baseProfile);

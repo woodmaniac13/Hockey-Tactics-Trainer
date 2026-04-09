@@ -276,6 +276,19 @@ Future enhancements:
 	•	coach-specific feedback styles
 	•	multi-language support
 
+Authored feedback hooks via `feedback_hints`
+
+If a scenario includes a `feedback_hints` object, the feedback system may use its authored strings in place of generated text:
+
+| Hook | Used when |
+|---|---|
+| `feedback_hints.success` | result_type is `IDEAL` or `VALID` |
+| `feedback_hints.common_error` | result_type is `PARTIAL` or `INVALID` |
+| `feedback_hints.alternate_valid` | result_type is `ALTERNATE_VALID` |
+| `feedback_hints.teaching_emphasis` | appended regardless of outcome |
+
+If a hook is absent, the feedback system falls back to its standard generated output. Fallback must always be safe and must not crash the UI.
+
 Must not break:
 	•	deterministic output
 	•	clarity

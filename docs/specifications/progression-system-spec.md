@@ -241,6 +241,7 @@ Future Enhancements
 	•	streak tracking
 	•	skill leveling system
 	•	personalized coaching paths
+	•	curriculum-group-based progression using `curriculum_group`, `learning_stage`, and `prerequisites` scenario metadata (see [specifications/scenario-semantic-metadata-spec.md](scenario-semantic-metadata-spec.md))
 
 ⸻
 

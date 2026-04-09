@@ -125,10 +125,15 @@ export const TacticalRegionSchema = z.union([
 
 export const PressureDirectionSchema = z.enum(['inside_out', 'outside_in', 'central', 'none']);
 export const PressureIntensitySchema = z.enum(['low', 'medium', 'high']);
+export const PressureForcedSideSchema = z.enum(['inside', 'outside', 'sideline', 'baseline', 'none']);
 
 export const PressureSchema = z.object({
   direction: PressureDirectionSchema,
   intensity: PressureIntensitySchema,
+  primary_presser_id: z.string().optional(),
+  forced_side: PressureForcedSideSchema.optional(),
+  blocked_lane: z.string().optional(),
+  trap_zone: z.string().optional(),
 }).strict();
 
 export const ConstraintThresholdsSchema = z.object({
@@ -138,6 +143,64 @@ export const ConstraintThresholdsSchema = z.object({
   pressure_relief: z.number().optional(),
   width_depth: z.number().optional(),
   cover: z.number().optional(),
+}).strict();
+
+/** Controlled vocabulary for tactical line groups. */
+export const LineGroupSchema = z.enum(['back', 'midfield', 'forward']);
+
+/** Controlled vocabulary for primary tactical concepts. */
+export const PrimaryConceptSchema = z.enum([
+  'support',
+  'cover',
+  'transfer',
+  'spacing',
+  'pressure_response',
+  'width_depth',
+  'recovery_shape',
+  'pressing_angle',
+]);
+
+/** Controlled vocabulary for target role families. */
+export const TargetRoleFamilySchema = z.enum(['back', 'midfield', 'forward']);
+
+/** Controlled vocabulary for tactical situations. */
+export const SituationSchema = z.enum([
+  'build_out_under_press',
+  'settled_attack',
+  'defensive_shape',
+  'high_press',
+  'recovery_defence',
+  'counter_attack',
+  'sideline_trap',
+  'free_hit_shape',
+  'circle_entry_support',
+]);
+
+/** Controlled vocabulary for field zones. */
+export const FieldZoneSchema = z.enum([
+  'defensive_third_left',
+  'defensive_third_central',
+  'defensive_third_right',
+  'middle_third_left',
+  'middle_third_central',
+  'middle_third_right',
+  'attacking_third_left',
+  'attacking_third_central',
+  'attacking_third_right',
+  'circle_edge_left',
+  'circle_edge_central',
+  'circle_edge_right',
+]);
+
+/** Controlled vocabulary for game states. */
+export const GameStateSchema = z.enum(['open_play', 'restart', 'turnover', 'counter', 'set_press']);
+
+/** Authored coaching language hooks for scenario-specific feedback. */
+export const FeedbackHintsSchema = z.object({
+  success: z.string().optional(),
+  common_error: z.string().optional(),
+  alternate_valid: z.string().optional(),
+  teaching_emphasis: z.string().optional(),
 }).strict();
 
 export const ScenarioSchema = z.object({
@@ -158,6 +221,25 @@ export const ScenarioSchema = z.object({
   constraint_thresholds: ConstraintThresholdsSchema,
   difficulty: z.number().int().min(1).max(5),
   tags: z.array(z.string()),
+  // ── Tactical semantics (optional) ─────────────────────────────────────
+  line_group: LineGroupSchema.optional(),
+  primary_concept: PrimaryConceptSchema.optional(),
+  secondary_concepts: z.array(PrimaryConceptSchema).optional(),
+  teaching_point: z.string().optional(),
+  // ── Role and tactical context (optional) ──────────────────────────────
+  target_role_family: TargetRoleFamilySchema.optional(),
+  situation: SituationSchema.optional(),
+  field_zone: FieldZoneSchema.optional(),
+  game_state: GameStateSchema.optional(),
+  // ── Curriculum and progression (optional) ──────────────────────────────
+  curriculum_group: z.string().optional(),
+  learning_stage: z.number().int().positive().optional(),
+  prerequisites: z.array(z.string()).optional(),
+  recommended_after: z.array(z.string()).optional(),
+  // ── Authored feedback hints (optional) ────────────────────────────────
+  feedback_hints: FeedbackHintsSchema.optional(),
+  // ── Scenario archetype (optional) ──────────────────────────────────────
+  scenario_archetype: z.string().optional(),
 }).strict();
 
 export const WeightProfileWeightsSchema = z.object({

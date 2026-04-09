@@ -138,7 +138,7 @@ All fields below are optional. Existing scenarios without them remain fully vali
 | `prerequisites` | string[] | Scenario IDs to complete first |
 | `recommended_after` | string[] | Scenario IDs for soft follow-up sequencing |
 | `feedback_hints` | object | Authored coaching language hooks |
-| `scenario_archetype` | string | Lightweight archetype label |
+| `scenario_archetype` | enum | Tactical archetype (controlled vocabulary) |
 
 ⸻
 

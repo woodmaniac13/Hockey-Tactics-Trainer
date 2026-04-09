@@ -340,19 +340,22 @@ If absent, the feedback system falls back to its standard generated output.
 
 ### `scenario_archetype`
 
-A lightweight label that identifies the high-level tactical pattern of the scenario. Used for authoring consistency, content QA, and AI generation prompts. Freeform string; no controlled vocabulary enforced.
+A lightweight label that identifies the high-level tactical pattern of the scenario. Used for authoring consistency, content QA, and AI generation prompts. Must be one of the values in the validated catalog below.
 
-**Example archetype values**
-- `back_outlet_support`
-- `fullback_escape_option`
-- `midfield_triangle_restore`
-- `interior_support_under_press`
-- `forward_width_hold`
-- `forward_press_angle`
-- `help_side_cover`
-- `central_recovery_cover`
-- `sideline_trap_support`
-- `weak_side_balance`
+**Valid archetype values**
+
+| Value | Tactical pattern |
+|---|---|
+| `back_outlet_support` | Back-line player offering an outlet pass option |
+| `fullback_escape_option` | Fullback creating an escape route under pressure |
+| `midfield_triangle_restore` | Midfield player reconnecting the passing triangle |
+| `interior_support_under_press` | Interior player supporting the ball carrier under press |
+| `forward_width_hold` | Forward maintaining wide position to stretch defence |
+| `forward_press_angle` | Forward positioning to apply a pressing angle |
+| `help_side_cover` | Player on the help side covering a central channel |
+| `central_recovery_cover` | Central player recovering into a covering shape |
+| `sideline_trap_support` | Support player assisting a sideline trap structure |
+| `weak_side_balance` | Weak-side player balancing the team shape |
 
 **Example**
 ```json
@@ -399,7 +402,7 @@ Full metadata (including curriculum, archetype, and feedback hints) should be ad
 | `prerequisites` | array of strings when present |
 | `recommended_after` | array of strings when present |
 | `feedback_hints` | object with known string fields only (strict) |
-| `scenario_archetype` | any string when present |
+| `scenario_archetype` | must be a valid enum value when present |
 | `primary_presser_id` | any string when present |
 | `blocked_lane` | any string when present |
 | `trap_zone` | any string when present |

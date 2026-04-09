@@ -1,6 +1,6 @@
 {
   "scenario_id": "S03",
-  "version": 1,
+  "version": 2,
   "title": "Forward Attack Support",
   "description": "You are a forward in an attacking position. Support your teammate who has the ball in a wide position and create a goal-scoring opportunity.",
   "phase": "attack",
@@ -20,12 +20,32 @@
   ],
   "pressure": { "direction": "outside_in", "intensity": "medium" },
   "ideal_regions": [
-    { "x": 85, "y": 45, "r": 8 },
-    { "x": 88, "y": 55, "r": 7 }
+    {
+      "label": "central_attacking_pocket",
+      "purpose": "primary_support_option",
+      "reference_frame": "pitch",
+      "geometry": { "type": "circle", "x": 85, "y": 45, "r": 8 }
+    },
+    {
+      "label": "far_post_run",
+      "purpose": "width_hold",
+      "reference_frame": "pitch",
+      "geometry": { "type": "circle", "x": 88, "y": 55, "r": 7 }
+    }
   ],
   "acceptable_regions": [
-    { "x": 83, "y": 48, "r": 12 },
-    { "x": 80, "y": 60, "r": 12 }
+    {
+      "label": "circle_edge_support",
+      "purpose": "secondary_support_option",
+      "reference_frame": "pitch",
+      "geometry": { "type": "circle", "x": 83, "y": 48, "r": 12 }
+    },
+    {
+      "label": "wide_attacking_zone",
+      "purpose": "passing_lane_support",
+      "reference_frame": "pitch",
+      "geometry": { "type": "circle", "x": 80, "y": 60, "r": 12 }
+    }
   ],
   "weight_profile": "attack_v1",
   "constraint_thresholds": {
@@ -34,5 +54,22 @@
     "width_depth": 0.3
   },
   "difficulty": 2,
-  "tags": ["support", "attack", "finishing"]
+  "tags": ["support", "attack", "finishing"],
+  "line_group": "forward",
+  "primary_concept": "width_depth",
+  "secondary_concepts": ["support"],
+  "teaching_point": "Make a diagonal run into the central channel or far post area to create a scoring option for the wide ball carrier.",
+  "target_role_family": "forward",
+  "situation": "settled_attack",
+  "field_zone": "attacking_third_right",
+  "game_state": "open_play",
+  "curriculum_group": "attacking_support",
+  "learning_stage": 1,
+  "scenario_archetype": "forward_width_hold",
+  "feedback_hints": {
+    "success": "You created a clear scoring option in the central channel or at the far post.",
+    "common_error": "You stayed too wide or too deep, reducing the goal threat and congesting the wide player's space.",
+    "alternate_valid": "This was still a workable position — it gave the ball carrier an option even if outside the ideal zone.",
+    "teaching_emphasis": "When the ball is wide, move to create depth and a second scoring option rather than clustering near the ball."
+  }
 }

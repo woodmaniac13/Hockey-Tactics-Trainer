@@ -82,13 +82,27 @@ export function generateFeedback(
     }
   }
 
+  // Determine the authored summary override from feedback_hints based on result type
+  const hints = scenario.feedback_hints;
+  let summary = SUMMARIES[result.result_type];
+  if (hints) {
+    if ((result.result_type === 'IDEAL' || result.result_type === 'VALID') && hints.success) {
+      summary = hints.success;
+    } else if ((result.result_type === 'PARTIAL' || result.result_type === 'INVALID') && hints.common_error) {
+      summary = hints.common_error;
+    } else if (result.result_type === 'ALTERNATE_VALID' && hints.alternate_valid) {
+      summary = hints.alternate_valid;
+    }
+  }
+
   return {
     score: result.score,
     result_type: result.result_type,
-    summary: SUMMARIES[result.result_type],
+    summary,
     positives,
     improvements,
     tactical_explanation: getTacticalExplanation(scenario),
     reasoning_feedback: getReasoningFeedback(reasoning, result),
+    teaching_emphasis: hints?.teaching_emphasis,
   };
 }

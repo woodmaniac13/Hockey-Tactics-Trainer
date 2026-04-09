@@ -68,5 +68,22 @@
     "pressure_relief": 0.4
   },
   "difficulty": 2,
-  "tags": ["build_out", "pressure_relief", "outlet"]
+  "tags": ["build_out", "pressure_relief", "outlet"],
+  "line_group": "midfield",
+  "primary_concept": "pressure_response",
+  "secondary_concepts": ["support"],
+  "teaching_point": "Offer a strong-side outlet lane beside the pressed CB and a diagonal escape pocket behind the first press line.",
+  "target_role_family": "midfield",
+  "situation": "build_out_under_press",
+  "field_zone": "defensive_third_right",
+  "game_state": "set_press",
+  "curriculum_group": "build_out_basics",
+  "learning_stage": 2,
+  "scenario_archetype": "back_outlet_support",
+  "feedback_hints": {
+    "success": "You provided a clear outlet lane and helped the CB escape the high press.",
+    "common_error": "You positioned too close or in line with the press, making it easy to block the outlet pass.",
+    "alternate_valid": "This position still offered the CB a usable escape option even outside the primary lane.",
+    "teaching_emphasis": "Position in the lane beside the pressing opponent — not behind them — so the CB can play forward quickly."
+  }
 }

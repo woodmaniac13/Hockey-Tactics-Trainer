@@ -1,6 +1,6 @@
 {
   "scenario_id": "S02",
-  "version": 1,
+  "version": 2,
   "title": "CB Cover Scenario",
   "description": "You are a centre-back. A wide opponent has the ball. Your fellow CB is pressing. Find the correct covering position to protect the central channel.",
   "phase": "defence",
@@ -20,11 +20,26 @@
   ],
   "pressure": { "direction": "inside_out", "intensity": "high" },
   "ideal_regions": [
-    { "x": 45, "y": 48, "r": 8 }
+    {
+      "label": "central_cover_position",
+      "purpose": "defensive_cover",
+      "reference_frame": "pitch",
+      "geometry": { "type": "circle", "x": 45, "y": 48, "r": 8 }
+    }
   ],
   "acceptable_regions": [
-    { "x": 45, "y": 50, "r": 14 },
-    { "x": 40, "y": 45, "r": 12 }
+    {
+      "label": "central_channel_cover",
+      "purpose": "central_protection",
+      "reference_frame": "pitch",
+      "geometry": { "type": "circle", "x": 45, "y": 50, "r": 14 }
+    },
+    {
+      "label": "inside_cover_option",
+      "purpose": "defensive_cover",
+      "reference_frame": "pitch",
+      "geometry": { "type": "circle", "x": 40, "y": 45, "r": 12 }
+    }
   ],
   "weight_profile": "defence_v1",
   "constraint_thresholds": {
@@ -33,5 +48,22 @@
     "pressure_relief": 0.3
   },
   "difficulty": 1,
-  "tags": ["cover", "defence", "central_channel"]
+  "tags": ["cover", "defence", "central_channel"],
+  "line_group": "back",
+  "primary_concept": "cover",
+  "secondary_concepts": ["spacing"],
+  "teaching_point": "Step inside and deeper to protect the central channel while your fellow CB presses wide.",
+  "target_role_family": "back",
+  "situation": "defensive_shape",
+  "field_zone": "attacking_third_central",
+  "game_state": "open_play",
+  "curriculum_group": "defensive_cover_basics",
+  "learning_stage": 1,
+  "scenario_archetype": "help_side_cover",
+  "feedback_hints": {
+    "success": "Well positioned — you covered the central channel and protected against the through ball.",
+    "common_error": "You followed your partner too wide, leaving the central channel exposed.",
+    "alternate_valid": "This was still a defensible position even outside the ideal zone.",
+    "teaching_emphasis": "When your partner presses wide, your job is to protect the central channel — not to shadow the ball."
+  }
 }

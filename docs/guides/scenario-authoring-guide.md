@@ -52,6 +52,44 @@ Step 2 — Fill Required Fields
 
 ⸻
 
+Step 2b — Add Optional Semantic Metadata (recommended for new scenarios)
+
+Adding semantic metadata is optional but recommended. At minimum, consider including:
+
+```json
+{
+  "line_group": "midfield",
+  "primary_concept": "support",
+  "situation": "build_out_under_press",
+  "teaching_point": "One sentence describing the core coaching message."
+}
+```
+
+For scenarios in a learning progression, also add:
+
+```json
+{
+  "curriculum_group": "midfield_support",
+  "learning_stage": 2,
+  "prerequisites": ["CM_SUPPORT_BASIC_01"]
+}
+```
+
+For authored feedback, add:
+
+```json
+{
+  "feedback_hints": {
+    "success": "What to say when the player succeeds.",
+    "common_error": "What to say for the most typical mistake."
+  }
+}
+```
+
+See [specifications/scenario-semantic-metadata-spec.md](../specifications/scenario-semantic-metadata-spec.md) for the full list of available fields, controlled vocabulary values, and examples.
+
+⸻
+
 Step 3 — Validate
 	•	run schema validation
 	•	fix any errors

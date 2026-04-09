@@ -117,6 +117,28 @@ constraint_thresholds	object	yes
 difficulty	number	yes
 tags	array	yes
 
+---
+
+Optional Semantic Metadata Fields
+
+All fields below are optional. Existing scenarios without them remain fully valid. See [specifications/scenario-semantic-metadata-spec.md](scenario-semantic-metadata-spec.md) for full documentation.
+
+| Field | Type | Description |
+|---|---|---|
+| `line_group` | enum | Line group: `back` \| `midfield` \| `forward` |
+| `primary_concept` | enum | Primary tactical concept (controlled vocabulary) |
+| `secondary_concepts` | enum[] | Additional concepts (same vocabulary) |
+| `teaching_point` | string | Short authored coaching point |
+| `target_role_family` | enum | Role family: `back` \| `midfield` \| `forward` |
+| `situation` | enum | Tactical situation (controlled vocabulary) |
+| `field_zone` | enum | Field zone (controlled vocabulary) |
+| `game_state` | enum | Game state (controlled vocabulary) |
+| `curriculum_group` | string | Named curriculum learning group |
+| `learning_stage` | integer | Step number within the curriculum group |
+| `prerequisites` | string[] | Scenario IDs to complete first |
+| `recommended_after` | string[] | Scenario IDs for soft follow-up sequencing |
+| `feedback_hints` | object | Authored coaching language hooks |
+| `scenario_archetype` | string | Lightweight archetype label |
 
 ⸻
 
@@ -230,6 +252,25 @@ intensity values
 	•	low
 	•	medium
 	•	high
+
+Optional pressure detail fields (all optional):
+
+| Field | Type | Description |
+|---|---|---|
+| `primary_presser_id` | string | Entity ID of the main pressing player |
+| `forced_side` | enum | `inside` \| `outside` \| `sideline` \| `baseline` \| `none` |
+| `blocked_lane` | string | Authored label for the blocked passing lane |
+| `trap_zone` | string | Authored label for the intended trap area |
+
+Example with optional fields:
+
+{
+  "direction": "outside_in",
+  "intensity": "high",
+  "primary_presser_id": "F1",
+  "forced_side": "sideline",
+  "blocked_lane": "central_return"
+}
 
 ⸻
 

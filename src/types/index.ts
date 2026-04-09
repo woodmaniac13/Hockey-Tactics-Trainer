@@ -61,10 +61,19 @@ export type TacticalRegion = TacticalRegionGeometry | SemanticRegion;
 
 export type PressureDirection = 'inside_out' | 'outside_in' | 'central' | 'none';
 export type PressureIntensity = 'low' | 'medium' | 'high';
+export type PressureForcedSide = 'inside' | 'outside' | 'sideline' | 'baseline' | 'none';
 
 export type Pressure = {
   direction: PressureDirection;
   intensity: PressureIntensity;
+  /** ID of the entity applying the primary press (optional). */
+  primary_presser_id?: string;
+  /** Which side the ball carrier is being forced toward (optional). */
+  forced_side?: PressureForcedSide;
+  /** Authored label for the passing lane blocked by pressure (optional). */
+  blocked_lane?: string;
+  /** Authored label for the intended trap area (optional). */
+  trap_zone?: string;
 };
 
 export type ConstraintThresholds = {
@@ -74,6 +83,61 @@ export type ConstraintThresholds = {
   pressure_relief?: number;
   width_depth?: number;
   cover?: number;
+};
+
+/** Tactical line group the scenario targets. */
+export type LineGroup = 'back' | 'midfield' | 'forward';
+
+/** Primary tactical concept being taught. */
+export type PrimaryConceptVocab =
+  | 'support'
+  | 'cover'
+  | 'transfer'
+  | 'spacing'
+  | 'pressure_response'
+  | 'width_depth'
+  | 'recovery_shape'
+  | 'pressing_angle';
+
+/** Role family context for the target player. */
+export type TargetRoleFamily = 'back' | 'midfield' | 'forward';
+
+/** Tactical situation context. */
+export type SituationVocab =
+  | 'build_out_under_press'
+  | 'settled_attack'
+  | 'defensive_shape'
+  | 'high_press'
+  | 'recovery_defence'
+  | 'counter_attack'
+  | 'sideline_trap'
+  | 'free_hit_shape'
+  | 'circle_entry_support';
+
+/** Field zone where the scenario primarily takes place. */
+export type FieldZone =
+  | 'defensive_third_left'
+  | 'defensive_third_central'
+  | 'defensive_third_right'
+  | 'middle_third_left'
+  | 'middle_third_central'
+  | 'middle_third_right'
+  | 'attacking_third_left'
+  | 'attacking_third_central'
+  | 'attacking_third_right'
+  | 'circle_edge_left'
+  | 'circle_edge_central'
+  | 'circle_edge_right';
+
+/** Game state at the time of the scenario. */
+export type GameState = 'open_play' | 'restart' | 'turnover' | 'counter' | 'set_press';
+
+/** Authored coaching language hooks for scenario-specific feedback. */
+export type FeedbackHints = {
+  success?: string;
+  common_error?: string;
+  alternate_valid?: string;
+  teaching_emphasis?: string;
 };
 
 export type Scenario = {
@@ -94,6 +158,39 @@ export type Scenario = {
   constraint_thresholds: ConstraintThresholds;
   difficulty: number;
   tags: string[];
+  // ── Tactical semantics (optional) ───────────────────────────────────────
+  /** Line group the scenario targets. */
+  line_group?: LineGroup;
+  /** Primary tactical concept being taught. */
+  primary_concept?: PrimaryConceptVocab;
+  /** Additional concepts covered by the scenario. */
+  secondary_concepts?: PrimaryConceptVocab[];
+  /** Short authored coaching point describing the ideal outcome. */
+  teaching_point?: string;
+  // ── Role and tactical context (optional) ────────────────────────────────
+  /** Role family of the target player. */
+  target_role_family?: TargetRoleFamily;
+  /** Tactical situation context. */
+  situation?: SituationVocab;
+  /** Primary field zone. */
+  field_zone?: FieldZone;
+  /** Game state at the time of the scenario. */
+  game_state?: GameState;
+  // ── Curriculum and progression (optional) ────────────────────────────────
+  /** Named curriculum group this scenario belongs to. */
+  curriculum_group?: string;
+  /** Learning stage within the curriculum group (small integer). */
+  learning_stage?: number;
+  /** Scenario IDs that should be completed before this one. */
+  prerequisites?: string[];
+  /** Scenario IDs that work well as follow-ups (soft sequencing). */
+  recommended_after?: string[];
+  // ── Authored feedback hints (optional) ──────────────────────────────────
+  /** Authored coaching language hooks for scenario-specific feedback. */
+  feedback_hints?: FeedbackHints;
+  // ── Scenario archetype (optional) ────────────────────────────────────────
+  /** Lightweight archetype label for authoring consistency and LLM generation. */
+  scenario_archetype?: string;
 };
 
 export type ComponentScores = {

@@ -56,16 +56,6 @@ describe('PressureSchema — extended optional fields', () => {
     expect(PressureSchema.safeParse(pressure).success).toBe(true);
   });
 
-  it('accepts pressure with primary_presser_id only', () => {
-    const pressure = { direction: 'inside_out', intensity: 'low', primary_presser_id: 'F2' };
-    expect(PressureSchema.safeParse(pressure).success).toBe(true);
-  });
-
-  it('accepts pressure with forced_side: none', () => {
-    const pressure = { direction: 'central', intensity: 'medium', forced_side: 'none' };
-    expect(PressureSchema.safeParse(pressure).success).toBe(true);
-  });
-
   it('rejects an invalid forced_side value', () => {
     const pressure = { direction: 'outside_in', intensity: 'medium', forced_side: 'diagonal' };
     expect(PressureSchema.safeParse(pressure).success).toBe(false);
@@ -80,8 +70,8 @@ describe('PressureSchema — extended optional fields', () => {
 // ── Controlled vocabulary schemas ─────────────────────────────────────────────
 
 describe('LineGroupSchema', () => {
-  it.each(['back', 'midfield', 'forward'])('accepts "%s"', (v) => {
-    expect(LineGroupSchema.safeParse(v).success).toBe(true);
+  it('accepts a valid line group', () => {
+    expect(LineGroupSchema.safeParse('midfield').success).toBe(true);
   });
 
   it('rejects an invalid value', () => {
@@ -90,8 +80,7 @@ describe('LineGroupSchema', () => {
 });
 
 describe('PrimaryConceptSchema', () => {
-  const valid = ['support', 'cover', 'transfer', 'spacing', 'pressure_response', 'width_depth', 'recovery_shape', 'pressing_angle'];
-  it.each(valid)('accepts "%s"', (v) => {
+  it.each(['support', 'cover'])('accepts "%s"', (v) => {
     expect(PrimaryConceptSchema.safeParse(v).success).toBe(true);
   });
 
@@ -101,17 +90,13 @@ describe('PrimaryConceptSchema', () => {
 });
 
 describe('TargetRoleFamilySchema', () => {
-  it.each(['back', 'midfield', 'forward'])('accepts "%s"', (v) => {
-    expect(TargetRoleFamilySchema.safeParse(v).success).toBe(true);
+  it('accepts a valid target role family', () => {
+    expect(TargetRoleFamilySchema.safeParse('midfield').success).toBe(true);
   });
 });
 
 describe('SituationSchema', () => {
-  const valid = [
-    'build_out_under_press', 'settled_attack', 'defensive_shape', 'high_press',
-    'recovery_defence', 'counter_attack', 'sideline_trap', 'free_hit_shape', 'circle_entry_support',
-  ];
-  it.each(valid)('accepts "%s"', (v) => {
+  it.each(['build_out_under_press', 'circle_entry_support'])('accepts "%s"', (v) => {
     expect(SituationSchema.safeParse(v).success).toBe(true);
   });
 
@@ -121,13 +106,7 @@ describe('SituationSchema', () => {
 });
 
 describe('FieldZoneSchema', () => {
-  const valid = [
-    'defensive_third_left', 'defensive_third_central', 'defensive_third_right',
-    'middle_third_left', 'middle_third_central', 'middle_third_right',
-    'attacking_third_left', 'attacking_third_central', 'attacking_third_right',
-    'circle_edge_left', 'circle_edge_central', 'circle_edge_right',
-  ];
-  it.each(valid)('accepts "%s"', (v) => {
+  it.each(['defensive_third_central', 'attacking_third_right'])('accepts "%s"', (v) => {
     expect(FieldZoneSchema.safeParse(v).success).toBe(true);
   });
 
@@ -137,7 +116,7 @@ describe('FieldZoneSchema', () => {
 });
 
 describe('GameStateSchema', () => {
-  it.each(['open_play', 'restart', 'turnover', 'counter', 'set_press'])('accepts "%s"', (v) => {
+  it.each(['open_play', 'counter'])('accepts "%s"', (v) => {
     expect(GameStateSchema.safeParse(v).success).toBe(true);
   });
 

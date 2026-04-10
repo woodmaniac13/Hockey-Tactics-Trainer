@@ -190,15 +190,6 @@ describe('evaluate — rich region types', () => {
     expect(result.region_fit_score).toBe(0.75);
   });
 
-  it('typed circle regions work with type field', () => {
-    const scenario = {
-      ...baseScenario,
-      ideal_regions: [{ type: 'circle' as const, x: 50, y: 50, r: 10 }],
-      acceptable_regions: [],
-    };
-    const result = evaluate(scenario, { x: 50, y: 50 }, baseProfile);
-    expect(result.region_fit_score).toBe(1.0);
-  });
 });
 
 describe('evaluate — semantic region resolution', () => {

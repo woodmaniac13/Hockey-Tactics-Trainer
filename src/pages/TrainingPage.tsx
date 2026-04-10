@@ -58,7 +58,7 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
 
   const scenarioStates: Record<string, ScenarioState> = {};
   for (const s of scenarios) {
-    scenarioStates[s.scenario_id] = getScenarioState(s.scenario_id, progress, s.difficulty, progress, scenarios);
+    scenarioStates[s.scenario_id] = getScenarioState(s.scenario_id, s.difficulty, progress, scenarios);
   }
 
   const handleSelectScenario = (id: string) => {

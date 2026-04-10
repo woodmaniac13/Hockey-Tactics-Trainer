@@ -15,9 +15,17 @@ export function getUnmetPrerequisites(
   });
 }
 
+/**
+ * Returns the state of a scenario for the current user.
+ *
+ * State resolution order:
+ * 1. COMPLETED — best score ≥ 80.
+ * 2. LOCKED — any prerequisite scenario has best score < 80.
+ * 3. AVAILABLE — difficulty 1, or average score ≥ 80 on all difficulty-1 scenarios.
+ * 4. LOCKED — previous difficulty average < 80.
+ */
 export function getScenarioState(
   scenarioId: string,
-  _progress: Record<string, ProgressRecord>,
   difficulty: number,
   allProgress: Record<string, ProgressRecord>,
   allScenarios: Scenario[],
@@ -38,6 +46,10 @@ export function getScenarioState(
   return 'LOCKED';
 }
 
+/**
+ * Returns the average best score across all scenarios at a given difficulty level.
+ * Returns 0 when no progress records exist for that difficulty.
+ */
 export function getAverageScoreByDifficulty(
   progress: Record<string, ProgressRecord>,
   scenarios: Scenario[],
@@ -58,6 +70,10 @@ export function getAverageScoreByDifficulty(
   return total / count;
 }
 
+/**
+ * Returns the tag with the lowest average best score across all attempted scenarios.
+ * Returns null when no progress records exist.
+ */
 export function getWeaknessTag(
   progress: Record<string, ProgressRecord>,
   scenarios: Scenario[],

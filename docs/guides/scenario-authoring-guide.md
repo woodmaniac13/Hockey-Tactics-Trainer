@@ -29,30 +29,31 @@ Scenarios are authored as **static JSON files** and committed to the repository.
 
 ```text
 /public/scenarios/<category>/
+```
 
+---
 
-⸻
+### Step 2 — Fill Required Fields
 
-Step 2 — Fill Required Fields
-	•	scenario_id
-	•	version
-	•	title
-	•	description
-	•	phase
-	•	ball position
-	•	teammates
-	•	opponents
-	•	pressure
-	•	target player
-	•	regions
-	•	weight profile
-	•	constraints
-	•	difficulty
-	•	tags
+- `scenario_id`
+- `version`
+- `title`
+- `description`
+- `phase`
+- ball position
+- teammates
+- opponents
+- pressure
+- target player
+- regions
+- weight profile
+- constraints
+- `difficulty`
+- tags
 
-⸻
+---
 
-Step 2b — Add Optional Semantic Metadata (recommended for new scenarios)
+### Step 2b — Add Optional Semantic Metadata (recommended for new scenarios)
 
 Adding semantic metadata is optional but recommended. At minimum, consider including:
 
@@ -117,9 +118,9 @@ To explicitly define which reasoning options are correct for this scenario, add 
 
 See [specifications/scenario-semantic-metadata-spec.md](../specifications/scenario-semantic-metadata-spec.md) for the full list of available fields, controlled vocabulary values, and examples.
 
-⸻
+---
 
-Step 3 — Run Content Lint
+### Step 3 — Run Content Lint
 
 Run the content lint check to catch errors and warnings before loading the scenario in the app:
 
@@ -135,26 +136,28 @@ Alternatively, use the standalone script for a more detailed pre-commit report:
 npx tsx scripts/lint-scenarios.ts
 ```
 
-⸻
+---
 
-Step 4 — Test Locally
-	•	load scenario in app
-	•	verify:
-	•	board renders correctly
-	•	player can move
-	•	scoring behaves as expected
-	•	feedback is logical
+### Step 4 — Test Locally
 
-⸻
+- Load scenario in app
+- Verify:
+  - board renders correctly
+  - player can move
+  - scoring behaves as expected
+  - feedback is logical
 
-Step 5 — Commit & Deploy
-	•	commit JSON file
-	•	push to repository
-	•	GitHub Pages deploy updates
+---
 
-⸻
+### Step 5 — Commit & Deploy
 
-Minimum Required Semantic Fields
+- Commit JSON file
+- Push to repository
+- GitHub Pages deploy updates
+
+---
+
+## Minimum Required Semantic Fields
 
 New authored scenarios must include the following fields. The content lint layer (`npm run lint-content`) will error if any of these are absent:
 
@@ -177,63 +180,63 @@ New authored scenarios must include the following fields. The content lint layer
 | `feedback_hints.teaching_emphasis` | Shown after every attempt as a persistent coaching point |
 | `secondary_concepts` | Documents additional tactical concepts covered |
 
-⸻
+---
 
-Scenario Design Principles
+## Scenario Design Principles
 
-1. Single Concept Focus
+### 1. Single Concept Focus
 
 Each scenario should primarily test:
-	•	support
-	•	cover
-	•	transfer
-	•	spacing
-	•	pressure response
+- support
+- cover
+- transfer
+- spacing
+- pressure response
 
 Avoid mixing too many concepts.
 
-⸻
+---
 
-2. Clear Tactical Intent
+### 2. Clear Tactical Intent
 
 Scenario description must clearly state:
-	•	what the player is trying to achieve
+- what the player is trying to achieve
 
 Example:
 
 “Move to support the ball carrier safely under pressure.”
 
-⸻
+---
 
-3. Realistic Spacing
-	•	avoid unrealistic clustering
-	•	maintain plausible player positions
-	•	simulate real match situations
+### 3. Realistic Spacing
+- avoid unrealistic clustering
+- maintain plausible player positions
+- simulate real match situations
 
-⸻
+---
 
-4. Meaningful Pressure
+### 4. Meaningful Pressure
 
 Pressure must be:
-	•	explicitly defined
-	•	relevant to the scenario
+- explicitly defined
+- relevant to the scenario
 
 Bad example:
-	•	pressure: none (for complex support scenario)
+- pressure: none (for complex support scenario)
 
-⸻
+---
 
-5. Multiple Valid Solutions
+### 5. Multiple Valid Solutions
 
 Where possible:
-	•	include acceptable regions
-	•	allow alternate-valid solutions via constraints
+- include acceptable regions
+- allow alternate-valid solutions via constraints
 
 Avoid overly restrictive setups.
 
-⸻
+---
 
-6. Region Design
+### 6. Region Design
 
 All authored regions must use the **semantic wrapper** format. Choose the geometry shape that best fits the intended tactical area:
 
@@ -255,161 +258,168 @@ All authored regions must use the **semantic wrapper** format. Choose the geomet
 
 > **Note:** Raw geometry without a semantic wrapper (e.g. `{ "type": "circle", ... }` at the top level) is only accepted in tests and internal tooling. Authored scenarios must use semantic wrappers. The content lint will error if raw geometry is found in `public/scenarios/`.
 
-Ideal Regions
+Ideal Regions:
 - represent best tactical positioning
 - include a `purpose` of `primary_support_option` or similar
 - should not be too small
 
-Acceptable Regions
+Acceptable Regions:
 - allow variation and capture reasonable alternatives
 - use `purpose: "secondary_support_option"` or equivalent
 
-⸻
+---
 
-7. Constraint Thresholds
+### 7. Constraint Thresholds
 
 Constraints should:
-	•	reflect the tactical goal
-	•	not be overly strict
-	•	align with weight profile
+- reflect the tactical goal
+- not be overly strict
+- align with weight profile
 
-⸻
+---
 
-8. Difficulty Calibration
+### 8. Difficulty Calibration
 
-Difficulty	Meaning
-1	very obvious
-2	simple
-3	moderate
-4	complex
-5	advanced
+| Difficulty | Meaning |
+|---|---|
+| 1 | Very easy — obvious positioning |
+| 2 | Simple |
+| 3 | Moderate |
+| 4 | Complex |
+| 5 | Advanced |
 
 
-⸻
+---
 
-Scenario Categories
+## Scenario Categories
 
 Recommended folders:
-	•	build-out
-	•	defence
-	•	attack
-	•	transition
+- build-out
+- defence
+- attack
+- transition
 
-⸻
+---
 
-Naming Conventions
+## Naming Conventions
 
-scenario_id
+`scenario_id`
 
-Format:
+Actual scenarios use a simple sequential format:
 
-<ROLE>_<CONCEPT>_<VARIANT>
+```
+S01, S02, S03, ...
+```
 
-Example:
+Alternatively, a descriptive format may be used:
 
-CM_SUPPORT_RIGHT_01
+```
+<ROLE>_<CONCEPT>_<VARIANT>_NN
+```
+
+Example: `CM_SUPPORT_RIGHT_01`
 
 
-⸻
+---
 
-Tags
+### Tags
 
 Used for progression and filtering.
 
 Examples:
-	•	support
-	•	cover
-	•	press
-	•	build_out
-	•	transition
-	•	spacing
+- support
+- cover
+- press
+- build_out
+- transition
+- spacing
 
-⸻
+---
 
-Common Mistakes
+## Common Mistakes
 
 1. Overly Small Regions
-	•	makes valid play fail
-	•	causes frustration
+- makes valid play fail
+- causes frustration
 
-⸻
+---
 
 2. Missing Pressure Context
-	•	removes tactical meaning
+- removes tactical meaning
 
-⸻
+---
 
 3. No Acceptable Regions
-	•	too rigid
-	•	prevents alternate valid solutions
+- too rigid
+- prevents alternate valid solutions
 
-⸻
+---
 
 4. Unrealistic Layout
-	•	players too close
-	•	impossible spacing
+- players too close
+- impossible spacing
 
-⸻
+---
 
 5. Conflicting Constraints
-	•	creates impossible scoring
-	•	must be avoided
+- creates impossible scoring
+- must be avoided
 
-⸻
+---
 
-Validation Checklist
+## Validation Checklist
 
 Before committing:
-	•	Run `npm run lint-content` — zero errors
-	•	All required semantic fields present (line_group, primary_concept, situation, teaching_point)
-	•	feedback_hints.success and feedback_hints.common_error present
-	•	All regions use semantic wrapper format (not raw geometry)
-	•	Coordinates valid (0–100)
-	•	Target player exists in teammates
-	•	At least one opponent exists
-	•	Pressure defined
-	•	Weight profile exists
-	•	Scenario loads in app
-	•	Feedback makes sense
+- Run `npm run lint-content` — zero errors
+- All required semantic fields present (line_group, primary_concept, situation, teaching_point)
+- feedback_hints.success and feedback_hints.common_error present
+- All regions use semantic wrapper format (not raw geometry)
+- Coordinates valid (0–100)
+- Target player exists in teammates
+- At least one opponent exists
+- Pressure defined
+- Weight profile exists
+- Scenario loads in app
+- Feedback makes sense
 
-⸻
+---
 
-Testing Guidelines
+## Testing Guidelines
 
-Manual Testing
-	•	try multiple positions:
-	•	ideal
-	•	acceptable
-	•	clearly wrong
-	•	verify scoring behavior
-	•	verify alternate-valid cases
+### Manual Testing
+- Try multiple positions:
+  - ideal
+  - acceptable
+  - clearly wrong
+- Verify scoring behavior
+- Verify alternate-valid cases
 
-⸻
+---
 
-Edge Case Testing
-	•	place player far away
-	•	place player directly on ball
-	•	place player overlapping teammate
+### Edge Case Testing
+- place player far away
+- place player directly on ball
+- place player overlapping teammate
 
-⸻
+---
 
-Content Quality Guidelines
+## Content Quality Guidelines
 
 Good scenarios:
-	•	feel like real hockey
-	•	teach one thing clearly
-	•	reward correct thinking
-	•	explain mistakes clearly
+- feel like real hockey
+- teach one thing clearly
+- reward correct thinking
+- explain mistakes clearly
 
 Bad scenarios:
-	•	unclear objective
-	•	ambiguous scoring
-	•	too many competing ideas
-	•	overly strict positioning
+- unclear objective
+- ambiguous scoring
+- too many competing ideas
+- overly strict positioning
 
-⸻
+---
 
-Versioning Rules
+## Versioning Rules
 - increment version when:
   - positions change
   - regions change
@@ -422,41 +432,41 @@ Do NOT change version for:
 
 ---
 
-Future Authoring Improvements
+## Future Authoring Improvements
 
 Planned (not required for MVP):
-	•	visual scenario editor
-	•	drag-and-place authoring UI
-	•	automatic region suggestion
-	•	AI-assisted scenario generation
+- visual scenario editor
+- drag-and-place authoring UI
+- automatic region suggestion
+- AI-assisted scenario generation
 
-⸻
+---
 
-Responsibilities
+## Responsibilities
 
 Authors
-	•	create high-quality scenarios
-	•	validate correctness
-	•	ensure clarity
+- create high-quality scenarios
+- validate correctness
+- ensure clarity
 
 Developers
-	•	enforce schema validation
-	•	provide debugging tools
-	•	ensure engine matches spec
+- enforce schema validation
+- provide debugging tools
+- ensure engine matches spec
 
-⸻
+---
 
-Final Rule
+## Final Rule
 
 If a scenario produces confusing or inconsistent feedback:
 
 → Fix the scenario, not the player.
 
 Scenarios must always be:
-	•	clear
-	•	fair
-	•	explainable
+- clear
+- fair
+- explainable
 
-⸻
+---
 
 

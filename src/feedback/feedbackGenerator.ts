@@ -56,6 +56,14 @@ function getReasoningFeedback(
   return 'Your tactical reasoning did not fully match the scenario objectives.';
 }
 
+/**
+ * Generates human-readable feedback from a scored evaluation result.
+ *
+ * The summary, positives, and improvements are derived from component scores.
+ * Authored `feedback_hints` on the scenario override the generic summaries when
+ * the result type matches. The `teaching_emphasis` hint, if present, is passed
+ * through to the result for persistent display after every attempt.
+ */
 export function generateFeedback(
   result: EvaluationResult,
   scenario: Scenario,

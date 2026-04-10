@@ -41,6 +41,4 @@ Complete index of all Hockey Tactics Trainer documentation, organized by categor
 
 | Document | Description |
 |---|---|
-| [process/scenario-marking-change-sequence.md](process/scenario-marking-change-sequence.md) | Canonical change log and decision record for the scenario marking / evaluation system evolution. Defines what is de-scoped. |
-| [process/scenario-marking-roadmap.md](process/scenario-marking-roadmap.md) | Roadmap for future scenario marking improvements and phased delivery plan. |
 | [process/proposed-schema-extensions-and-roadmap.md](process/proposed-schema-extensions-and-roadmap.md) | Proposal for extending scenario semantics with optional metadata for tactical concepts, role context, pressure detail, curriculum structure, and authored feedback, plus a phased implementation roadmap. |

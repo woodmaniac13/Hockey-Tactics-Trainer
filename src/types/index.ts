@@ -6,6 +6,13 @@ export type Entity = {
   team: 'home' | 'away';
   x: number;
   y: number;
+  /**
+   * Optional semantic hint naming the standard tactical position this entity occupies.
+   * Must be a key from `CANONICAL_POSITION_ANCHORS` in `src/utils/pitchConstants.ts`.
+   * The content lint layer warns when the actual (x, y) deviates more than 15 units
+   * from the anchor centroid, helping catch LLM-generated coordinate errors.
+   */
+  position_hint?: string;
 };
 
 export type TaggedCircleRegion = { type: 'circle'; x: number; y: number; r: number };
@@ -42,6 +49,14 @@ export type SemanticRegionPurpose =
 /**
  * Semantic wrapper that pairs tactical metadata with a geometric shape.
  * `reference_frame` defaults to `'pitch'` when omitted.
+ *
+ * Either `geometry` or `named_zone` must be provided:
+ *   - `geometry`: explicit coordinate-based shape (circle, rectangle, polygon, lane)
+ *   - `named_zone`: key from `NAMED_PITCH_ZONES` in `src/utils/pitchConstants.ts`
+ *     — the geometry is resolved automatically; no coordinates required.
+ *
+ * Using `named_zone` is the preferred approach for LLM-generated scenarios because
+ * it avoids the need to specify absolute pitch coordinates.
  */
 export type SemanticRegion = {
   label?: string;
@@ -50,7 +65,14 @@ export type SemanticRegion = {
   /** Required only when `reference_frame === 'entity'`. */
   reference_entity_id?: string;
   notes?: string;
-  geometry: TacticalRegionGeometry;
+  /**
+   * Named zone key from `NAMED_PITCH_ZONES`. When present without `geometry`,
+   * the system resolves coordinates from the named-zone lookup table.
+   * When both `named_zone` and `geometry` are present, `geometry` takes precedence.
+   */
+  named_zone?: string;
+  /** Explicit geometry. Required unless `named_zone` is provided. */
+  geometry?: TacticalRegionGeometry;
 };
 
 /** Union of all supported tactical region forms — raw geometry or semantic wrapper. */
@@ -150,6 +172,38 @@ export type ScenarioArchetype =
   | 'sideline_trap_support'
   | 'weak_side_balance';
 
+/**
+ * Authoring-only spatial or tactical relationship between two entities.
+ *
+ * Added to a scenario as `entity_relationships` to document the intended
+ * positioning logic. Not used by the evaluator or scoring pipeline.
+ *
+ * Benefits for LLM generation:
+ *   - LLMs can reason about player layouts relationally ("cb2 is goal_side_of
+ *     the opposing forward") and derive coordinates from those relationships
+ *     using `CANONICAL_POSITION_ANCHORS` as a starting point.
+ *   - The content lint layer cross-checks declared relationships against actual
+ *     entity coordinates and warns when they are geometrically inconsistent.
+ */
+export type EntityRelationshipType =
+  | 'goal_side_of'      // entity is positioned closer to own goal than relative_to
+  | 'supporting_behind' // entity is behind relative_to (lower x than relative_to)
+  | 'screening'         // entity is positioned to block a passing lane to relative_to
+  | 'pressing'          // entity is actively closing down relative_to
+  | 'tracking_runner'   // entity is marking relative_to in a run
+  | 'providing_width';  // entity is on the wide flank relative to relative_to
+
+export type EntityRelationship = {
+  /** ID of the entity whose position is being described. */
+  entity_id: string;
+  /** The spatial or tactical role this entity plays relative to the reference. */
+  relationship: EntityRelationshipType;
+  /** Entity ID of the reference entity, or `"ball"` for ball-relative positioning. */
+  relative_to: string;
+  /** Optional authored note explaining the tactical intent. */
+  notes?: string;
+};
+
 export type Scenario = {
   scenario_id: string;
   version: number;
@@ -208,6 +262,14 @@ export type Scenario = {
    * alignment from tags. Falls back to the tag-driven heuristic when absent.
    */
   correct_reasoning?: ReasoningOption[];
+  // ── Entity relationship annotations (optional, authoring-only) ───────────
+  /**
+   * Declared spatial/tactical relationships between entities.
+   * Authoring-only — not used by the evaluator or scoring pipeline.
+   * The content lint layer cross-checks declared relationships against actual
+   * entity coordinates and emits warnings on geometric inconsistencies.
+   */
+  entity_relationships?: EntityRelationship[];
 };
 
 export type ComponentScores = {

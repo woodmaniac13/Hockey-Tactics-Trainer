@@ -1,5 +1,5 @@
 
-import type { FeedbackResult, ResultType } from '../types';
+import type { FeedbackResult, ResultType, OutcomePreview } from '../types';
 
 interface FeedbackPanelProps {
   feedback: FeedbackResult;
@@ -7,6 +7,11 @@ interface FeedbackPanelProps {
   onNext: () => void;
   /** When true, hides the inline action buttons (mobile uses a sticky bar instead) */
   isMobile?: boolean;
+  /**
+   * Authored consequence to surface as "What happens next" below the teaching point.
+   * Shown when the scenario includes a `consequence_frame` and an evaluation was submitted.
+   */
+  outcomePreview?: OutcomePreview | null;
 }
 
 const RESULT_COLORS: Record<ResultType, string> = {
@@ -18,7 +23,7 @@ const RESULT_COLORS: Record<ResultType, string> = {
   ERROR: '#7f8c8d',
 };
 
-export default function FeedbackPanel({ feedback, onRetry, onNext, isMobile }: FeedbackPanelProps) {
+export default function FeedbackPanel({ feedback, onRetry, onNext, isMobile, outcomePreview }: FeedbackPanelProps) {
   const color = RESULT_COLORS[feedback.result_type];
 
   return (
@@ -85,6 +90,13 @@ export default function FeedbackPanel({ feedback, onRetry, onNext, isMobile }: F
         <div style={{ marginBottom: '10px', padding: '8px 10px', background: 'rgba(52, 152, 219, 0.12)', borderLeft: '3px solid #3498db', borderRadius: '4px', color: '#a8d4f5', fontSize: isMobile ? '0.8rem' : '0.875rem' }}>
           <div style={{ fontWeight: 'bold', color: '#3498db', marginBottom: '3px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📌 Coaching Point</div>
           {feedback.teaching_emphasis}
+        </div>
+      )}
+
+      {outcomePreview && (
+        <div style={{ marginBottom: '10px', padding: '8px 10px', background: 'rgba(39, 174, 96, 0.1)', borderLeft: '3px solid #27ae60', borderRadius: '4px', fontSize: isMobile ? '0.8rem' : '0.875rem' }}>
+          <div style={{ fontWeight: 'bold', color: '#27ae60', marginBottom: '3px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚡ What happens next</div>
+          <div style={{ color: '#aed6ae' }}>{outcomePreview.explanation}</div>
         </div>
       )}
 

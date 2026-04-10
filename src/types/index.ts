@@ -270,6 +270,15 @@ export type Scenario = {
    * entity coordinates and emits warnings on geometric inconsistencies.
    */
   entity_relationships?: EntityRelationship[];
+  // ── Authored tactical consequence (optional) ─────────────────────────────
+  /**
+   * Describes the one-step tactical outcome that follows the correct (or incorrect)
+   * positioning decision. Not evaluated — used only for board overlay and feedback display.
+   *
+   * `on_success` is shown for IDEAL/VALID/ALTERNATE_VALID results.
+   * `on_failure` is shown for PARTIAL/INVALID results.
+   */
+  consequence_frame?: ConsequenceFrame;
 };
 
 export type ComponentScores = {
@@ -370,3 +379,127 @@ export type AppSettings = {
 export type ScenarioState = 'LOCKED' | 'AVAILABLE' | 'COMPLETED';
 
 export type ReasoningOption = 'create_passing_angle' | 'provide_cover' | 'enable_switch' | 'support_under_pressure';
+
+// ── Consequence-Based Tactical Feedback Types ─────────────────────────────────
+
+/** Visual style for an arrow drawn on the board in a consequence overlay. */
+export type ArrowStyle = 'pass' | 'run' | 'pressure' | 'cover_shift';
+
+/**
+ * A single arrow drawn on the board as part of a tactical consequence overlay.
+ * Endpoints are resolved from entity IDs (or 'ball') or explicit pitch-space points.
+ * At least one of `from_entity_id`/`from_point` and one of `to_entity_id`/`to_point`
+ * should be provided so the arrow can be rendered.
+ */
+export type Arrow = {
+  style: ArrowStyle;
+  /** Entity ID of the source, or `'ball'` for the ball position. */
+  from_entity_id?: string;
+  /** Entity ID of the target, or `'ball'` for the ball position. */
+  to_entity_id?: string;
+  /** Explicit pitch-space source point (0–100 range) used when no entity anchor exists. */
+  from_point?: Point;
+  /** Explicit pitch-space target point (0–100 range) used when no entity anchor exists. */
+  to_point?: Point;
+  /** Optional short label displayed near the arrow midpoint (suppressed on small screens). */
+  label?: string;
+};
+
+/** An entity visually shifting to a new "ghost" position in the consequence frame. */
+export type EntityShift = {
+  /** ID of the entity whose future position is being illustrated. */
+  entity_id: string;
+  /** Target x coordinate in pitch space (0–100). */
+  to_x: number;
+  /** Target y coordinate in pitch space (0–100). */
+  to_y: number;
+  /** Optional short label shown near the ghost position. */
+  label?: string;
+};
+
+/** State of a passing option between two entities after the consequence. */
+export type PassOptionState = {
+  /** ID of the entity with the ball (or `'ball'` for the ball itself). */
+  from_entity_id: string;
+  /** ID of the potential receiving entity. */
+  to_entity_id: string;
+  /** Whether the pass is clear, blocked, or risky after the move. */
+  state: 'open' | 'blocked' | 'risky';
+  /** Optional coaching label for this lane. */
+  label?: string;
+};
+
+/**
+ * Controlled vocabulary of tactical consequence types.
+ * Anchors each authored outcome to a known tactical pattern, preventing LLM drift.
+ * Positive types (e.g. `pass_opened`) suit `on_success`; negative types (`pass_blocked`)
+ * suit `on_failure`. The lint layer warns when a negative type appears on `on_success`.
+ */
+export type ConsequenceType =
+  | 'pass_opened'
+  | 'pass_blocked'
+  | 'pressure_broken'
+  | 'pressure_maintained'
+  | 'shape_restored'
+  | 'shape_broken'
+  | 'cover_gained'
+  | 'cover_lost'
+  | 'lane_opened'
+  | 'lane_closed'
+  | 'triangle_formed'
+  | 'triangle_broken'
+  | 'width_gained'
+  | 'width_lost'
+  | 'depth_created'
+  | 'overloaded_zone';
+
+/**
+ * Authored one-step tactical consequence shown on the board after submission.
+ *
+ * `consequence_type` and `explanation` are required — they form the minimal authored
+ * consequence. All other fields are optional enrichment layers (arrows, ghost positions,
+ * lane highlights, pressure/shape results) that progressively enhance the board overlay.
+ *
+ * LLM authoring guidance:
+ *   - Start with only `consequence_type` + `explanation`.
+ *   - Add `arrows` (max 3) only when they directly illustrate the consequence.
+ *   - Add `entity_shifts` (max 2) only for the most tactically significant next movement.
+ *   - Use entity IDs from the scenario — the lint layer validates them.
+ */
+export type OutcomePreview = {
+  /** Required — constrained enum anchoring the consequence to a known tactical pattern. */
+  consequence_type: ConsequenceType;
+  /** Required — one coaching sentence (max ~200 chars) tied to the tactical concept. */
+  explanation: string;
+  /** Optional — arrows drawn on the board (pass/run/pressure/cover_shift). Max 3. */
+  arrows?: Arrow[];
+  /** Optional — entities shown at a future "ghost" position. Max 2. */
+  entity_shifts?: EntityShift[];
+  /** Optional — pass lane states between entities (open/blocked/risky). */
+  pass_option_states?: PassOptionState[];
+  /** Optional — an explicit lane geometry highlighted as open or blocked. */
+  lane_highlight?: {
+    label: string;
+    state: 'open' | 'blocked';
+    /** Pitch-space geometry defining the highlighted lane shape. */
+    geometry: TacticalRegionGeometry;
+  };
+  /** Optional — summary of how pressure changes after the move. */
+  pressure_result?: 'broken' | 'maintained' | 'intensified';
+  /** Optional — summary of how team shape changes after the move. */
+  shape_result?: 'triangle_formed' | 'line_restored' | 'overloaded' | 'exposed';
+};
+
+/**
+ * Authored consequence frame for a scenario.
+ *
+ * `on_success` is shown when the evaluation result is IDEAL, VALID, or ALTERNATE_VALID.
+ * `on_failure` is shown when the result is PARTIAL or INVALID.
+ * Both branches are optional — a scenario can have one, both, or neither.
+ */
+export type ConsequenceFrame = {
+  /** Shown after a correct or near-correct answer (IDEAL / VALID / ALTERNATE_VALID). */
+  on_success?: OutcomePreview;
+  /** Shown after an incorrect answer (PARTIAL / INVALID). */
+  on_failure?: OutcomePreview;
+};

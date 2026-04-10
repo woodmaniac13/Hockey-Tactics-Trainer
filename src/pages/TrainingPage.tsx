@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import type { Scenario, Point, WeightProfile, FeedbackResult, ProgressRecord, ScenarioPack, ScenarioState, ReasoningOption, LineGroup, PrimaryConceptVocab, SituationVocab } from '../types';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import type { Scenario, Point, WeightProfile, FeedbackResult, ProgressRecord, ScenarioPack, ScenarioState, ReasoningOption, LineGroup, PrimaryConceptVocab, SituationVocab, OutcomePreview } from '../types';
 import Board from '../board/Board';
 import FeedbackPanel from '../components/FeedbackPanel';
 import ScenarioSelector from '../components/ScenarioSelector';
@@ -40,11 +40,31 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
   const [filterLineGroup, setFilterLineGroup] = useState<LineGroup | undefined>();
   const [filterPrimaryConcept, setFilterPrimaryConcept] = useState<PrimaryConceptVocab | undefined>();
   const [filterSituation, setFilterSituation] = useState<SituationVocab | undefined>();
+  /** Whether the board shows evaluation zones or the consequence overlay after submission. */
+  const [boardViewMode, setBoardViewMode] = useState<'evaluation' | 'consequence'>('evaluation');
+  const consequenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settings = getSettings();
   const isMobile = useIsMobile();
 
   const scenario = selectedId ? scenarioMap[selectedId] : null;
   const scenarios = useMemo(() => Object.values(scenarioMap), [scenarioMap]);
+
+  /**
+   * Derive the active `OutcomePreview` from the current scenario and evaluation result.
+   * Positive results (IDEAL/VALID/ALTERNATE_VALID) show `on_success`;
+   * negative results (PARTIAL/INVALID) show `on_failure`.
+   */
+  const activeOutcomePreview: OutcomePreview | null = useMemo(() => {
+    if (!scenario?.consequence_frame || !feedback) return null;
+    const { result_type } = feedback;
+    if (result_type === 'IDEAL' || result_type === 'VALID' || result_type === 'ALTERNATE_VALID') {
+      return scenario.consequence_frame.on_success ?? null;
+    }
+    if (result_type === 'PARTIAL' || result_type === 'INVALID') {
+      return scenario.consequence_frame.on_failure ?? null;
+    }
+    return null;
+  }, [scenario, feedback]);
 
   useEffect(() => {
     if (scenario) {
@@ -53,6 +73,8 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
       setFeedback(null);
       setShowReasoning(false);
       setDetailsExpanded(false);
+      setBoardViewMode('evaluation');
+      if (consequenceTimerRef.current) clearTimeout(consequenceTimerRef.current);
     }
   }, [selectedId]);
 
@@ -93,6 +115,15 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
     setFeedback(fb);
     setSubmitted(true);
     setShowReasoning(false);
+    setBoardViewMode('evaluation');
+
+    // Auto-advance to consequence view after 1.5s if the scenario has a consequence_frame
+    if (consequenceTimerRef.current) clearTimeout(consequenceTimerRef.current);
+    if (sc.consequence_frame) {
+      consequenceTimerRef.current = setTimeout(() => {
+        setBoardViewMode('consequence');
+      }, 1500);
+    }
 
     const existing = progress[sc.scenario_id];
     const newRecord: ProgressRecord = {
@@ -120,6 +151,8 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
     setSubmitted(false);
     setFeedback(null);
     setShowReasoning(false);
+    setBoardViewMode('evaluation');
+    if (consequenceTimerRef.current) clearTimeout(consequenceTimerRef.current);
   };
 
   const handleNext = () => {
@@ -297,8 +330,30 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                 onPositionChange={pos => { if (!submitted) setPlayerPosition(pos); }}
                 submitted={submitted}
                 showOverlays={settings.show_overlays}
+                boardViewMode={boardViewMode}
+                consequenceOverlay={activeOutcomePreview}
               />
             </div>
+
+            {/* View-mode toggle — shown when submitted and consequence data is available */}
+            {submitted && activeOutcomePreview && (
+              <div style={{ padding: '4px 12px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                <button
+                  onClick={() => setBoardViewMode(boardViewMode === 'evaluation' ? 'consequence' : 'evaluation')}
+                  style={{
+                    padding: '5px 16px',
+                    borderRadius: '20px',
+                    border: '1px solid #3498db',
+                    background: boardViewMode === 'consequence' ? '#3498db' : 'transparent',
+                    color: boardViewMode === 'consequence' ? '#fff' : '#3498db',
+                    cursor: 'pointer',
+                    fontSize: '0.78rem',
+                  }}
+                >
+                  {boardViewMode === 'consequence' ? '← Show zones' : 'Show consequence →'}
+                </button>
+              </div>
+            )}
 
             {/* Reasoning capture inline */}
             {showReasoning && (
@@ -310,7 +365,7 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
             {/* Result feedback (mobile-optimized) */}
             {feedback && (
               <div style={{ padding: '8px 12px', overflowY: 'auto', maxHeight: '40vh', flexShrink: 0 }}>
-                <FeedbackPanel feedback={feedback} onRetry={handleReset} onNext={handleNext} isMobile />
+                <FeedbackPanel feedback={feedback} onRetry={handleReset} onNext={handleNext} isMobile outcomePreview={activeOutcomePreview} />
               </div>
             )}
 
@@ -502,7 +557,29 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                 onPositionChange={pos => { if (!submitted) setPlayerPosition(pos); }}
                 submitted={submitted}
                 showOverlays={settings.show_overlays}
+                boardViewMode={boardViewMode}
+                consequenceOverlay={activeOutcomePreview}
               />
+
+              {/* View-mode toggle — shown when submitted and consequence data is available */}
+              {submitted && activeOutcomePreview && (
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <button
+                    onClick={() => setBoardViewMode(boardViewMode === 'evaluation' ? 'consequence' : 'evaluation')}
+                    style={{
+                      padding: '5px 18px',
+                      borderRadius: '20px',
+                      border: '1px solid #3498db',
+                      background: boardViewMode === 'consequence' ? '#3498db' : 'transparent',
+                      color: boardViewMode === 'consequence' ? '#fff' : '#3498db',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    {boardViewMode === 'consequence' ? '← Show zones' : 'Show consequence →'}
+                  </button>
+                </div>
+              )}
 
               {!submitted && !showReasoning && (
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -526,7 +603,7 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
               )}
 
               {feedback && (
-                <FeedbackPanel feedback={feedback} onRetry={handleReset} onNext={handleNext} />
+                <FeedbackPanel feedback={feedback} onRetry={handleReset} onNext={handleNext} outcomePreview={activeOutcomePreview} />
               )}
             </>
           ) : (

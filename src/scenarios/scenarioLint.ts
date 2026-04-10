@@ -1,4 +1,4 @@
-import type { Scenario, TacticalRegion, ScenarioArchetype, LineGroup, PrimaryConceptVocab, FieldZone } from '../types';
+import type { Scenario, TacticalRegion, ScenarioArchetype, LineGroup, PrimaryConceptVocab, FieldZone, ConsequenceType } from '../types';
 import { isSemanticRegion } from '../utils/regions';
 import {
   CANONICAL_POSITION_ANCHORS,
@@ -510,6 +510,130 @@ export function lintScenario(scenario: Scenario): LintResult {
             `"${rel.relative_to}" but entity x=${entity.x} is not behind reference x=${refPos.x}`,
         );
       }
+    }
+  }
+
+  // ── Consequence frame checks ──────────────────────────────────────────────
+
+  if (scenario.consequence_frame) {
+    // Build a set of valid entity IDs for cross-referencing arrow/shift/pass_option targets.
+    // 'ball' is accepted as a pseudo-entity for arrow endpoints.
+    const knownEntityIds = new Set(
+      [...scenario.teammates, ...scenario.opponents].map(e => e.id),
+    );
+    knownEntityIds.add('ball');
+
+    /**
+     * Validate a single OutcomePreview branch (on_success or on_failure).
+     * Populates `errors` and `warnings` from the outer closure.
+     */
+    const checkOutcome = (
+      outcome: NonNullable<typeof scenario.consequence_frame>['on_success'],
+      branch: 'on_success' | 'on_failure',
+    ): void => {
+      if (!outcome) return;
+
+      // explanation length warning (verbose LLM output)
+      if (outcome.explanation.length > 200) {
+        warnings.push(
+          `[${id}] consequence_frame.${branch}.explanation exceeds 200 characters ` +
+            `(${outcome.explanation.length} chars) — keep consequence explanations concise`,
+        );
+      }
+
+      // arrows: max 3, entity ID cross-check
+      if (outcome.arrows) {
+        if (outcome.arrows.length > 3) {
+          warnings.push(
+            `[${id}] consequence_frame.${branch}.arrows has ${outcome.arrows.length} entries — ` +
+              `limit to 3 arrows to avoid board clutter`,
+          );
+        }
+        for (const arrow of outcome.arrows) {
+          if (arrow.from_entity_id && !knownEntityIds.has(arrow.from_entity_id)) {
+            errors.push(
+              `[${id}] consequence_frame.${branch}.arrows references unknown entity ` +
+                `"${arrow.from_entity_id}" in from_entity_id`,
+            );
+          }
+          if (arrow.to_entity_id && !knownEntityIds.has(arrow.to_entity_id)) {
+            errors.push(
+              `[${id}] consequence_frame.${branch}.arrows references unknown entity ` +
+                `"${arrow.to_entity_id}" in to_entity_id`,
+            );
+          }
+        }
+      }
+
+      // entity_shifts: max 2, entity ID cross-check
+      if (outcome.entity_shifts) {
+        if (outcome.entity_shifts.length > 2) {
+          warnings.push(
+            `[${id}] consequence_frame.${branch}.entity_shifts has ` +
+              `${outcome.entity_shifts.length} entries — ` +
+              `limit to 2 shifts to avoid over-simulation`,
+          );
+        }
+        for (const shift of outcome.entity_shifts) {
+          if (!knownEntityIds.has(shift.entity_id)) {
+            errors.push(
+              `[${id}] consequence_frame.${branch}.entity_shifts references unknown ` +
+                `entity "${shift.entity_id}"`,
+            );
+          }
+        }
+      }
+
+      // pass_option_states: entity ID cross-check
+      if (outcome.pass_option_states) {
+        for (const pos of outcome.pass_option_states) {
+          if (!knownEntityIds.has(pos.from_entity_id)) {
+            errors.push(
+              `[${id}] consequence_frame.${branch}.pass_option_states references ` +
+                `unknown entity "${pos.from_entity_id}" in from_entity_id`,
+            );
+          }
+          if (!knownEntityIds.has(pos.to_entity_id)) {
+            errors.push(
+              `[${id}] consequence_frame.${branch}.pass_option_states references ` +
+                `unknown entity "${pos.to_entity_id}" in to_entity_id`,
+            );
+          }
+        }
+      }
+    };
+
+    checkOutcome(scenario.consequence_frame.on_success, 'on_success');
+    checkOutcome(scenario.consequence_frame.on_failure, 'on_failure');
+
+    // on_success with a negative consequence_type is likely a copy-paste error
+    const NEGATIVE_CONSEQUENCE_TYPES: ReadonlySet<ConsequenceType> = new Set([
+      'pass_blocked',
+      'pressure_maintained',
+      'shape_broken',
+      'cover_lost',
+      'lane_closed',
+      'triangle_broken',
+      'width_lost',
+    ]);
+
+    if (
+      scenario.consequence_frame.on_success &&
+      NEGATIVE_CONSEQUENCE_TYPES.has(scenario.consequence_frame.on_success.consequence_type)
+    ) {
+      warnings.push(
+        `[${id}] consequence_frame.on_success.consequence_type is ` +
+          `"${scenario.consequence_frame.on_success.consequence_type}" — ` +
+          `this is a negative outcome type; verify it is correct for the success branch`,
+      );
+    }
+
+    // on_success with pressure_result: maintained is suspicious
+    if (scenario.consequence_frame.on_success?.pressure_result === 'maintained') {
+      warnings.push(
+        `[${id}] consequence_frame.on_success.pressure_result is "maintained" — ` +
+          `this suggests pressure was not broken by the correct move; verify this is intentional`,
+      );
     }
   }
 

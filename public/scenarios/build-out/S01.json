@@ -148,5 +148,32 @@
   "correct_reasoning": [
     "create_passing_angle",
     "support_under_pressure"
-  ]
+  ],
+  "consequence_frame": {
+    "on_success": {
+      "consequence_type": "triangle_formed",
+      "explanation": "Your staggered position creates a support triangle with the goalkeeper and CB1, giving two clean outlets and breaking the press line.",
+      "arrows": [
+        { "style": "pass", "from_entity_id": "gk", "to_entity_id": "cm1", "label": "outlet pass" },
+        { "style": "run", "from_entity_id": "cm1", "to_point": { "x": 38, "y": 50 }, "label": "carry forward" }
+      ],
+      "pass_option_states": [
+        { "from_entity_id": "gk", "to_entity_id": "cm1", "state": "open", "label": "diagonal outlet" },
+        { "from_entity_id": "gk", "to_entity_id": "cb1", "state": "risky", "label": "press risk" }
+      ],
+      "pressure_result": "broken",
+      "shape_result": "triangle_formed"
+    },
+    "on_failure": {
+      "consequence_type": "pressure_maintained",
+      "explanation": "Staying flat or central lets the opponent screen both you and the passing lane, leaving the goalkeeper trapped under the press.",
+      "arrows": [
+        { "style": "pressure", "from_entity_id": "opp1", "to_entity_id": "gk", "label": "press held" }
+      ],
+      "pass_option_states": [
+        { "from_entity_id": "gk", "to_entity_id": "cm1", "state": "blocked", "label": "screened" }
+      ],
+      "pressure_result": "maintained"
+    }
+  }
 }

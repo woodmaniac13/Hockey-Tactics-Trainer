@@ -244,6 +244,13 @@ export const ScenarioSchema = z.object({
   feedback_hints: FeedbackHintsSchema.optional(),
   // ── Scenario archetype (optional) ──────────────────────────────────────
   scenario_archetype: ScenarioArchetypeSchema.optional(),
+  // ── Authored reasoning alignment (optional) ───────────────────────────
+  /**
+   * The reasoning options that are tactically correct for this scenario.
+   * When present the evaluator uses this list directly instead of inferring
+   * alignment from tags. Falls back to the tag-driven heuristic when absent.
+   */
+  correct_reasoning: z.array(z.enum(['create_passing_angle', 'provide_cover', 'enable_switch', 'support_under_pressure'])).optional(),
 }).strict();
 
 export const WeightProfileWeightsSchema = z.object({

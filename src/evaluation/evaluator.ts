@@ -268,6 +268,14 @@ function computeReasoningBonus(
   scenario: Scenario,
 ): number {
   if (!reasoning) return 0;
+
+  // Authored alignment: when the scenario explicitly lists correct reasoning options,
+  // use that list directly rather than relying on the tag-driven heuristic.
+  if (scenario.correct_reasoning && scenario.correct_reasoning.length > 0) {
+    return scenario.correct_reasoning.includes(reasoning) ? 1.0 : 0.0;
+  }
+
+  // Tag-driven fallback for scenarios that do not carry authored alignment.
   const tag = scenario.tags[0] ?? '';
   const alignmentMap: Record<string, string[]> = {
     support: ['create_passing_angle', 'support_under_pressure'],

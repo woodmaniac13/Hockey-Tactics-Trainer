@@ -107,6 +107,14 @@ To label the high-level tactical pattern of the scenario, add a `scenario_archet
 }
 ```
 
+To explicitly define which reasoning options are correct for this scenario, add `correct_reasoning`. When present, the evaluator uses this list directly rather than inferring alignment from tags. Use values from the controlled vocabulary: `create_passing_angle` | `provide_cover` | `enable_switch` | `support_under_pressure`.
+
+```json
+{
+  "correct_reasoning": ["create_passing_angle", "support_under_pressure"]
+}
+```
+
 See [specifications/scenario-semantic-metadata-spec.md](../specifications/scenario-semantic-metadata-spec.md) for the full list of available fields, controlled vocabulary values, and examples.
 
 ⸻

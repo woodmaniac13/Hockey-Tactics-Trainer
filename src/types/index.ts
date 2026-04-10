@@ -201,6 +201,13 @@ export type Scenario = {
   // ── Scenario archetype (optional) ────────────────────────────────────────
   /** Lightweight archetype label for authoring consistency and LLM generation. */
   scenario_archetype?: ScenarioArchetype;
+  // ── Authored reasoning alignment (optional) ──────────────────────────────
+  /**
+   * The reasoning options that are tactically correct for this scenario.
+   * When present the evaluator uses this list directly instead of inferring
+   * alignment from tags. Falls back to the tag-driven heuristic when absent.
+   */
+  correct_reasoning?: ReasoningOption[];
 };
 
 export type ComponentScores = {

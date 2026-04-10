@@ -6,25 +6,78 @@
   "phase": "defence",
   "team_orientation": "home_attacks_positive_x",
   "target_player": "cb2",
-  "ball": { "x": 70, "y": 20 },
+  "ball": {
+    "x": 70,
+    "y": 20
+  },
   "teammates": [
-    { "id": "gk", "role": "GK", "team": "home", "x": 5, "y": 50 },
-    { "id": "cb1", "role": "CB", "team": "home", "x": 65, "y": 25 },
-    { "id": "cb2", "role": "CB", "team": "home", "x": 55, "y": 50 },
-    { "id": "mf1", "role": "MF", "team": "home", "x": 60, "y": 40 }
+    {
+      "id": "gk",
+      "role": "GK",
+      "team": "home",
+      "x": 5,
+      "y": 50
+    },
+    {
+      "id": "cb1",
+      "role": "CB",
+      "team": "home",
+      "x": 65,
+      "y": 25
+    },
+    {
+      "id": "cb2",
+      "role": "CB",
+      "team": "home",
+      "x": 55,
+      "y": 50
+    },
+    {
+      "id": "mf1",
+      "role": "MF",
+      "team": "home",
+      "x": 60,
+      "y": 40
+    }
   ],
   "opponents": [
-    { "id": "opp1", "role": "WG", "team": "away", "x": 70, "y": 20 },
-    { "id": "opp2", "role": "CF", "team": "away", "x": 60, "y": 55 },
-    { "id": "opp3", "role": "AM", "team": "away", "x": 65, "y": 45 }
+    {
+      "id": "opp1",
+      "role": "WG",
+      "team": "away",
+      "x": 70,
+      "y": 20
+    },
+    {
+      "id": "opp2",
+      "role": "CF",
+      "team": "away",
+      "x": 60,
+      "y": 55
+    },
+    {
+      "id": "opp3",
+      "role": "AM",
+      "team": "away",
+      "x": 65,
+      "y": 45
+    }
   ],
-  "pressure": { "direction": "inside_out", "intensity": "high" },
+  "pressure": {
+    "direction": "inside_out",
+    "intensity": "high"
+  },
   "ideal_regions": [
     {
       "label": "central_cover_position",
       "purpose": "defensive_cover",
       "reference_frame": "pitch",
-      "geometry": { "type": "circle", "x": 45, "y": 48, "r": 8 }
+      "geometry": {
+        "type": "circle",
+        "x": 45,
+        "y": 48,
+        "r": 8
+      }
     }
   ],
   "acceptable_regions": [
@@ -32,13 +85,23 @@
       "label": "central_channel_cover",
       "purpose": "central_protection",
       "reference_frame": "pitch",
-      "geometry": { "type": "circle", "x": 45, "y": 50, "r": 14 }
+      "geometry": {
+        "type": "circle",
+        "x": 45,
+        "y": 50,
+        "r": 14
+      }
     },
     {
       "label": "inside_cover_option",
       "purpose": "defensive_cover",
       "reference_frame": "pitch",
-      "geometry": { "type": "circle", "x": 40, "y": 45, "r": 12 }
+      "geometry": {
+        "type": "circle",
+        "x": 40,
+        "y": 45,
+        "r": 12
+      }
     }
   ],
   "weight_profile": "defence_v1",
@@ -48,10 +111,16 @@
     "pressure_relief": 0.3
   },
   "difficulty": 1,
-  "tags": ["cover", "defence", "central_channel"],
+  "tags": [
+    "cover",
+    "defence",
+    "central_channel"
+  ],
   "line_group": "back",
   "primary_concept": "cover",
-  "secondary_concepts": ["spacing"],
+  "secondary_concepts": [
+    "spacing"
+  ],
   "teaching_point": "Step inside and deeper to protect the central channel while your fellow CB presses wide.",
   "target_role_family": "back",
   "situation": "defensive_shape",
@@ -61,9 +130,12 @@
   "learning_stage": 1,
   "scenario_archetype": "help_side_cover",
   "feedback_hints": {
-    "success": "Well positioned — you covered the central channel and protected against the through ball.",
+    "success": "Well positioned \u2014 you covered the central channel and protected against the through ball.",
     "common_error": "You followed your partner too wide, leaving the central channel exposed.",
     "alternate_valid": "This was still a defensible position even outside the ideal zone.",
-    "teaching_emphasis": "When your partner presses wide, your job is to protect the central channel — not to shadow the ball."
-  }
+    "teaching_emphasis": "When your partner presses wide, your job is to protect the central channel \u2014 not to shadow the ball."
+  },
+  "correct_reasoning": [
+    "provide_cover"
+  ]
 }

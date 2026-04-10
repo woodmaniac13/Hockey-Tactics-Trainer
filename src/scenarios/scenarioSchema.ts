@@ -367,7 +367,16 @@ export const ScenarioSchema = z.object({
    * When present the evaluator uses this list directly instead of inferring
    * alignment from tags. Falls back to the tag-driven heuristic when absent.
    */
-  correct_reasoning: z.array(z.enum(['create_passing_angle', 'provide_cover', 'enable_switch', 'support_under_pressure'])).optional(),
+  correct_reasoning: z.array(z.enum([
+    'create_passing_angle',
+    'provide_cover',
+    'enable_switch',
+    'support_under_pressure',
+    'maintain_width',
+    'restore_shape',
+    'break_pressure',
+    'occupy_depth',
+  ])).optional(),
   // ── Entity relationship annotations (optional, authoring-only) ────────
   /**
    * Declared spatial/tactical relationships between entities.

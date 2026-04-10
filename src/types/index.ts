@@ -378,7 +378,15 @@ export type AppSettings = {
 
 export type ScenarioState = 'LOCKED' | 'AVAILABLE' | 'COMPLETED';
 
-export type ReasoningOption = 'create_passing_angle' | 'provide_cover' | 'enable_switch' | 'support_under_pressure';
+export type ReasoningOption =
+  | 'create_passing_angle'
+  | 'provide_cover'
+  | 'enable_switch'
+  | 'support_under_pressure'
+  | 'maintain_width'
+  | 'restore_shape'
+  | 'break_pressure'
+  | 'occupy_depth';
 
 // ── Consequence-Based Tactical Feedback Types ─────────────────────────────────
 

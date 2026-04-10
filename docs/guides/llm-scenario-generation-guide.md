@@ -261,12 +261,163 @@ The lint warns if actual (x, y) deviates > 15 units from the hint's anchor.
 
 ### `correct_reasoning`
 
-| Value | Player prompt |
+| Value | Player prompt | When to use |
+|---|---|---|
+| `create_passing_angle` | "Create a passing angle" | Target player opens a new passing lane for the ball carrier |
+| `provide_cover` | "Provide cover" | Target player drops to protect a dangerous space or runner |
+| `enable_switch` | "Enable a switch" | Target player holds width or positions to allow the ball to be switched across the pitch |
+| `support_under_pressure` | "Support under pressure" | Target player provides an outlet when the ball carrier is pressed |
+| `maintain_width` | "Maintain width" | Target player preserves wide spacing to stretch the defence |
+| `restore_shape` | "Restore team shape" | Target player reconnects to rebuild a triangle or defensive structure |
+| `break_pressure` | "Break the press" | Target player's movement directly defeats or bypasses an organised press |
+| `occupy_depth` | "Occupy depth" | Target player makes a run or holds position that pins the defensive line deep |
+
+> 💡 **Alignment tip**: choose `correct_reasoning` values whose tactical meaning maps directly to the `consequence_type` on `on_success` (see Section 3a below). For example, `maintain_width` aligns with `consequence_type: "width_gained"` and `break_pressure` aligns with `consequence_type: "pressure_broken"`.
+
+---
+
+## 3a. `consequence_frame` Vocabulary
+
+A `consequence_frame` describes the **one-step tactical outcome** that the board shows after submission. It is optional but strongly encouraged — it transforms correct-answer feedback from "you were in the right place" to "here is what that position *enabled*."
+
+```json
+"consequence_frame": {
+  "on_success": { ... OutcomePreview ... },
+  "on_failure":  { ... OutcomePreview ... }
+}
+```
+
+`on_success` is shown for **IDEAL / VALID / ALTERNATE_VALID** results.  
+`on_failure` is shown for **PARTIAL / INVALID** results.  
+Both branches are optional.
+
+---
+
+### `ConsequenceType` — controlled vocabulary
+
+Each `OutcomePreview` requires a `consequence_type` that anchors the outcome to a known tactical pattern.
+
+> ⚠️ **Polarity rule**: positive types belong on `on_success`; negative types belong on `on_failure`. The lint layer warns when a negative type appears on `on_success`.
+
+#### Positive types (use on `on_success`)
+
+| Value | Tactical meaning |
 |---|---|
-| `create_passing_angle` | "Create a passing angle" |
-| `provide_cover` | "Provide cover" |
-| `enable_switch` | "Enable a switch" |
-| `support_under_pressure` | "Support under pressure" |
+| `pass_opened` | The move reveals or creates a previously blocked passing lane |
+| `pressure_broken` | The positioning defeats the press — ball carrier is no longer trapped |
+| `shape_restored` | Team shape (triangle, line, block) is re-formed after disruption |
+| `cover_gained` | A dangerous runner or space is now covered |
+| `lane_opened` | A key attacking or support lane is now clear |
+| `triangle_formed` | Three players now form a passing triangle, providing two clean outlets |
+| `width_gained` | Team gains width — defence must stretch to track the player |
+| `depth_created` | A forward run pins the back line and creates space in front of them |
+| `overloaded_zone` | Team creates a numerical advantage in the key zone |
+
+#### Negative types (use on `on_failure`)
+
+| Value | Tactical meaning |
+|---|---|
+| `pass_blocked` | The player's position shadows or occupies the best passing lane |
+| `pressure_maintained` | Incorrect positioning leaves the ball carrier still under a press |
+| `shape_broken` | Team shape collapses — no clear passing structure |
+| `cover_lost` | A dangerous runner or space is left unattended |
+| `lane_closed` | A key lane is congested or screened by the player's own position |
+| `triangle_broken` | The passing triangle is disrupted — no clean outlet exists |
+| `width_lost` | Team becomes narrow; defence can shift across without consequence |
+
+---
+
+### `ArrowStyle` — board arrow styles
+
+Arrows are drawn on the board to illustrate the consequence. Use at most **3 arrows**.
+
+| Style | Colour | Use for |
+|---|---|---|
+| `pass` | Solid yellow | A pass that becomes available or is illustrated |
+| `run` | Dashed blue | A player's run — where they should or will move |
+| `pressure` | Solid red | An opponent closing down or blocking |
+| `cover_shift` | Dashed green | A defensive player shifting to cover a space |
+
+---
+
+### `consequence_type` → typical `ArrowStyle` mapping
+
+| `consequence_type` | Typical arrow styles |
+|---|---|
+| `pass_opened` / `pass_blocked` | `pass` (ball carrier → target), optionally `run` |
+| `pressure_broken` / `pressure_maintained` | `pressure` (opponent → ball carrier), optionally `run` (escape route) |
+| `triangle_formed` / `triangle_broken` | `pass` (ball carrier → target), `pass` (target → third player) |
+| `width_gained` / `width_lost` | `run` (target player moving wide) |
+| `depth_created` | `run` (forward run into depth) |
+| `shape_restored` / `shape_broken` | `cover_shift` (player reconnecting), optionally `pass` |
+| `cover_gained` / `cover_lost` | `cover_shift` (defender moving to cover space) |
+| `lane_opened` / `lane_closed` | `pass` (showing the lane), optionally `pressure` |
+| `overloaded_zone` | `run` + `pass` (two-player combination entering the zone) |
+
+---
+
+### `OutcomePreview` authoring rules
+
+> ⚠️ **Limits enforced by the lint layer**:
+> - `explanation` must be ≤ 200 characters — one coaching sentence only.
+> - `arrows` max **3**.
+> - `entity_shifts` max **2**.
+> - Entity IDs in `arrows`, `entity_shifts`, and `pass_option_states` must match IDs defined in the scenario's `teammates` or `opponents` arrays.
+
+**Start minimal, then enrich**:
+
+1. Author `consequence_type` + `explanation` only.
+2. Add `arrows` (max 3) if they directly illustrate the tactical flow.
+3. Add `entity_shifts` (max 2) only for the most important ghost movement.
+4. Optionally add `pass_option_states` to mark lanes open/blocked/risky.
+
+**Minimal `OutcomePreview`**:
+
+```json
+{
+  "consequence_type": "pass_opened",
+  "explanation": "Your diagonal run pulls the defender wide, opening a direct pass to the striker."
+}
+```
+
+**Richer `OutcomePreview`**:
+
+```json
+{
+  "consequence_type": "triangle_formed",
+  "explanation": "You stagger left of the press, creating a triangle with the CB and GK — two clean outlets.",
+  "arrows": [
+    { "style": "pass",     "from_entity_id": "cb_right", "to_entity_id": "cm_right", "label": "outlet pass" },
+    { "style": "run",      "from_entity_id": "cm_right", "to_point": { "x": 38, "y": 50 } },
+    { "style": "pressure", "from_entity_id": "opp_fw",   "to_entity_id": "cb_right" }
+  ],
+  "pressure_result": "broken",
+  "shape_result": "triangle_formed"
+}
+```
+
+**Paired `consequence_frame` (success + failure)**:
+
+```json
+"consequence_frame": {
+  "on_success": {
+    "consequence_type": "pass_opened",
+    "explanation": "Your diagonal creates a lane behind the press — CB plays forward immediately.",
+    "arrows": [
+      { "style": "pass", "from_entity_id": "cb_right", "to_entity_id": "cm_right", "label": "outlet" }
+    ],
+    "pressure_result": "broken"
+  },
+  "on_failure": {
+    "consequence_type": "pressure_maintained",
+    "explanation": "Staying flat puts you in the press shadow — the CB has no forward option.",
+    "arrows": [
+      { "style": "pressure", "from_entity_id": "opp_fw", "to_entity_id": "cb_right" }
+    ],
+    "pressure_result": "maintained"
+  }
+}
+```
 
 ---
 
@@ -391,7 +542,26 @@ central: 33–67, left: 72–90).
     "common_error": "You stayed in line with the press, blocking the outlet pass.",
     "teaching_emphasis": "Step diagonally away from the press — open your body to receive on the half-turn."
   },
-  "correct_reasoning": ["create_passing_angle", "support_under_pressure"]
+  "correct_reasoning": ["create_passing_angle", "support_under_pressure"],
+  "consequence_frame": {
+    "on_success": {
+      "consequence_type": "pass_opened",
+      "explanation": "Your stagger out of the press shadow opens a direct forward lane — the CB plays out under no pressure.",
+      "arrows": [
+        { "style": "pass",     "from_entity_id": "cb_right", "to_entity_id": "cm_right", "label": "outlet" },
+        { "style": "pressure", "from_entity_id": "opp_press", "to_entity_id": "cb_right" }
+      ],
+      "pressure_result": "broken"
+    },
+    "on_failure": {
+      "consequence_type": "pressure_maintained",
+      "explanation": "You're flat and in line with the press — the CB has no forward option and is forced to play backwards.",
+      "arrows": [
+        { "style": "pressure", "from_entity_id": "opp_press", "to_entity_id": "cb_right" }
+      ],
+      "pressure_result": "maintained"
+    }
+  }
 }
 ```
 
@@ -439,7 +609,24 @@ central: 33–67, left: 72–90).
     "common_error": "You drifted inward and congested the central channel.",
     "teaching_emphasis": "Width creates space. Stay wide until you decide to make a run into the circle."
   },
-  "correct_reasoning": ["create_passing_angle", "enable_switch"]
+  "correct_reasoning": ["create_passing_angle", "enable_switch", "maintain_width"],
+  "consequence_frame": {
+    "on_success": {
+      "consequence_type": "width_gained",
+      "explanation": "Your wide position stretches the defence, forcing a CB to track you and opening the central channel for the AM.",
+      "arrows": [
+        { "style": "run",  "from_entity_id": "fw_right", "to_point": { "x": 72, "y": 10 } },
+        { "style": "pass", "from_entity_id": "am",       "to_entity_id": "fw_right", "label": "wide option" }
+      ]
+    },
+    "on_failure": {
+      "consequence_type": "width_lost",
+      "explanation": "Drifting inside lets the defence stay compact — the central channel is crowded and the AM has no wide escape.",
+      "arrows": [
+        { "style": "pressure", "from_entity_id": "opp_cb1", "to_entity_id": "am" }
+      ]
+    }
+  }
 }
 ```
 
@@ -487,7 +674,25 @@ central: 33–67, left: 72–90).
     "common_error": "You followed the ball wide and left the central channel open.",
     "teaching_emphasis": "Stay central when the ball is wide — cover the most dangerous space, not the ball."
   },
-  "correct_reasoning": ["provide_cover"]
+  "correct_reasoning": ["provide_cover"],
+  "consequence_frame": {
+    "on_success": {
+      "consequence_type": "cover_gained",
+      "explanation": "Dropping centrally cuts off the CF's run — the threat is nullified before it becomes dangerous.",
+      "arrows": [
+        { "style": "cover_shift", "from_entity_id": "cm_help", "to_point": { "x": 42, "y": 50 } },
+        { "style": "run",         "from_entity_id": "opp_cf",  "to_point": { "x": 60, "y": 48 } }
+      ]
+    },
+    "on_failure": {
+      "consequence_type": "cover_lost",
+      "explanation": "Following the ball wide leaves the central CF completely free — the back line is exposed.",
+      "arrows": [
+        { "style": "run",      "from_entity_id": "opp_cf",  "to_point": { "x": 68, "y": 48 } },
+        { "style": "pressure", "from_entity_id": "opp_cf",  "to_entity_id": "cb_c" }
+      ]
+    }
+  }
 }
 ```
 
@@ -538,10 +743,26 @@ Ensure they are semantically consistent:
 
 ### Step 6 — Assign `correct_reasoning`
 
-Pick from `["create_passing_angle", "provide_cover", "enable_switch", "support_under_pressure"]`.  
-Choose the options that best match what a good player should be thinking in this scenario.
+Pick from the full vocabulary (see Section 3):
+```
+"create_passing_angle" | "provide_cover" | "enable_switch" | "support_under_pressure"
+"maintain_width" | "restore_shape" | "break_pressure" | "occupy_depth"
+```
+Choose the values that best match what a well-positioned player should be thinking.
 
-### Step 7 — Validate
+### Step 7 — Author a `consequence_frame`
+
+Add a `consequence_frame` to show players the one-step outcome of their decision.
+
+1. **Pick `consequence_type`** for `on_success` from the positive types (Section 3a) whose tactical meaning matches what the ideal position *enables*. Align it with the `correct_reasoning` values you chose in Step 6.
+2. **Write `explanation`** — one coaching sentence (≤ 200 characters) naming the specific tactical outcome.
+3. **Optionally add `arrows`** (max 3) using entity IDs from your scenario to illustrate the flow.
+4. **Pick `consequence_type`** for `on_failure` from the negative types — typically the logical opposite of the success type (e.g. `pass_opened` → `pass_blocked`, `width_gained` → `width_lost`).
+5. **Write `on_failure.explanation`** describing what goes wrong if the player is in the wrong position.
+
+> 💡 Use the archetype templates in Section 5 as worked examples — each includes a paired `consequence_frame`.
+
+### Step 8 — Validate
 
 Run the lint tool and fix all errors and warnings:
 ```bash
@@ -567,6 +788,10 @@ Avoid these patterns — the content lint will catch them.
 | All teammates within 15 units of each other | Unrealistic bunching | Spread players across the pitch using appropriate position hints |
 | `named_zone` key not in `NAMED_PITCH_ZONES` | Typo or unsupported zone | Check the full list in Section 4 or `src/utils/pitchConstants.ts` |
 | Missing `feedback_hints.success` or `feedback_hints.common_error` | Required fields | Add both — they drive in-game feedback |
+| Negative `consequence_type` (e.g. `pressure_maintained`) on `on_success` | Polarity mismatch — lint warns | Move it to `on_failure`; use a positive type on `on_success` |
+| Entity ID in `arrows` or `entity_shifts` not in the scenario | References a non-existent entity — lint errors | Use only IDs from `teammates` or `opponents` |
+| `explanation` longer than ~200 characters | Verbose — the board truncates it | Shorten to one direct coaching sentence |
+| More than 3 `arrows` in a single `OutcomePreview` | Visual clutter — lint warns | Keep to the 1–3 arrows that most directly illustrate the consequence |
 
 ---
 
@@ -609,8 +834,14 @@ Hockey Tactics Trainer app. Generate a valid scenario JSON for the archetype
    Step 2: Choose field_zone and game_state consistent with situation.
    Step 3: Place ball using zone x bounds. Place entities using position_hint table.
    Step 4: Define 1–2 ideal_regions and 1–2 acceptable_regions using named_zone.
-   Step 5: Write teaching_point, feedback_hints, correct_reasoning.
+   Step 5: Write teaching_point, feedback_hints, correct_reasoning (pick from:
+           create_passing_angle | provide_cover | enable_switch | support_under_pressure |
+           maintain_width | restore_shape | break_pressure | occupy_depth).
    Step 6: Self-check: Is ball x in the declared field_zone's x range? Are opponents near the ball?
+   Step 7: Add a minimal consequence_frame. Pick consequence_type from the positive list
+           (see Section 3a) for on_success. Write explanation ≤ 200 chars. Optionally add
+           1–3 arrows using the entity IDs you defined in Step 3. For on_failure, pick the
+           corresponding negative type (e.g. pass_opened → pass_blocked).
 
 Generate the JSON now. After generating, I will run the lint tool:
   npx tsx scripts/lint-scenarios.ts
@@ -657,7 +888,26 @@ everything automatically.
     { "label": "wider_support", "purpose": "secondary_support_option", "named_zone": "left_midfield_triangle_slot" }
   ],
   "pressure": { "direction": "outside_in", "intensity": "high", "forced_side": "inside" },
-  "correct_reasoning": ["create_passing_angle", "support_under_pressure"]
+  "correct_reasoning": ["create_passing_angle", "support_under_pressure"],
+  "consequence_frame": {
+    "on_success": {
+      "consequence_type": "pass_opened",
+      "explanation": "Your diagonal away from the press opens a clear lane — the CB plays forward immediately.",
+      "arrows": [
+        { "style": "pass",     "from_entity_id": "cb_right", "to_entity_id": "cm_right", "label": "outlet" },
+        { "style": "pressure", "from_entity_id": "opp_fw",   "to_entity_id": "cb_right" }
+      ],
+      "pressure_result": "broken"
+    },
+    "on_failure": {
+      "consequence_type": "pressure_maintained",
+      "explanation": "Flat positioning keeps you in the press shadow — the CB is trapped and must play back.",
+      "arrows": [
+        { "style": "pressure", "from_entity_id": "opp_fw", "to_entity_id": "cb_right" }
+      ],
+      "pressure_result": "maintained"
+    }
+  }
 }
 ```
 

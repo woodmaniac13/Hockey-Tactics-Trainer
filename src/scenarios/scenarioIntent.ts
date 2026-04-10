@@ -36,6 +36,7 @@ import {
   PressureDirectionSchema,
   PressureIntensitySchema,
   PressureForcedSideSchema,
+  ConsequenceFrameSchema,
 } from './scenarioSchema';
 import type { Scenario, Entity, SemanticRegion } from '../types';
 import {
@@ -133,7 +134,14 @@ export const ScenarioIntentSchema = z.object({
   feedback_hints: FeedbackHintsSchema,
   /** Reasoning options that are tactically correct. */
   correct_reasoning: z.array(z.enum([
-    'create_passing_angle', 'provide_cover', 'enable_switch', 'support_under_pressure',
+    'create_passing_angle',
+    'provide_cover',
+    'enable_switch',
+    'support_under_pressure',
+    'maintain_width',
+    'restore_shape',
+    'break_pressure',
+    'occupy_depth',
   ])).optional(),
 
   // ── Symbolic player layout ─────────────────────────────────────────────────
@@ -165,6 +173,15 @@ export const ScenarioIntentSchema = z.object({
   learning_stage: z.number().int().positive().optional(),
   secondary_concepts: z.array(PrimaryConceptSchema).optional(),
   target_role_family: z.enum(['back', 'midfield', 'forward']).optional(),
+
+  // ── Optional consequence frame ─────────────────────────────────────────────
+  /**
+   * Authored one-step tactical consequence shown on the board after submission.
+   * Same structure as `ConsequenceFrame` in the full Scenario schema — entity IDs
+   * referenced in `arrows` and `entity_shifts` must match the `entities` array above.
+   * The converter copies this field verbatim into the output Scenario.
+   */
+  consequence_frame: ConsequenceFrameSchema.optional(),
 }).strict();
 
 // ── TypeScript types ──────────────────────────────────────────────────────────
@@ -343,6 +360,7 @@ export function intentToScenario(
     correct_reasoning: intent.correct_reasoning,
     curriculum_group: intent.curriculum_group,
     learning_stage: intent.learning_stage,
+    consequence_frame: intent.consequence_frame,
   };
 
   return scenario;

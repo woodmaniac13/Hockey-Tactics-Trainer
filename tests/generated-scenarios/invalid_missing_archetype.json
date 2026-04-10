@@ -1,0 +1,49 @@
+{
+  "scenario_id": "GEN_invalid_missing_archetype",
+  "version": 1,
+  "title": "Missing Archetype Example",
+  "description": "A scenario that is missing the scenario_archetype field — should fail generated-content validation.",
+  "phase": "attack",
+  "team_orientation": "home_attacks_positive_x",
+  "target_player": "cm1",
+  "ball": { "x": 48, "y": 50 },
+  "teammates": [
+    { "id": "cm1", "role": "CM", "team": "home", "x": 48, "y": 50 },
+    { "id": "dm1", "role": "DM", "team": "home", "x": 35, "y": 50 }
+  ],
+  "opponents": [
+    { "id": "opp1", "role": "MF", "team": "away", "x": 52, "y": 50 }
+  ],
+  "pressure": { "direction": "central", "intensity": "medium" },
+  "ideal_regions": [
+    {
+      "label": "support_pocket",
+      "purpose": "primary_support_option",
+      "geometry": { "type": "circle", "x": 44, "y": 42, "r": 8 }
+    }
+  ],
+  "acceptable_regions": [
+    {
+      "label": "midfield_zone",
+      "purpose": "secondary_support_option",
+      "geometry": { "type": "circle", "x": 46, "y": 46, "r": 12 }
+    }
+  ],
+  "weight_profile": "attack_v1",
+  "constraint_thresholds": {},
+  "difficulty": 2,
+  "tags": ["support", "attack"],
+  "line_group": "midfield",
+  "primary_concept": "support",
+  "secondary_concepts": ["spacing"],
+  "teaching_point": "Find the gap to restore the triangle.",
+  "target_role_family": "midfield",
+  "situation": "build_out_under_press",
+  "field_zone": "middle_third_central",
+  "game_state": "open_play",
+  "feedback_hints": {
+    "success": "Good support angle.",
+    "common_error": "Staying in the shadow of the opponent."
+  },
+  "correct_reasoning": ["create_passing_angle"]
+}

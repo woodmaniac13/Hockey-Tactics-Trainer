@@ -225,7 +225,7 @@ function drawArrow(
   }
 
   // Shorten the line slightly so it ends just before the arrowhead tip
-  const shortenBy = headLen * 0.75;
+  const shortenBy = headLen * ARROW_SHORTENING_FACTOR;
   const endX = x2 - (dx / len) * shortenBy;
   const endY = y2 - (dy / len) * shortenBy;
 
@@ -255,6 +255,12 @@ function drawArrow(
   ctx.restore();
 }
 
+/** Fraction by which the arrow line is shortened so it ends before the arrowhead tip. */
+const ARROW_SHORTENING_FACTOR = 0.75;
+
+/** Half-width in canvas pixels for the pass-option lane strip. */
+const PASS_LANE_HALF_WIDTH_PX = 4;
+
 /** Draw a pass-option lane between two pitch-space points as a thin colored strip. */
 function drawPassOptionLane(
   ctx: CanvasRenderingContext2D,
@@ -271,9 +277,8 @@ function drawPassOptionLane(
   const len = Math.sqrt(dx * dx + dy * dy);
   if (len < 4) return;
 
-  const halfW = 4; // strip half-width in canvas pixels
-  const px = (-dy / len) * halfW;
-  const py = (dx / len) * halfW;
+  const px = (-dy / len) * PASS_LANE_HALF_WIDTH_PX;
+  const py = (dx / len) * PASS_LANE_HALF_WIDTH_PX;
 
   let fillColor: string;
   switch (state) {

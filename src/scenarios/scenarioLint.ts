@@ -606,8 +606,10 @@ export function lintScenario(scenario: Scenario): LintResult {
     checkOutcome(scenario.consequence_frame.on_success, 'on_success');
     checkOutcome(scenario.consequence_frame.on_failure, 'on_failure');
 
-    // on_success with a negative consequence_type is likely a copy-paste error
-    const NEGATIVE_CONSEQUENCE_TYPES: ReadonlySet<ConsequenceType> = new Set([
+    // on_success with a negative consequence_type is likely a copy-paste error.
+    // These types describe outcomes where the defensive/neutral situation persists
+    // or worsens — they belong on the on_failure branch, not on_success.
+    const NEGATIVE_OUTCOME_TYPES: ReadonlySet<ConsequenceType> = new Set([
       'pass_blocked',
       'pressure_maintained',
       'shape_broken',
@@ -619,7 +621,7 @@ export function lintScenario(scenario: Scenario): LintResult {
 
     if (
       scenario.consequence_frame.on_success &&
-      NEGATIVE_CONSEQUENCE_TYPES.has(scenario.consequence_frame.on_success.consequence_type)
+      NEGATIVE_OUTCOME_TYPES.has(scenario.consequence_frame.on_success.consequence_type)
     ) {
       warnings.push(
         `[${id}] consequence_frame.on_success.consequence_type is ` +

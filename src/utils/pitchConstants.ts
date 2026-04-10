@@ -181,9 +181,9 @@ export const NAMED_PITCH_ZONES: Record<string, TacticalRegionGeometry> = {
 
   // ── Defensive build-out pockets ───────────────────────────────────────────
   left_back_escape_pocket:
-    { type: 'circle', x: 22, y: 18, r: 9 },
-  right_back_escape_pocket:
     { type: 'circle', x: 22, y: 82, r: 9 },
+  right_back_escape_pocket:
+    { type: 'circle', x: 22, y: 18, r: 9 },
   cb_outlet_right:
     { type: 'circle', x: 20, y: 28, r: 8 },
   cb_outlet_left:

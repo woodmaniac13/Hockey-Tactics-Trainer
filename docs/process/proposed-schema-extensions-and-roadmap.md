@@ -477,7 +477,7 @@ Estimated impact: low engineering cost, high content value.
 - extended Zod schema (archetype enum, strict validation throughout)
 - removed `CircleRegion` (untagged) from `TacticalRegionGeometry`; removed `CircleRegionSchema` from `TacticalRegionGeometrySchema`
 - removed legacy circle branches from evaluator, board renderer
-- upgraded all public scenarios (S01–S06) to tagged format with full semantic metadata
+- upgraded all public scenarios (S01–S05) to tagged format with full semantic metadata
 - updated docs and templates
 
 **Success criteria**
@@ -530,7 +530,52 @@ Estimated impact: low engineering cost, high content value.
 
 ---
 
-### Phase 5 — Relationship-aware scoring improvements
+### Phase 5 — Content QA lint layer ✅ (complete)
+
+**Goals**
+- provide a machine-checkable quality gate for authored scenarios
+- enforce semantic completeness at authoring time rather than at review time
+- provide concrete constraints to guide LLM-assisted scenario generation
+
+**Changes**
+- `src/scenarios/scenarioLint.ts` — `CANONICAL_ROLES`, `ARCHETYPE_CONSTRAINTS`, `lintScenario()` function
+- `src/test/scenarioContentLint.test.ts` — Vitest integration test that validates all files in `public/scenarios/`
+- `scripts/lint-scenarios.ts` — standalone CLI script for pre-commit use (`npx tsx scripts/lint-scenarios.ts`)
+- `npm run lint-content` npm script added to `package.json`
+- `src/scenarios/scenarioSchema.ts` — `EntitySchema.role` tightened to require uppercase alphanumeric format
+
+**Content lint error checks (blocking)**
+- Missing required semantic fields: `line_group`, `primary_concept`, `situation`, `teaching_point`
+- Missing required feedback hints: `feedback_hints.success`, `feedback_hints.common_error`
+- Regions using raw geometry instead of semantic wrappers
+- `target_player` not in teammates; duplicate entity IDs
+- `scenario_archetype` inconsistent with `line_group`, `primary_concept`, or `phase` per `ARCHETYPE_CONSTRAINTS`
+
+**Content lint warnings (advisory)**
+- Entity role outside `CANONICAL_ROLES`; missing optional fields; missing `forced_side` under high pressure
+
+---
+
+### Phase 6 — Role vocabulary and archetype expansion
+
+**Goals**
+- grow `CANONICAL_ROLES` as new scenario content is added
+- expand `ARCHETYPE_CONSTRAINTS` as new archetypes are introduced
+- expand the scenario library to cover all 10 archetypes and all 9 situations
+
+**Planned content additions**
+- `fullback_escape_option` — back-line escape scenarios
+- `forward_press_angle` — forward pressing shape scenarios
+- `central_recovery_cover` — central recovery scenarios
+- `sideline_trap_support` — sideline trap scenarios
+- `weak_side_balance` — weak-side balancing scenarios
+- Situations not yet represented: `high_press`, `recovery_defence`, `free_hit_shape`, `circle_entry_support`, `sideline_trap`
+
+**Recommendation**: create at minimum 2–3 scenarios per missing archetype, ensuring each passes the content lint with zero errors.
+
+---
+
+### Phase 7 — Relationship-aware scoring improvements
 
 **Goals**
 - support richer hockey semantics in scoring
@@ -541,27 +586,27 @@ Estimated impact: low engineering cost, high content value.
 - line-of-pressure positioning
 - weak-side balancing
 
-**Recommendation**: do not start here. Only pursue after the metadata and tooling phases are stable.
+**Recommendation**: do not start here. Only pursue after the content library is stable and covers all archetypes.
 
 ---
 
 ## Recommended Priority Order
 
-**Highest priority**
-1. add optional semantic metadata
-2. add optional curriculum metadata
-3. add optional feedback hints
-4. update docs and scenario templates
+**Complete ✅**
+1. add optional semantic metadata (Phase 1)
+2. add optional curriculum metadata (Phase 1)
+3. add optional feedback hints (Phase 3)
+4. update docs and scenario templates (Phase 1–4)
+5. add UI filters (Phase 2)
+6. define archetype catalog (Phase 4)
+7. content QA lint layer (Phase 5)
 
-**Medium priority**
-5. add UI filters and authoring diagnostics
-6. define archetype catalog
-7. create exemplar scenario packs using the new metadata
+**Active / next**
+8. expand scenario library — cover all 10 archetypes and all 9 situations (Phase 6)
 
-**Lower priority**
-8. relationship-aware scoring
-9. richer automated scenario QA maps and field heatmaps
-10. evaluator logic expansion tied to new semantic fields
+**Future**
+9. relationship-aware scoring (Phase 7)
+10. richer automated scenario QA maps and field heatmaps
 
 ---
 

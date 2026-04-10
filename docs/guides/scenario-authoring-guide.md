@@ -119,10 +119,21 @@ See [specifications/scenario-semantic-metadata-spec.md](../specifications/scenar
 
 ⸻
 
-Step 3 — Validate
-	•	run schema validation
-	•	fix any errors
-	•	ensure no missing required fields
+Step 3 — Run Content Lint
+
+Run the content lint check to catch errors and warnings before loading the scenario in the app:
+
+```bash
+npm run lint-content
+```
+
+This validates all scenario files in `public/scenarios/`. Fix any **errors** before committing. **Warnings** are advisory — review them but they do not block acceptance.
+
+Alternatively, use the standalone script for a more detailed pre-commit report:
+
+```bash
+npx tsx scripts/lint-scenarios.ts
+```
 
 ⸻
 
@@ -140,6 +151,31 @@ Step 5 — Commit & Deploy
 	•	commit JSON file
 	•	push to repository
 	•	GitHub Pages deploy updates
+
+⸻
+
+Minimum Required Semantic Fields
+
+New authored scenarios must include the following fields. The content lint layer (`npm run lint-content`) will error if any of these are absent:
+
+| Field | Why required |
+|---|---|
+| `line_group` | Identifies which line the scenario targets (`back`, `midfield`, `forward`) |
+| `primary_concept` | Names the main tactical concept being taught |
+| `situation` | Describes the tactical game situation (controls filtering) |
+| `teaching_point` | One-sentence coaching message shown as tactical context in feedback |
+| `feedback_hints.success` | Specific coaching language shown on IDEAL/VALID results |
+| `feedback_hints.common_error` | Coaching language shown on PARTIAL/INVALID results |
+
+**Strongly recommended** (the lint layer will warn if absent):
+
+| Field | Why recommended |
+|---|---|
+| `scenario_archetype` | Ensures authoring consistency and improves LLM generation quality |
+| `target_role_family` | Helps content filtering and gap analysis |
+| `field_zone` | Enables coverage analysis across the pitch |
+| `feedback_hints.teaching_emphasis` | Shown after every attempt as a persistent coaching point |
+| `secondary_concepts` | Documents additional tactical concepts covered |
 
 ⸻
 
@@ -199,23 +235,34 @@ Avoid overly restrictive setups.
 
 6. Region Design
 
-Regions use the polymorphic `TacticalRegion` type. Choose whichever shape best fits the intended area:
+All authored regions must use the **semantic wrapper** format. Choose the geometry shape that best fits the intended tactical area:
 
-| Shape | When to use |
+```json
+{
+  "label": "inside_support_pocket",
+  "purpose": "primary_support_option",
+  "reference_frame": "pitch",
+  "geometry": { "type": "circle", "x": 52, "y": 64, "r": 6 }
+}
+```
+
+| Geometry shape | When to use |
 |---|---|
-| `{ x, y, r }` (legacy circle) | Simple circular zone — most common |
-| `{ type: "circle", x, y, r }` | Same as legacy; explicit tag optional |
-| `{ type: "rectangle", x, y, width, height, rotation? }` | Corridor or box-shaped zones |
-| `{ type: "polygon", vertices: [{x,y}...] }` | Irregular or angled areas |
-| `{ type: "lane", x1, y1, x2, y2, width }` | Passing lanes or diagonal corridors |
+| `{ "type": "circle", x, y, r }` | Simple circular zone — use for most support/cover regions |
+| `{ "type": "rectangle", x, y, width, height, rotation? }` | Corridor or box-shaped zones |
+| `{ "type": "polygon", vertices: [{x,y}...] }` | Irregular or angled tactical areas |
+| `{ "type": "lane", x1, y1, x2, y2, width }` | Passing lanes or diagonal corridors |
+
+> **Note:** Raw geometry without a semantic wrapper (e.g. `{ "type": "circle", ... }` at the top level) is only accepted in tests and internal tooling. Authored scenarios must use semantic wrappers. The content lint will error if raw geometry is found in `public/scenarios/`.
 
 Ideal Regions
 - represent best tactical positioning
+- include a `purpose` of `primary_support_option` or similar
 - should not be too small
 
 Acceptable Regions
-- allow variation
-- capture reasonable alternatives
+- allow variation and capture reasonable alternatives
+- use `purpose: "secondary_support_option"` or equivalent
 
 ⸻
 
@@ -313,11 +360,13 @@ Common Mistakes
 Validation Checklist
 
 Before committing:
-	•	All required fields present
+	•	Run `npm run lint-content` — zero errors
+	•	All required semantic fields present (line_group, primary_concept, situation, teaching_point)
+	•	feedback_hints.success and feedback_hints.common_error present
+	•	All regions use semantic wrapper format (not raw geometry)
 	•	Coordinates valid (0–100)
 	•	Target player exists in teammates
 	•	At least one opponent exists
-	•	Regions defined
 	•	Pressure defined
 	•	Weight profile exists
 	•	Scenario loads in app

@@ -17,11 +17,16 @@ For the core scenario schema (required fields, region types, validation rules), 
 
 ## Design Principles
 
-- all fields are optional
-- enum fields validate against a controlled vocabulary
-- freeform string fields remain lightly constrained
+- enum fields validate against a controlled vocabulary at schema-parse time
+- freeform string fields remain lightly constrained (string type only)
 - no evaluator logic changes are required to use these fields
-- existing scenarios without these fields remain fully valid
+- all fields are optional in the Zod schema — the **content lint layer** enforces which fields are required for authored scenarios in `public/scenarios/`
+
+The following fields are **required for authored scenarios** (enforced by `npm run lint-content`):
+- `line_group`, `primary_concept`, `situation`, `teaching_point`
+- `feedback_hints.success`, `feedback_hints.common_error`
+
+All other semantic fields remain optional. See the authoring guide for the full list of required and recommended fields.
 
 ---
 
@@ -336,6 +341,8 @@ An array of `scenario_id` values that **must** be completed (best_score ≥ 80) 
 
 An array of `scenario_id` values that work well as follow-up scenarios after this one. Softer than prerequisites — used for suggested sequencing rather than hard unlocking.
 
+> **Not yet wired at runtime.** This field is stored and validated but not currently consumed by the progression system. It is retained as an authoring documentation tool and reserved for future curriculum tooling. Use it to document intended sequencing when authoring scenario packs.
+
 **Example**
 ```json
 "recommended_after": ["CM_SUPPORT_PRESSURE_02"]
@@ -374,7 +381,9 @@ If absent, the feedback system falls back to its standard generated output.
 
 ### `scenario_archetype`
 
-A lightweight label that identifies the high-level tactical pattern of the scenario. Displayed as a badge in the scenario details UI. Also used for authoring consistency, content QA, and AI generation prompts. Must be one of the values in the validated catalog below. Not used by the evaluator at runtime.
+A lightweight label that identifies the high-level tactical pattern of the scenario. Must be one of the values in the validated catalog below.
+
+**Runtime classification: Authoring-only.** The archetype is validated by the Zod schema (must be a known catalog value) and cross-checked for consistency by the content lint layer (see `ARCHETYPE_CONSTRAINTS` in `src/scenarios/scenarioLint.ts`). It is not used by the evaluator or scoring pipeline at runtime.
 
 **Valid archetype values**
 
@@ -442,6 +451,33 @@ Full metadata (including curriculum, archetype, and feedback hints) should be ad
 - creating a scenario intended for a specific learning progression
 - creating a scenario as part of a themed pack or curriculum group
 - wanting richer authored feedback
+
+---
+
+## Content Lint
+
+The content lint layer (`src/scenarios/scenarioLint.ts`) enforces authoring quality rules that are not expressible in the Zod schema:
+
+- **Errors** (blocking — must be fixed):
+  - Missing required semantic fields (`line_group`, `primary_concept`, `situation`, `teaching_point`, `feedback_hints.success`, `feedback_hints.common_error`)
+  - Regions using raw geometry instead of semantic wrappers
+  - `target_player` not found in teammates
+  - Duplicate entity IDs
+  - `scenario_archetype` inconsistent with `line_group`, `primary_concept`, or `phase` per `ARCHETYPE_CONSTRAINTS`
+
+- **Warnings** (advisory — review but not blocking):
+  - Entity role not in `CANONICAL_ROLES` vocabulary
+  - Missing `feedback_hints.teaching_emphasis`
+  - Missing `target_role_family`, `field_zone`, `scenario_archetype`, or `secondary_concepts`
+  - `pressure.forced_side` missing with high-intensity directional pressure
+  - `recommended_after` missing when `learning_stage > 1`
+
+Run with:
+```bash
+npm run lint-content           # via vitest (errors fail, warnings are advisory)
+npx tsx scripts/lint-scenarios.ts     # standalone CLI with detailed output
+npx tsx scripts/lint-scenarios.ts --strict  # exit 1 on warnings too
+```
 
 ---
 

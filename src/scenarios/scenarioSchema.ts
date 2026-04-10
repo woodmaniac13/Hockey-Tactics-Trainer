@@ -7,7 +7,9 @@ export const PointSchema = z.object({
 
 export const EntitySchema = z.object({
   id: z.string(),
-  role: z.string(),
+  // Roles must use uppercase alphanumeric characters only (e.g. "GK", "CM", "FW").
+  // The content lint layer additionally checks against a canonical vocabulary list.
+  role: z.string().regex(/^[A-Z0-9_]+$/, 'Entity role must use uppercase alphanumeric characters (e.g. "GK", "CM", "FW")'),
   team: z.enum(['home', 'away']),
   x: z.number(),
   y: z.number(),

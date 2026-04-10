@@ -31,7 +31,7 @@ function fillTemplate(template: string, values: Record<string, string>): string 
  * repair user template.
  */
 function formatIssuesList(issues: string[]): string {
-  if (issues.length === 0) return '(no specific issues listed)';
+  if (issues.length === 0) return '(no specific issues listed — verify the output format and schema compliance)';
   return issues.map((issue, i) => `${i + 1}. ${issue}`).join('\n');
 }
 

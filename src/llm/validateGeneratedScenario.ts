@@ -88,14 +88,14 @@ function hasBoardPrimitive(outcome: OutcomePreview): boolean {
 
 // ── Board clutter check ───────────────────────────────────────────────────────
 
-/** Heuristic arrow count that risks cluttering the board. */
-const BOARD_CLUTTER_ARROW_THRESHOLD = 3;
+/** Heuristic total primitive count (arrows + shifts + pass states) that risks cluttering the board. */
+const BOARD_CLUTTER_TOTAL_THRESHOLD = 5;
 
 function isBoardCluttered(outcome: OutcomePreview): boolean {
   const arrowCount = outcome.arrows?.length ?? 0;
   const shiftCount = outcome.entity_shifts?.length ?? 0;
   const passCount = outcome.pass_option_states?.length ?? 0;
-  return arrowCount + shiftCount + passCount > BOARD_CLUTTER_ARROW_THRESHOLD + 2;
+  return arrowCount + shiftCount + passCount > BOARD_CLUTTER_TOTAL_THRESHOLD;
 }
 
 // ── Main generated-content lint function ─────────────────────────────────────

@@ -34,7 +34,7 @@ export function extractJson(raw: string): unknown {
   // Try to extract JSON from a markdown code block (```json ... ``` or ``` ... ```)
   const codeBlockMatch = stripped.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (codeBlockMatch) {
-    return JSON.parse(codeBlockMatch[1]!.trim());
+    return JSON.parse(codeBlockMatch[1]?.trim() ?? '');
   }
 
   // Try the raw string directly

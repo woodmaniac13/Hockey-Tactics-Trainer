@@ -27,4 +27,6 @@ along with a list of specific issues to fix.
 
 ## Output format
 
-Respond with only the corrected JSON object — no explanation, no summary of changes.
+Respond with only the corrected JSON object. Prefer plain JSON without markdown code fences,
+though code fences are accepted if your output requires them.
+No explanation, no summary of changes outside the JSON.

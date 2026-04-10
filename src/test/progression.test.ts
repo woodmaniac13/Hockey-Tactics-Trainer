@@ -38,24 +38,24 @@ describe('getScenarioState', () => {
   ];
 
   it('difficulty 1 is always AVAILABLE', () => {
-    const state = getScenarioState('S1', {}, 1, {}, scenarios);
+    const state = getScenarioState('S1', 1, {}, scenarios);
     expect(state).toBe('AVAILABLE');
   });
 
   it('difficulty 2 is LOCKED without completed difficulty 1', () => {
-    const state = getScenarioState('S2', {}, 2, {}, scenarios);
+    const state = getScenarioState('S2', 2, {}, scenarios);
     expect(state).toBe('LOCKED');
   });
 
   it('difficulty 2 is AVAILABLE when difficulty 1 average >= 80', () => {
     const progress = { S1: makeRecord(85) };
-    const state = getScenarioState('S2', progress, 2, progress, scenarios);
+    const state = getScenarioState('S2', 2, progress, scenarios);
     expect(state).toBe('AVAILABLE');
   });
 
   it('returns COMPLETED when best_score >= 80', () => {
     const progress = { S1: makeRecord(90) };
-    const state = getScenarioState('S1', progress, 1, progress, scenarios);
+    const state = getScenarioState('S1', 1, progress, scenarios);
     expect(state).toBe('COMPLETED');
   });
 });
@@ -67,7 +67,7 @@ describe('getScenarioState — prerequisite gating', () => {
       makeScenario('S2', 1, ['cover'], { prerequisites: ['S1'] }),
     ];
     // S1 not completed — S2 should be LOCKED despite being difficulty 1
-    const state = getScenarioState('S2', {}, 1, {}, scenarios);
+    const state = getScenarioState('S2', 1, {}, scenarios);
     expect(state).toBe('LOCKED');
   });
 
@@ -77,7 +77,7 @@ describe('getScenarioState — prerequisite gating', () => {
       makeScenario('S2', 1, ['cover'], { prerequisites: ['S1'] }),
     ];
     const progress = { S1: makeRecord(85) };
-    const state = getScenarioState('S2', progress, 1, progress, scenarios);
+    const state = getScenarioState('S2', 1, progress, scenarios);
     expect(state).toBe('AVAILABLE');
   });
 
@@ -88,7 +88,7 @@ describe('getScenarioState — prerequisite gating', () => {
       makeScenario('S3', 1, ['transition'], { prerequisites: ['S1', 'S2'] }),
     ];
     const progress = { S1: makeRecord(85) }; // S2 not done
-    const state = getScenarioState('S3', progress, 1, progress, scenarios);
+    const state = getScenarioState('S3', 1, progress, scenarios);
     expect(state).toBe('LOCKED');
   });
 
@@ -98,7 +98,7 @@ describe('getScenarioState — prerequisite gating', () => {
       makeScenario('S2', 1, ['cover'], { prerequisites: ['S1'] }),
     ];
     const progress = { S1: makeRecord(80) };
-    const state = getScenarioState('S2', progress, 1, progress, scenarios);
+    const state = getScenarioState('S2', 1, progress, scenarios);
     expect(state).toBe('AVAILABLE');
   });
 });

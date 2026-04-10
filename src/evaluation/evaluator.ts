@@ -130,6 +130,9 @@ function computeWidthDepthScore(
 ): number {
   const xDiff = Math.abs(playerPos.x - ball.x);
   const yDiff = Math.abs(playerPos.y - ball.y);
+  // Width/depth thresholds are intentionally fixed rather than configurable:
+  // in normalised 0-100 pitch coordinates, 8–30 units maps to roughly 7–27 m
+  // across the 91.4 m pitch width, covering the optimal support band for all phases.
   const optimalMin = 8;
   const optimalMax = 30;
   let xScore = 0;

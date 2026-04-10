@@ -28,11 +28,15 @@ const IMPROVEMENTS: Record<string, string> = {
 };
 
 function getTacticalExplanation(scenario: Scenario): string {
-  const { phase, tags } = scenario;
-  if (phase === 'attack' && tags.includes('support')) {
+  // Use authored teaching_point as the primary tactical explanation when available.
+  if (scenario.teaching_point) return scenario.teaching_point;
+
+  // Fall back to phase + concept matching for scenarios without an authored teaching point.
+  const { phase, tags, primary_concept } = scenario;
+  if (phase === 'attack' && (tags.includes('support') || primary_concept === 'support')) {
     return 'The player should support the ball carrier to create a safe passing option.';
   }
-  if (phase === 'defence' && tags.includes('cover')) {
+  if (phase === 'defence' && (tags.includes('cover') || primary_concept === 'cover')) {
     return 'Defenders should protect the central channel before pressing wide.';
   }
   if (phase === 'transition') {

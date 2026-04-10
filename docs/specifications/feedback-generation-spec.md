@@ -164,20 +164,23 @@ cover	“You were not in a strong covering position”
 
 ⸻
 
-4. Tactical Explanation
+## 4. Tactical Explanation
 
-Explains what the player should have done.
+Explains the key tactical principle for this scenario.
 
-Rules
-	•	1–2 sentences
-	•	derived from scenario tags + phase
-	•	must not depend on exact coordinates
+**Priority:**
+1. If the scenario has a `teaching_point` field, it is used verbatim as the tactical explanation.
+2. Otherwise, a generic explanation is derived from the scenario's `phase`, `tags`, and `primary_concept`:
+   - attack + support/primary_concept=support → "The player should support the ball carrier to create a safe passing option."
+   - defence + cover/primary_concept=cover → "Defenders should protect the central channel before pressing wide."
+   - transition → "Quick movement helps transition between phases effectively."
+   - fallback → "Good positioning supports team structure and enables passing options."
 
-Examples
-	•	“The CM should support the ball carrier to create a safe passing option.”
-	•	“Defenders should protect the central channel before pressing wide.”
+**Rules:**
+- 1–2 sentences
+- must not depend on exact coordinates
 
-⸻
+---
 
 5. Alternate Valid Feedback
 

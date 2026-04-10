@@ -7,7 +7,7 @@ import ReasoningCapture from '../components/ReasoningCapture';
 import ProgressView from '../components/ProgressView';
 import { evaluate } from '../evaluation/evaluator';
 import { generateFeedback } from '../feedback/feedbackGenerator';
-import { getScenarioState } from '../progression/progression';
+import { getScenarioState, getUnmetPrerequisites } from '../progression/progression';
 import { getProgress, updateProgress, addAttempt, getSettings } from '../storage/storage';
 import useIsMobile from '../hooks/useIsMobile';
 
@@ -238,7 +238,7 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                   ))}
                 </div>
                 {/* Semantic metadata badges */}
-                {(scenario.line_group || scenario.primary_concept || scenario.situation) && (
+                {(scenario.line_group || scenario.primary_concept || scenario.situation || scenario.scenario_archetype) && (
                   <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
                     {scenario.line_group && (
                       <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(52, 152, 219, 0.2)', color: '#3498db', border: '1px solid rgba(52,152,219,0.4)' }}>
@@ -255,6 +255,20 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                         {formatTag(scenario.situation)}
                       </span>
                     )}
+                    {scenario.scenario_archetype && (
+                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(230, 126, 34, 0.2)', color: '#e67e22', border: '1px solid rgba(230,126,34,0.4)' }}>
+                        {formatTag(scenario.scenario_archetype)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {/* Curriculum context */}
+                {(scenario.curriculum_group || scenario.learning_stage !== undefined) && (
+                  <div style={{ marginTop: '6px', fontSize: '0.7rem', color: '#888' }}>
+                    {scenario.curriculum_group && <span>{formatTag(scenario.curriculum_group)}</span>}
+                    {scenario.learning_stage !== undefined && (
+                      <span> · Stage {scenario.learning_stage}</span>
+                    )}
                   </div>
                 )}
                 {/* Teaching point */}
@@ -263,6 +277,15 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                     {scenario.teaching_point}
                   </div>
                 )}
+                {/* Unmet prerequisites warning */}
+                {(() => {
+                  const unmet = getUnmetPrerequisites(scenario, progress);
+                  return unmet.length > 0 ? (
+                    <div style={{ marginTop: '6px', padding: '4px 8px', background: 'rgba(231,76,60,0.1)', borderLeft: '2px solid #e74c3c', borderRadius: '4px', color: '#e74c3c', fontSize: '0.7rem' }}>
+                      ⚠ Complete first: {unmet.join(', ')}
+                    </div>
+                  ) : null;
+                })()}
               </div>
             )}
 
@@ -423,7 +446,7 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                   ))}
                 </div>
                 {/* Semantic metadata badges */}
-                {(scenario.line_group || scenario.primary_concept || scenario.situation) && (
+                {(scenario.line_group || scenario.primary_concept || scenario.situation || scenario.scenario_archetype) && (
                   <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                     {scenario.line_group && (
                       <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(52, 152, 219, 0.2)', color: '#3498db', border: '1px solid rgba(52,152,219,0.4)' }}>
@@ -440,6 +463,20 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                         {formatTag(scenario.situation)}
                       </span>
                     )}
+                    {scenario.scenario_archetype && (
+                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(230, 126, 34, 0.2)', color: '#e67e22', border: '1px solid rgba(230,126,34,0.4)' }}>
+                        {formatTag(scenario.scenario_archetype)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {/* Curriculum context */}
+                {(scenario.curriculum_group || scenario.learning_stage !== undefined) && (
+                  <div style={{ marginTop: '6px', fontSize: '0.75rem', color: '#888' }}>
+                    {scenario.curriculum_group && <span>{formatTag(scenario.curriculum_group)}</span>}
+                    {scenario.learning_stage !== undefined && (
+                      <span> · Stage {scenario.learning_stage}</span>
+                    )}
                   </div>
                 )}
                 {/* Teaching point */}
@@ -448,6 +485,15 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                     {scenario.teaching_point}
                   </div>
                 )}
+                {/* Unmet prerequisites warning */}
+                {(() => {
+                  const unmet = getUnmetPrerequisites(scenario, progress);
+                  return unmet.length > 0 ? (
+                    <div style={{ marginTop: '8px', padding: '5px 10px', background: 'rgba(231,76,60,0.1)', borderLeft: '2px solid #e74c3c', borderRadius: '4px', color: '#e74c3c', fontSize: '0.8rem' }}>
+                      ⚠ Complete prerequisites first: {unmet.join(', ')}
+                    </div>
+                  ) : null;
+                })()}
               </div>
 
               <Board

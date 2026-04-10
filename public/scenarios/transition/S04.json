@@ -6,32 +6,96 @@
   "phase": "transition",
   "team_orientation": "home_attacks_positive_x",
   "target_player": "mf2",
-  "ball": { "x": 50, "y": 50 },
+  "ball": {
+    "x": 50,
+    "y": 50
+  },
   "teammates": [
-    { "id": "gk", "role": "GK", "team": "home", "x": 5, "y": 50 },
-    { "id": "df1", "role": "DF", "team": "home", "x": 35, "y": 45 },
-    { "id": "mf1", "role": "MF", "team": "home", "x": 50, "y": 50 },
-    { "id": "mf2", "role": "MF", "team": "home", "x": 55, "y": 40 },
-    { "id": "fw1", "role": "FW", "team": "home", "x": 70, "y": 55 }
+    {
+      "id": "gk",
+      "role": "GK",
+      "team": "home",
+      "x": 5,
+      "y": 50
+    },
+    {
+      "id": "df1",
+      "role": "DF",
+      "team": "home",
+      "x": 35,
+      "y": 45
+    },
+    {
+      "id": "mf1",
+      "role": "MF",
+      "team": "home",
+      "x": 50,
+      "y": 50
+    },
+    {
+      "id": "mf2",
+      "role": "MF",
+      "team": "home",
+      "x": 55,
+      "y": 40
+    },
+    {
+      "id": "fw1",
+      "role": "FW",
+      "team": "home",
+      "x": 70,
+      "y": 55
+    }
   ],
   "opponents": [
-    { "id": "opp1", "role": "MF", "team": "away", "x": 55, "y": 55 },
-    { "id": "opp2", "role": "DF", "team": "away", "x": 65, "y": 40 },
-    { "id": "opp3", "role": "DF", "team": "away", "x": 70, "y": 60 }
+    {
+      "id": "opp1",
+      "role": "MF",
+      "team": "away",
+      "x": 55,
+      "y": 55
+    },
+    {
+      "id": "opp2",
+      "role": "DF",
+      "team": "away",
+      "x": 65,
+      "y": 40
+    },
+    {
+      "id": "opp3",
+      "role": "DF",
+      "team": "away",
+      "x": 70,
+      "y": 60
+    }
   ],
-  "pressure": { "direction": "none", "intensity": "low" },
+  "pressure": {
+    "direction": "none",
+    "intensity": "low"
+  },
   "ideal_regions": [
     {
       "label": "forward_run_channel",
       "purpose": "passing_lane_support",
       "reference_frame": "pitch",
-      "geometry": { "type": "circle", "x": 65, "y": 35, "r": 8 }
+      "geometry": {
+        "type": "circle",
+        "x": 65,
+        "y": 35,
+        "r": 8
+      }
     },
     {
       "label": "central_support_run",
       "purpose": "primary_support_option",
       "reference_frame": "pitch",
-      "geometry": { "type": "circle", "x": 68, "y": 48, "r": 8 }
+      "geometry": {
+        "type": "circle",
+        "x": 68,
+        "y": 48,
+        "r": 8
+      }
     }
   ],
   "acceptable_regions": [
@@ -39,13 +103,23 @@
       "label": "advanced_midfield_zone",
       "purpose": "secondary_support_option",
       "reference_frame": "pitch",
-      "geometry": { "type": "circle", "x": 62, "y": 38, "r": 12 }
+      "geometry": {
+        "type": "circle",
+        "x": 62,
+        "y": 38,
+        "r": 12
+      }
     },
     {
       "label": "wide_transition_zone",
       "purpose": "width_hold",
       "reference_frame": "pitch",
-      "geometry": { "type": "circle", "x": 65, "y": 52, "r": 12 }
+      "geometry": {
+        "type": "circle",
+        "x": 65,
+        "y": 52,
+        "r": 12
+      }
     }
   ],
   "weight_profile": "transition_v1",
@@ -55,10 +129,16 @@
     "width_depth": 0.3
   },
   "difficulty": 2,
-  "tags": ["transition", "support", "counter_attack"],
+  "tags": [
+    "transition",
+    "support",
+    "counter_attack"
+  ],
   "line_group": "midfield",
   "primary_concept": "support",
-  "secondary_concepts": ["width_depth"],
+  "secondary_concepts": [
+    "width_depth"
+  ],
   "teaching_point": "Make an immediate forward run into space behind the defensive line to give the ball carrier a transition option.",
   "target_role_family": "midfield",
   "situation": "counter_attack",
@@ -68,9 +148,13 @@
   "learning_stage": 1,
   "scenario_archetype": "midfield_triangle_restore",
   "feedback_hints": {
-    "success": "Great run — you found space behind the defensive line and created a clear counter-attack option.",
+    "success": "Great run \u2014 you found space behind the defensive line and created a clear counter-attack option.",
     "common_error": "You hesitated or stayed too deep, allowing the defence to reorganise before you could threaten the space.",
     "alternate_valid": "This was still a usable support position for the transition even if not in the ideal lane.",
-    "teaching_emphasis": "On a turnover, commit to the forward run immediately — the space behind their midfield line closes quickly."
-  }
+    "teaching_emphasis": "On a turnover, commit to the forward run immediately \u2014 the space behind their midfield line closes quickly."
+  },
+  "correct_reasoning": [
+    "enable_switch",
+    "support_under_pressure"
+  ]
 }

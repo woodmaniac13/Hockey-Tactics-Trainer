@@ -56,6 +56,7 @@ Fields are classified by their runtime role:
 | `recommended_after` | Authoring-only (soft guidance, not yet wired into runtime) |
 | `scenario_archetype` | User-facing (badge in scenario details); Authoring-only at runtime |
 | `feedback_hints.*` | Runtime-used (feedback summary overrides) |
+| `correct_reasoning` | Runtime-used — consumed by the evaluator to score reasoning alignment |
 | `pressure.primary_presser_id` | **Authoring-only** — not evaluated or scored |
 | `pressure.forced_side` | **Authoring-only** — not evaluated or scored |
 | `pressure.blocked_lane` | **Authoring-only** — not evaluated or scored |
@@ -406,6 +407,33 @@ A lightweight label that identifies the high-level tactical pattern of the scena
 
 ---
 
+## Authored Reasoning Alignment
+
+### `correct_reasoning`
+
+An explicit list of the reasoning options that are tactically correct for this scenario. When present, the evaluator uses this list directly to score the player's reasoning selection. When absent, the evaluator falls back to a tag-driven heuristic.
+
+**Type**: array of enum strings
+
+**Allowed values**: `create_passing_angle` | `provide_cover` | `enable_switch` | `support_under_pressure`
+
+**Runtime behaviour**:
+- if the player selects any value in this list → reasoning bonus awarded
+- if the player selects a value not in this list → no bonus
+- if the field is absent → tag-driven heuristic applies as before
+
+**Example**
+```json
+"correct_reasoning": ["create_passing_angle", "support_under_pressure"]
+```
+
+Scenarios where only one option is tactically correct:
+```json
+"correct_reasoning": ["provide_cover"]
+```
+
+---
+
 ## Minimum Recommended Metadata
 
 Not every scenario needs all optional fields. A reasonable minimum for new scenarios:
@@ -472,6 +500,7 @@ npx tsx scripts/lint-scenarios.ts --strict  # exit 1 on warnings too
 | `recommended_after` | array of strings when present |
 | `feedback_hints` | object with known string fields only (strict) |
 | `scenario_archetype` | must be a valid enum value when present |
+| `correct_reasoning` | array of valid `ReasoningOption` enum values when present |
 | `primary_presser_id` | any string when present |
 | `blocked_lane` | any string when present |
 | `trap_zone` | any string when present |

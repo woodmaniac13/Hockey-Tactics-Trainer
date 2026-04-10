@@ -6,31 +6,89 @@
   "phase": "attack",
   "team_orientation": "home_attacks_positive_x",
   "target_player": "cm1",
-  "ball": { "x": 5, "y": 50 },
+  "ball": {
+    "x": 5,
+    "y": 50
+  },
   "teammates": [
-    { "id": "gk", "role": "GK", "team": "home", "x": 5, "y": 50 },
-    { "id": "cb1", "role": "CB", "team": "home", "x": 15, "y": 35 },
-    { "id": "cb2", "role": "CB", "team": "home", "x": 15, "y": 65 },
-    { "id": "cm1", "role": "CM", "team": "home", "x": 30, "y": 50 },
-    { "id": "fw1", "role": "FW", "team": "home", "x": 70, "y": 50 }
+    {
+      "id": "gk",
+      "role": "GK",
+      "team": "home",
+      "x": 5,
+      "y": 50
+    },
+    {
+      "id": "cb1",
+      "role": "CB",
+      "team": "home",
+      "x": 15,
+      "y": 35
+    },
+    {
+      "id": "cb2",
+      "role": "CB",
+      "team": "home",
+      "x": 15,
+      "y": 65
+    },
+    {
+      "id": "cm1",
+      "role": "CM",
+      "team": "home",
+      "x": 30,
+      "y": 50
+    },
+    {
+      "id": "fw1",
+      "role": "FW",
+      "team": "home",
+      "x": 70,
+      "y": 50
+    }
   ],
   "opponents": [
-    { "id": "opp1", "role": "CF", "team": "away", "x": 20, "y": 48 },
-    { "id": "opp2", "role": "CM", "team": "away", "x": 35, "y": 40 }
+    {
+      "id": "opp1",
+      "role": "CF",
+      "team": "away",
+      "x": 20,
+      "y": 48
+    },
+    {
+      "id": "opp2",
+      "role": "CM",
+      "team": "away",
+      "x": 35,
+      "y": 40
+    }
   ],
-  "pressure": { "direction": "outside_in", "intensity": "medium" },
+  "pressure": {
+    "direction": "outside_in",
+    "intensity": "medium"
+  },
   "ideal_regions": [
     {
       "label": "left_support_pocket",
       "purpose": "primary_support_option",
       "reference_frame": "pitch",
-      "geometry": { "type": "circle", "x": 28, "y": 62, "r": 8 }
+      "geometry": {
+        "type": "circle",
+        "x": 28,
+        "y": 62,
+        "r": 8
+      }
     },
     {
       "label": "right_support_pocket",
       "purpose": "secondary_support_option",
       "reference_frame": "pitch",
-      "geometry": { "type": "circle", "x": 32, "y": 38, "r": 8 }
+      "geometry": {
+        "type": "circle",
+        "x": 32,
+        "y": 38,
+        "r": 8
+      }
     }
   ],
   "acceptable_regions": [
@@ -38,13 +96,23 @@
       "label": "wide_left_zone",
       "purpose": "pressure_relief",
       "reference_frame": "pitch",
-      "geometry": { "type": "circle", "x": 25, "y": 55, "r": 12 }
+      "geometry": {
+        "type": "circle",
+        "x": 25,
+        "y": 55,
+        "r": 12
+      }
     },
     {
       "label": "wide_right_zone",
       "purpose": "pressure_relief",
       "reference_frame": "pitch",
-      "geometry": { "type": "circle", "x": 35, "y": 42, "r": 12 }
+      "geometry": {
+        "type": "circle",
+        "x": 35,
+        "y": 42,
+        "r": 12
+      }
     }
   ],
   "weight_profile": "build_out_v1",
@@ -54,10 +122,15 @@
     "spacing": 0.3
   },
   "difficulty": 1,
-  "tags": ["support", "build_out"],
+  "tags": [
+    "support",
+    "build_out"
+  ],
   "line_group": "midfield",
   "primary_concept": "support",
-  "secondary_concepts": ["pressure_response"],
+  "secondary_concepts": [
+    "pressure_response"
+  ],
   "teaching_point": "Drop into a staggered support angle either side of the pressing opponent to create a clean passing lane for the goalkeeper.",
   "target_role_family": "midfield",
   "situation": "build_out_under_press",
@@ -67,9 +140,13 @@
   "learning_stage": 1,
   "scenario_archetype": "back_outlet_support",
   "feedback_hints": {
-    "success": "Good support angle — you made yourself available for the goalkeeper and helped break the press.",
+    "success": "Good support angle \u2014 you made yourself available for the goalkeeper and helped break the press.",
     "common_error": "You were too flat or too central, making it easy for the opponent to cover both you and the passing lane.",
     "alternate_valid": "This was still a workable support position even if not in the ideal pocket.",
     "teaching_emphasis": "Stagger your position to offer the goalkeeper a clear, angled outlet behind the first press line."
-  }
+  },
+  "correct_reasoning": [
+    "create_passing_angle",
+    "support_under_pressure"
+  ]
 }

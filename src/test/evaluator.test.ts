@@ -405,3 +405,55 @@ describe('evaluate — semantic region resolution', () => {
     expect(result.region_fit_score).toBeLessThanOrEqual(0.9);
   });
 });
+
+describe('evaluate — authored reasoning alignment', () => {
+  const profileWithReasoning: WeightProfile = {
+    ...baseProfile,
+    weights: { ...baseProfile.weights, reasoning_bonus: 0.1 },
+  };
+
+  it('authored correct_reasoning awards bonus when player selects a correct option', () => {
+    const scenario = {
+      ...baseScenario,
+      correct_reasoning: ['create_passing_angle' as const, 'support_under_pressure' as const],
+    };
+    const result = evaluate(scenario, { x: 45, y: 62 }, profileWithReasoning, 'create_passing_angle');
+    expect(result.component_scores.reasoning_bonus).toBe(1.0);
+  });
+
+  it('authored correct_reasoning awards no bonus for an option not in the list', () => {
+    const scenario = {
+      ...baseScenario,
+      correct_reasoning: ['provide_cover' as const],
+    };
+    const result = evaluate(scenario, { x: 45, y: 62 }, profileWithReasoning, 'create_passing_angle');
+    expect(result.component_scores.reasoning_bonus).toBe(0.0);
+  });
+
+  it('authored correct_reasoning takes precedence over tag-driven fallback', () => {
+    // The first tag is 'support', which would match 'create_passing_angle' via tag heuristic.
+    // But correct_reasoning only lists 'provide_cover', so 'create_passing_angle' should yield 0.
+    const scenario = {
+      ...baseScenario,
+      tags: ['support'],
+      correct_reasoning: ['provide_cover' as const],
+    };
+    const result = evaluate(scenario, { x: 45, y: 62 }, profileWithReasoning, 'create_passing_angle');
+    expect(result.component_scores.reasoning_bonus).toBe(0.0);
+  });
+
+  it('falls back to tag-driven heuristic when correct_reasoning is absent', () => {
+    // baseScenario has tags: ['support'] — 'create_passing_angle' is in the tag map
+    const result = evaluate(baseScenario, { x: 45, y: 62 }, profileWithReasoning, 'create_passing_angle');
+    expect(result.component_scores.reasoning_bonus).toBe(1.0);
+  });
+
+  it('awards no bonus when reasoning is not provided regardless of correct_reasoning', () => {
+    const scenario = {
+      ...baseScenario,
+      correct_reasoning: ['create_passing_angle' as const],
+    };
+    const result = evaluate(scenario, { x: 45, y: 62 }, profileWithReasoning);
+    expect(result.component_scores.reasoning_bonus).toBe(0.0);
+  });
+});

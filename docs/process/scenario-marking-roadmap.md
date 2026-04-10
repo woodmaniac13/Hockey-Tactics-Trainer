@@ -59,6 +59,8 @@ Support scoring should be improved to include more than angle alone, so that it 
 
 Reasoning bonus behavior should be improved where practical to reduce reliance on a simple global tag lookup.
 
+**Status**: Implemented. Scenarios now carry an optional `correct_reasoning` field that lists the tactically correct reasoning options for that scenario. When present, the evaluator uses this list directly. When absent, the tag-driven heuristic is used as a fallback. All existing scenarios have been updated with authored reasoning values.
+
 ### 3.5 Weight normalization and validation
 
 Weight validation and normalization behavior should be explicitly defined and improved.
@@ -150,6 +152,8 @@ The intent is to improve it incrementally, beginning with distance-to-ball band 
 - This work is **secondary** to region-model and weight-profile improvements.
 - Incremental improvements within the current tag-driven approach are acceptable in the short term.
 
+**Implemented:** Scenarios now carry an optional `correct_reasoning` field (array of `ReasoningOption` values). When present, the evaluator uses this array directly for alignment scoring. When absent, the tag-driven heuristic applies as a fallback. All existing public scenarios have been updated with authored `correct_reasoning` values.
+
 ---
 
 ## 5. Implementation order
@@ -175,19 +179,19 @@ A change is only complete when both steps have occurred.
 
 ### Documentation acceptance
 
-- [ ] Repository documentation removes the de-scoped requirements listed in section 2.
-- [ ] Repository documentation records the revised priorities from section 3.
-- [ ] Repository documentation defines the intended target design from section 4 before implementation.
-- [ ] Repository documentation states that documentation must precede code changes in this area.
+- [x] Repository documentation removes the de-scoped requirements listed in section 2.
+- [x] Repository documentation records the revised priorities from section 3.
+- [x] Repository documentation defines the intended target design from section 4 before implementation.
+- [x] Repository documentation states that documentation must precede code changes in this area.
 
 ### Code acceptance (to be verified after implementation)
 
-- [ ] The implementation follows the documented target direction.
-- [ ] The code no longer contradicts the updated documentation.
-- [ ] Changed schema, evaluator, or weight-profile behavior aligns with the documented intent.
-- [ ] Existing circle-only scenarios continue to validate and evaluate correctly.
+- [x] The implementation follows the documented target direction.
+- [x] The code no longer contradicts the updated documentation.
+- [x] Changed schema, evaluator, or weight-profile behavior aligns with the documented intent.
+- [x] Existing circle-only scenarios continue to validate and evaluate correctly.
 
 ### Process acceptance
 
-- [ ] Documentation is updated before code changes are made.
-- [ ] Both documentation and code updates occur.
+- [x] Documentation is updated before code changes are made.
+- [x] Both documentation and code updates occur.

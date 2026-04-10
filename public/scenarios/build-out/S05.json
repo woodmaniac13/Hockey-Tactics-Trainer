@@ -6,21 +6,81 @@
   "phase": "attack",
   "team_orientation": "home_attacks_positive_x",
   "target_player": "cm_right",
-  "ball": { "x": 18, "y": 30 },
+  "ball": {
+    "x": 18,
+    "y": 30
+  },
   "teammates": [
-    { "id": "gk", "role": "GK", "team": "home", "x": 5, "y": 50 },
-    { "id": "cb_right", "role": "CB", "team": "home", "x": 18, "y": 30 },
-    { "id": "cb_left", "role": "CB", "team": "home", "x": 18, "y": 70 },
-    { "id": "cm_right", "role": "CM", "team": "home", "x": 35, "y": 32 },
-    { "id": "cm_left", "role": "CM", "team": "home", "x": 35, "y": 68 },
-    { "id": "fw1", "role": "FW", "team": "home", "x": 65, "y": 50 }
+    {
+      "id": "gk",
+      "role": "GK",
+      "team": "home",
+      "x": 5,
+      "y": 50
+    },
+    {
+      "id": "cb_right",
+      "role": "CB",
+      "team": "home",
+      "x": 18,
+      "y": 30
+    },
+    {
+      "id": "cb_left",
+      "role": "CB",
+      "team": "home",
+      "x": 18,
+      "y": 70
+    },
+    {
+      "id": "cm_right",
+      "role": "CM",
+      "team": "home",
+      "x": 35,
+      "y": 32
+    },
+    {
+      "id": "cm_left",
+      "role": "CM",
+      "team": "home",
+      "x": 35,
+      "y": 68
+    },
+    {
+      "id": "fw1",
+      "role": "FW",
+      "team": "home",
+      "x": 65,
+      "y": 50
+    }
   ],
   "opponents": [
-    { "id": "opp_press", "role": "FW", "team": "away", "x": 22, "y": 28 },
-    { "id": "opp_cm", "role": "CM", "team": "away", "x": 38, "y": 35 },
-    { "id": "opp_cf", "role": "CF", "team": "away", "x": 45, "y": 50 }
+    {
+      "id": "opp_press",
+      "role": "FW",
+      "team": "away",
+      "x": 22,
+      "y": 28
+    },
+    {
+      "id": "opp_cm",
+      "role": "CM",
+      "team": "away",
+      "x": 38,
+      "y": 35
+    },
+    {
+      "id": "opp_cf",
+      "role": "CF",
+      "team": "away",
+      "x": 45,
+      "y": 50
+    }
   ],
-  "pressure": { "direction": "outside_in", "intensity": "high" },
+  "pressure": {
+    "direction": "outside_in",
+    "intensity": "high"
+  },
   "ideal_regions": [
     {
       "label": "strong_side_outlet_lane",
@@ -68,10 +128,16 @@
     "pressure_relief": 0.4
   },
   "difficulty": 2,
-  "tags": ["build_out", "pressure_relief", "outlet"],
+  "tags": [
+    "build_out",
+    "pressure_relief",
+    "outlet"
+  ],
   "line_group": "midfield",
   "primary_concept": "pressure_response",
-  "secondary_concepts": ["support"],
+  "secondary_concepts": [
+    "support"
+  ],
   "teaching_point": "Offer a strong-side outlet lane beside the pressed CB and a diagonal escape pocket behind the first press line.",
   "target_role_family": "midfield",
   "situation": "build_out_under_press",
@@ -84,6 +150,10 @@
     "success": "You provided a clear outlet lane and helped the CB escape the high press.",
     "common_error": "You positioned too close or in line with the press, making it easy to block the outlet pass.",
     "alternate_valid": "This position still offered the CB a usable escape option even outside the primary lane.",
-    "teaching_emphasis": "Position in the lane beside the pressing opponent — not behind them — so the CB can play forward quickly."
-  }
+    "teaching_emphasis": "Position in the lane beside the pressing opponent \u2014 not behind them \u2014 so the CB can play forward quickly."
+  },
+  "correct_reasoning": [
+    "create_passing_angle",
+    "support_under_pressure"
+  ]
 }

@@ -74,11 +74,21 @@ Full Example
   },
 
   "ideal_regions": [
-    { "x": 52, "y": 64, "r": 6 }
+    {
+      "label": "inside_support_pocket",
+      "purpose": "primary_support_option",
+      "reference_frame": "pitch",
+      "geometry": { "type": "circle", "x": 52, "y": 64, "r": 6 }
+    }
   ],
 
   "acceptable_regions": [
-    { "x": 48, "y": 66, "r": 10 }
+    {
+      "label": "wider_support_zone",
+      "purpose": "secondary_support_option",
+      "reference_frame": "pitch",
+      "geometry": { "type": "circle", "x": 48, "y": 66, "r": 10 }
+    }
   ],
 
   "weight_profile": "build_out_v1",
@@ -276,27 +286,56 @@ Example with optional fields:
 
 Regions
 
-Regions use a polymorphic `TacticalRegion` type. All four formats may be mixed freely within the same scenario. Existing scenarios that only use the legacy circle format continue to work unchanged.
+Regions use a polymorphic `TacticalRegion` type that accepts either a **semantic wrapper** (required for authored scenarios) or raw typed geometry (accepted in tests and internal tooling only).
 
-### Legacy circle (backward compatible)
+**Authored scenarios must use semantic wrappers.** The content lint layer enforces this at authoring time. See `src/scenarios/scenarioLint.ts` and the authoring guide.
+
+### Semantic wrapper (required for authored scenarios)
+
+A semantic wrapper pairs tactical metadata with a geometric shape. Use this format for all `ideal_regions` and `acceptable_regions` in authored scenarios.
 
 ```json
-{ "x": 52, "y": 64, "r": 6 }
+{
+  "label": "inside_support_pocket",
+  "purpose": "primary_support_option",
+  "reference_frame": "pitch",
+  "geometry": { "type": "circle", "x": 52, "y": 64, "r": 6 }
+}
 ```
 
-The legacy `{ x, y, r }` object is still fully supported and does not need to be migrated.
+**Fields**
+
+| Field | Required | Description |
+|---|---|---|
+| `geometry` | **yes** | One of the typed geometry primitives below |
+| `label` | recommended | Short descriptive name for the region |
+| `purpose` | recommended | Controlled vocabulary — see `SemanticRegionPurpose` in types |
+| `reference_frame` | optional | `pitch` (default), `ball`, `target_player`, or `entity` |
+| `reference_entity_id` | conditional | Required only when `reference_frame` is `entity` |
+| `notes` | optional | Authoring notes (not shown in UI) |
+
+**Reference frames**
+
+| Value | Meaning |
+|---|---|
+| `pitch` | Coordinates are absolute pitch-space (default, use for most scenarios) |
+| `ball` | Geometry is offset relative to the ball position at load time |
+| `target_player` | Geometry is offset relative to the target player's starting position |
+| `entity` | Geometry is offset relative to a named entity (`reference_entity_id` required) |
 
 ---
 
-### Tagged circle
+### Geometry primitives (used inside `geometry` field)
+
+All geometric regions require a `type` discriminator.
+
+#### Circle
 
 ```json
 { "type": "circle", "x": 52, "y": 64, "r": 6 }
 ```
 
----
-
-### Rectangle
+#### Rectangle
 
 ```json
 { "type": "rectangle", "x": 48, "y": 60, "width": 10, "height": 8 }
@@ -305,9 +344,7 @@ The legacy `{ x, y, r }` object is still fully supported and does not need to be
 
 `rotation` is optional (radians, counter-clockwise). Omit or set to `0` for axis-aligned.
 
----
-
-### Polygon
+#### Polygon
 
 ```json
 { "type": "polygon", "vertices": [{"x":48,"y":60},{"x":58,"y":60},{"x":55,"y":70}] }
@@ -315,9 +352,7 @@ The legacy `{ x, y, r }` object is still fully supported and does not need to be
 
 Any convex or concave polygon with ≥ 3 vertices. Point-in-polygon is evaluated with the ray-casting algorithm.
 
----
-
-### Lane
+#### Lane
 
 ```json
 { "type": "lane", "x1": 40, "y1": 50, "x2": 70, "y2": 50, "width": 8 }
@@ -329,16 +364,17 @@ A rectangular corridor of constant width centred on the line segment (`x1,y1`) �
 
 ### Ideal Regions
 
-Best solutions. Use whichever shape best describes the intended area.
+Best solutions. The geometry should define the tactically optimal area. Each region should be wrapped in a semantic wrapper with `purpose: "primary_support_option"` or equivalent.
 
 ### Acceptable Regions
 
-Valid but less optimal solutions. Same polymorphic type.
+Valid but less optimal solutions. Use `purpose: "secondary_support_option"` or similar in the semantic wrapper.
 
 ---
 
 Rules
 - at least one region must exist across both arrays
+- all regions in authored scenarios must use the semantic wrapper format
 - regions must be within pitch bounds
 - circles: radius must be > 0
 - rectangles: `width` and `height` must be > 0

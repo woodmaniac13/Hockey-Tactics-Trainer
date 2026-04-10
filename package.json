@@ -8,7 +8,9 @@
     "test": "vitest",
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
-    "lint-content": "vitest run src/test/scenarioContentLint.test.ts"
+    "lint-content": "vitest run src/test/scenarioContentLint.test.ts",
+    "generate-scenario": "tsx scripts/generate-scenario-from-intent.ts",
+    "coverage-report": "tsx scripts/scenario-coverage-report.ts"
   },
   "dependencies": {
     "react": "^18.2.0",

@@ -13,6 +13,9 @@ export const EntitySchema = z.object({
   team: z.enum(['home', 'away']),
   x: z.number(),
   y: z.number(),
+  // Optional semantic position hint — must be a key in CANONICAL_POSITION_ANCHORS.
+  // The content lint layer warns when actual (x, y) deviates >15 units from the anchor.
+  position_hint: z.string().optional(),
 }).strict();
 
 // All region primitives require a `type` discriminator — no legacy untagged format.
@@ -80,6 +83,14 @@ export const SemanticRegionPurposeSchema = z.enum([
 
 /**
  * Semantic region wrapper — pairs tactical metadata with a geometric shape.
+ *
+ * Either `geometry` or `named_zone` must be provided:
+ *   - `geometry`: explicit coordinate-based shape.
+ *   - `named_zone`: a key from `NAMED_PITCH_ZONES` in `src/utils/pitchConstants.ts`.
+ *     When `named_zone` is present and `geometry` is absent, the system resolves
+ *     the geometry automatically from the named-zone lookup table.
+ *   - When both are provided, `geometry` takes precedence.
+ *
  * Validates reference-frame/entity-id consistency at parse time.
  */
 export const SemanticRegionSchema = z.object({
@@ -88,8 +99,17 @@ export const SemanticRegionSchema = z.object({
   reference_frame: ReferenceFrameSchema.optional(),
   reference_entity_id: z.string().optional(),
   notes: z.string().optional(),
-  geometry: TacticalRegionGeometrySchema,
+  named_zone: z.string().optional(),
+  geometry: TacticalRegionGeometrySchema.optional(),
 }).strict().superRefine((region, ctx) => {
+  // Either geometry or named_zone must be present.
+  if (!region.geometry && !region.named_zone) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['geometry'],
+      message: 'A semantic region must have either "geometry" or "named_zone"',
+    });
+  }
   const frame = region.reference_frame ?? 'pitch';
   if (frame === 'entity' && !region.reference_entity_id) {
     ctx.addIssue({
@@ -209,6 +229,24 @@ export const ScenarioArchetypeSchema = z.enum([
   'weak_side_balance',
 ]);
 
+/** Controlled vocabulary for entity spatial/tactical relationship types. */
+export const EntityRelationshipTypeSchema = z.enum([
+  'goal_side_of',
+  'supporting_behind',
+  'screening',
+  'pressing',
+  'tracking_runner',
+  'providing_width',
+]);
+
+/** Authored spatial/tactical relationship between two entities (authoring-only). */
+export const EntityRelationshipSchema = z.object({
+  entity_id: z.string(),
+  relationship: EntityRelationshipTypeSchema,
+  relative_to: z.string(),
+  notes: z.string().optional(),
+}).strict();
+
 export const ScenarioSchema = z.object({
   scenario_id: z.string(),
   version: z.number().int().positive(),
@@ -253,6 +291,14 @@ export const ScenarioSchema = z.object({
    * alignment from tags. Falls back to the tag-driven heuristic when absent.
    */
   correct_reasoning: z.array(z.enum(['create_passing_angle', 'provide_cover', 'enable_switch', 'support_under_pressure'])).optional(),
+  // ── Entity relationship annotations (optional, authoring-only) ────────
+  /**
+   * Declared spatial/tactical relationships between entities.
+   * Authoring-only — not evaluated or scored at runtime.
+   * The content lint layer cross-checks declared relationships against actual
+   * entity coordinates and warns on geometric inconsistencies.
+   */
+  entity_relationships: z.array(EntityRelationshipSchema).optional(),
 }).strict();
 
 export const WeightProfileWeightsSchema = z.object({

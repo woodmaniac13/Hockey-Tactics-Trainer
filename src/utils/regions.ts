@@ -5,10 +5,13 @@ import type {
   Scenario,
   Point,
 } from '../types';
+import { NAMED_PITCH_ZONES } from './pitchConstants';
 
 /** Returns true when a region carries semantic metadata (i.e. is a SemanticRegion). */
 export function isSemanticRegion(region: TacticalRegion): region is SemanticRegion {
-  return 'geometry' in region;
+  // A region is semantic if it carries the `geometry` wrapper field OR a `named_zone`
+  // reference. Raw geometry primitives carry a `type` discriminator instead.
+  return 'geometry' in region || 'named_zone' in region;
 }
 
 /**
@@ -72,13 +75,26 @@ export function translateGeometry(geometry: TacticalRegionGeometry, origin: Poin
  * Resolves a TacticalRegion into pitch-space geometry ready for hit-testing or rendering.
  * Raw geometry is returned as-is.
  * Semantic regions are translated according to their reference frame.
- * Returns null if the reference entity cannot be found (safe fallback — treated as no hit / not drawn).
+ *
+ * Geometry resolution order for semantic regions:
+ *   1. `geometry` field (explicit coordinates) — takes precedence.
+ *   2. `named_zone` field (looked up from NAMED_PITCH_ZONES).
+ *   3. If neither is present, returns null (safe fallback).
+ *
+ * Returns null if the reference entity cannot be found (treated as no hit / not drawn).
  */
 export function resolveRegionGeometry(region: TacticalRegion, scenario: Scenario): TacticalRegionGeometry | null {
   if (!isSemanticRegion(region)) return region;
+
+  // Resolve the geometry: explicit geometry takes precedence over named_zone.
+  const geo: TacticalRegionGeometry | undefined =
+    region.geometry ?? (region.named_zone ? NAMED_PITCH_ZONES[region.named_zone] : undefined);
+
+  if (!geo) return null;
+
   const frame = region.reference_frame ?? 'pitch';
-  if (frame === 'pitch') return region.geometry;
+  if (frame === 'pitch') return geo;
   const origin = getReferencePointForRegion(region, scenario);
   if (!origin) return null;
-  return translateGeometry(region.geometry, origin);
+  return translateGeometry(geo, origin);
 }

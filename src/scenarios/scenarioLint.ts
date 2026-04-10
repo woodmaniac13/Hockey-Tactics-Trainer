@@ -1,5 +1,12 @@
-import type { Scenario, TacticalRegion, ScenarioArchetype, LineGroup, PrimaryConceptVocab } from '../types';
+import type { Scenario, TacticalRegion, ScenarioArchetype, LineGroup, PrimaryConceptVocab, FieldZone } from '../types';
 import { isSemanticRegion } from '../utils/regions';
+import {
+  CANONICAL_POSITION_ANCHORS,
+  NAMED_PITCH_ZONES,
+  isPointInZoneX,
+  FIELD_ZONE_BOUNDS,
+  pitchDistance,
+} from '../utils/pitchConstants';
 
 /**
  * Canonical vocabulary of accepted entity role abbreviations.
@@ -41,6 +48,11 @@ type ArchetypeConstraint = {
   allowed_line_groups?: LineGroup[];
   /** If set and `primary_concept` is present in the scenario, primary_concept must be one of these. */
   allowed_primary_concepts?: PrimaryConceptVocab[];
+  /**
+   * If set and `field_zone` is present in the scenario, the zone should be in this list.
+   * Violations produce a **warning** (not an error) — zones are advisory for archetypes.
+   */
+  allowed_field_zones?: FieldZone[];
 };
 
 /**
@@ -60,17 +72,30 @@ export const ARCHETYPE_CONSTRAINTS: Record<ScenarioArchetype, ArchetypeConstrain
     // Applies in attack (including build-out under press).
     allowed_phases: ['attack'],
     allowed_primary_concepts: ['support', 'pressure_response'],
+    allowed_field_zones: [
+      'defensive_third_left', 'defensive_third_central', 'defensive_third_right',
+      'middle_third_left', 'middle_third_central', 'middle_third_right',
+    ],
   },
   fullback_escape_option: {
     // A fullback creating an escape route under pressure.
     allowed_phases: ['attack'],
     allowed_line_groups: ['back'],
+    allowed_field_zones: [
+      'defensive_third_left', 'defensive_third_central', 'defensive_third_right',
+      'middle_third_left', 'middle_third_central', 'middle_third_right',
+    ],
   },
   midfield_triangle_restore: {
     // Midfield player reconnecting the team's passing triangle.
     allowed_line_groups: ['midfield'],
     allowed_phases: ['attack', 'transition'],
     allowed_primary_concepts: ['support', 'transfer', 'spacing'],
+    allowed_field_zones: [
+      'defensive_third_left', 'defensive_third_central', 'defensive_third_right',
+      'middle_third_left', 'middle_third_central', 'middle_third_right',
+      'attacking_third_left', 'attacking_third_central', 'attacking_third_right',
+    ],
   },
   interior_support_under_press: {
     // Interior player supporting the ball carrier under press.
@@ -82,27 +107,50 @@ export const ARCHETYPE_CONSTRAINTS: Record<ScenarioArchetype, ArchetypeConstrain
     allowed_phases: ['attack'],
     allowed_line_groups: ['forward'],
     allowed_primary_concepts: ['width_depth', 'support'],
+    allowed_field_zones: [
+      'attacking_third_left', 'attacking_third_central', 'attacking_third_right',
+      'circle_edge_left', 'circle_edge_central', 'circle_edge_right',
+      'middle_third_left', 'middle_third_central', 'middle_third_right',
+    ],
   },
   forward_press_angle: {
     // Forward positioning to apply a pressing angle.
     allowed_phases: ['attack'],
     allowed_line_groups: ['forward'],
     allowed_primary_concepts: ['pressing_angle', 'pressure_response'],
+    allowed_field_zones: [
+      'defensive_third_left', 'defensive_third_central', 'defensive_third_right',
+      'middle_third_left', 'middle_third_central', 'middle_third_right',
+    ],
   },
   help_side_cover: {
     // Player on the help side covering a central channel.
     allowed_phases: ['defence'],
     allowed_primary_concepts: ['cover', 'spacing'],
+    allowed_field_zones: [
+      'defensive_third_left', 'defensive_third_central', 'defensive_third_right',
+      'middle_third_left', 'middle_third_central', 'middle_third_right',
+      'attacking_third_left', 'attacking_third_central', 'attacking_third_right',
+    ],
   },
   central_recovery_cover: {
     // Central player recovering into a covering shape.
     allowed_phases: ['defence', 'transition'],
     allowed_primary_concepts: ['cover', 'recovery_shape'],
+    allowed_field_zones: [
+      'defensive_third_left', 'defensive_third_central', 'defensive_third_right',
+      'middle_third_left', 'middle_third_central', 'middle_third_right',
+    ],
   },
   sideline_trap_support: {
     // Support player assisting a sideline trap structure.
     // No strict phase or line_group constraint — can apply to various lines.
     allowed_primary_concepts: ['pressing_angle', 'pressure_response', 'support', 'spacing'],
+    allowed_field_zones: [
+      'defensive_third_left', 'defensive_third_right',
+      'middle_third_left', 'middle_third_right',
+      'attacking_third_left', 'attacking_third_right',
+    ],
   },
   weak_side_balance: {
     // Weak-side player balancing the team shape.
@@ -238,7 +286,35 @@ export function lintScenario(scenario: Scenario): LintResult {
     }
   }
 
-  // ── Warning checks ────────────────────────────────────────────────────────
+  // Phase B: field_zone vs. ball x-axis position (which third)
+  // Mismatched thirds are the most common LLM coordinate error and are flagged
+  // as a blocking error. The y-axis channel check is advisory (warning) below.
+  if (scenario.field_zone) {
+    const { x: bx } = scenario.ball;
+    if (!isPointInZoneX(bx, scenario.field_zone)) {
+      errors.push(
+        `[${id}] field_zone "${scenario.field_zone}" declares x-bounds ` +
+          `[${FIELD_ZONE_BOUNDS[scenario.field_zone].xMin}–${FIELD_ZONE_BOUNDS[scenario.field_zone].xMax}] ` +
+          `but ball is at x=${bx} — check that the declared zone matches the ball position`,
+      );
+    }
+  }
+
+  // Phase D: named_zone references in regions must be known keys in NAMED_PITCH_ZONES
+  const unknownNamedZones: string[] = [];
+  for (const region of allRegions) {
+    if (isSemanticRegion(region) && region.named_zone && !(region.named_zone in NAMED_PITCH_ZONES)) {
+      unknownNamedZones.push(region.named_zone);
+    }
+  }
+  if (unknownNamedZones.length > 0) {
+    errors.push(
+      `[${id}] Region(s) reference unknown named_zone(s): ${unknownNamedZones.map(z => `"${z}"`).join(', ')} — ` +
+        `add to NAMED_PITCH_ZONES in src/utils/pitchConstants.ts`,
+    );
+  }
+
+  // ── Warning checks ─────────────────────────────────────────────────────────
 
   // Entity roles not in canonical vocabulary
   const allEntities = [...scenario.teammates, ...scenario.opponents];
@@ -307,6 +383,134 @@ export function lintScenario(scenario: Scenario): LintResult {
       `[${id}] recommended_after is not set but learning_stage is ${scenario.learning_stage} — ` +
         `consider listing follow-up scenarios to guide progression`,
     );
+  }
+
+  // Phase B: entity spread — warn if all teammates are unrealistically clustered
+  if (scenario.teammates.length >= 3) {
+    let maxDist = 0;
+    for (let i = 0; i < scenario.teammates.length; i++) {
+      for (let j = i + 1; j < scenario.teammates.length; j++) {
+        const d = pitchDistance(scenario.teammates[i]!, scenario.teammates[j]!);
+        if (d > maxDist) maxDist = d;
+      }
+    }
+    if (maxDist < 15) {
+      warnings.push(
+        `[${id}] All teammates are within ${maxDist.toFixed(1)} units of each other — ` +
+          `consider spreading the team across the pitch for a realistic tactical layout`,
+      );
+    }
+  }
+
+  // Phase B: opponent reachability — warn if no opponent is within 40 units of the ball
+  if (scenario.opponents.length > 0 && scenario.pressure.direction !== 'none') {
+    const minOppDist = Math.min(
+      ...scenario.opponents.map(o => pitchDistance(o, scenario.ball)),
+    );
+    if (minOppDist > 40) {
+      warnings.push(
+        `[${id}] pressure direction is "${scenario.pressure.direction}" but no opponent ` +
+          `is within 40 units of the ball (nearest: ${minOppDist.toFixed(1)} units) — ` +
+          `consider moving a pressing opponent closer to the ball`,
+      );
+    }
+  }
+
+  // Phase C: position_hint deviation — warn when entity's hint anchor is > 15 units from actual (x, y)
+  for (const entity of allEntities) {
+    if (entity.position_hint) {
+      const anchor = CANONICAL_POSITION_ANCHORS[entity.position_hint];
+      if (!anchor) {
+        warnings.push(
+          `[${id}] Entity "${entity.id}" has position_hint "${entity.position_hint}" ` +
+            `which is not in CANONICAL_POSITION_ANCHORS — ` +
+            `check the hint name or add it to src/utils/pitchConstants.ts`,
+        );
+      } else {
+        const deviation = pitchDistance(entity, anchor);
+        if (deviation > 15) {
+          warnings.push(
+            `[${id}] Entity "${entity.id}" position_hint "${entity.position_hint}" ` +
+              `implies approximately (x:${anchor.x}, y:${anchor.y}) ` +
+              `but entity is at (x:${entity.x}, y:${entity.y}) — ` +
+              `deviation ${deviation.toFixed(1)} units exceeds the 15-unit threshold`,
+          );
+        }
+      }
+    }
+  }
+
+  // Phase B: archetype vs. field_zone cross-check (advisory)
+  if (scenario.scenario_archetype && scenario.field_zone) {
+    const constraint = ARCHETYPE_CONSTRAINTS[scenario.scenario_archetype];
+    if (
+      constraint.allowed_field_zones &&
+      !constraint.allowed_field_zones.includes(scenario.field_zone)
+    ) {
+      warnings.push(
+        `[${id}] scenario_archetype "${scenario.scenario_archetype}" typically appears in ` +
+          `[${constraint.allowed_field_zones.join(', ')}] ` +
+          `but field_zone is "${scenario.field_zone}" — ` +
+          `verify this is intentional`,
+      );
+    }
+  }
+
+  // Phase E: ball-relative region usage nudge for build-out and counter-attack situations
+  const relativeSituations = new Set<string>(['build_out_under_press', 'counter_attack']);
+  if (scenario.situation && relativeSituations.has(scenario.situation)) {
+    const semanticRegions = allRegions.filter(isSemanticRegion);
+    const hasRelativeFrame = semanticRegions.some(
+      r => r.reference_frame === 'ball' || r.reference_frame === 'target_player' || r.reference_frame === 'entity',
+    );
+    if (semanticRegions.length > 0 && !hasRelativeFrame) {
+      warnings.push(
+        `[${id}] situation "${scenario.situation}" uses only reference_frame:"pitch" regions — ` +
+          `consider using reference_frame:"ball" or "target_player" for regions whose position ` +
+          `is most naturally described relative to the ball carrier`,
+      );
+    }
+  }
+
+  // Phase H: entity_relationship geometric consistency checks
+  if (scenario.entity_relationships && scenario.entity_relationships.length > 0) {
+    const entityMap = new Map(
+      [...scenario.teammates, ...scenario.opponents].map(e => [e.id, e]),
+    );
+    for (const rel of scenario.entity_relationships) {
+      const entity = entityMap.get(rel.entity_id);
+      if (!entity) {
+        warnings.push(
+          `[${id}] entity_relationship references unknown entity_id "${rel.entity_id}"`,
+        );
+        continue;
+      }
+      const refPos =
+        rel.relative_to === 'ball'
+          ? scenario.ball
+          : entityMap.get(rel.relative_to);
+      if (!refPos) {
+        warnings.push(
+          `[${id}] entity_relationship for "${rel.entity_id}" references unknown relative_to "${rel.relative_to}"`,
+        );
+        continue;
+      }
+      // goal_side_of: entity must have lower x than the reference (closer to own goal)
+      if (rel.relationship === 'goal_side_of' && entity.x > refPos.x) {
+        warnings.push(
+          `[${id}] entity_relationship declares "${rel.entity_id}" is goal_side_of ` +
+            `"${rel.relative_to}" but entity x=${entity.x} is ahead of reference x=${refPos.x} — ` +
+            `goal_side positioning requires a lower x value`,
+        );
+      }
+      // supporting_behind: entity must have lower x than the reference
+      if (rel.relationship === 'supporting_behind' && entity.x >= refPos.x) {
+        warnings.push(
+          `[${id}] entity_relationship declares "${rel.entity_id}" is supporting_behind ` +
+            `"${rel.relative_to}" but entity x=${entity.x} is not behind reference x=${refPos.x}`,
+        );
+      }
+    }
   }
 
   return { errors, warnings };

@@ -285,3 +285,235 @@ describe('lintScenario — unit checks using S01 as base', () => {
     expect(warnings.every(w => !w.includes('recommended_after'))).toBe(true);
   });
 });
+
+// ── Consequence frame lint checks ─────────────────────────────────────────────
+
+describe('lintScenario — consequence_frame checks', () => {
+  function loadS01(): Scenario {
+    const raw: unknown = JSON.parse(
+      fs.readFileSync(path.join(SCENARIOS_DIR, 'build-out/S01.json'), 'utf-8'),
+    );
+    return ScenarioSchema.parse(raw);
+  }
+
+  it('returns no errors for S01 with its authored consequence_frame', () => {
+    const { errors } = lintScenario(loadS01());
+    expect(errors).toHaveLength(0);
+  });
+
+  it('errors when on_success.arrows references an unknown entity in from_entity_id', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'pass_opened',
+          explanation: 'Test consequence.',
+          arrows: [{ style: 'pass', from_entity_id: 'nonexistent', to_entity_id: 'cm1' }],
+        },
+      },
+    };
+    const { errors } = lintScenario(scenario);
+    expect(errors.some(e => e.includes('nonexistent') && e.includes('from_entity_id'))).toBe(true);
+  });
+
+  it('errors when on_success.arrows references an unknown entity in to_entity_id', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'pass_opened',
+          explanation: 'Test consequence.',
+          arrows: [{ style: 'pass', from_entity_id: 'gk', to_entity_id: 'ghost_player' }],
+        },
+      },
+    };
+    const { errors } = lintScenario(scenario);
+    expect(errors.some(e => e.includes('ghost_player') && e.includes('to_entity_id'))).toBe(true);
+  });
+
+  it('accepts "ball" as a valid entity ID in arrow endpoints', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'pass_opened',
+          explanation: 'Test consequence.',
+          arrows: [{ style: 'pass', from_entity_id: 'ball', to_entity_id: 'cm1' }],
+        },
+      },
+    };
+    const { errors } = lintScenario(scenario);
+    expect(errors.every(e => !e.includes('ball'))).toBe(true);
+  });
+
+  it('errors when on_failure.entity_shifts references an unknown entity', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_failure: {
+          consequence_type: 'pressure_maintained',
+          explanation: 'Press held.',
+          entity_shifts: [{ entity_id: 'unknown_id', to_x: 30, to_y: 50 }],
+        },
+      },
+    };
+    const { errors } = lintScenario(scenario);
+    expect(errors.some(e => e.includes('unknown_id'))).toBe(true);
+  });
+
+  it('errors when pass_option_states references an unknown entity in from_entity_id', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'pass_opened',
+          explanation: 'Test.',
+          pass_option_states: [{ from_entity_id: 'ghost', to_entity_id: 'cm1', state: 'open' }],
+        },
+      },
+    };
+    const { errors } = lintScenario(scenario);
+    expect(errors.some(e => e.includes('ghost') && e.includes('from_entity_id'))).toBe(true);
+  });
+
+  it('warns when on_success.explanation exceeds 200 characters', () => {
+    const base = loadS01();
+    const longExplanation = 'A'.repeat(201);
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'pass_opened',
+          explanation: longExplanation,
+        },
+      },
+    };
+    const { warnings } = lintScenario(scenario);
+    expect(warnings.some(w => w.includes('200 characters'))).toBe(true);
+  });
+
+  it('does NOT warn when explanation is exactly 200 characters', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'pass_opened',
+          explanation: 'A'.repeat(200),
+        },
+      },
+    };
+    const { warnings } = lintScenario(scenario);
+    expect(warnings.every(w => !w.includes('200 characters'))).toBe(true);
+  });
+
+  it('warns when on_success has more than 3 arrows', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'pass_opened',
+          explanation: 'Test.',
+          arrows: [
+            { style: 'pass', from_entity_id: 'gk', to_entity_id: 'cm1' },
+            { style: 'run', from_entity_id: 'cm1', to_point: { x: 40, y: 50 } },
+            { style: 'run', from_entity_id: 'cb1', to_point: { x: 25, y: 40 } },
+            { style: 'cover_shift', from_entity_id: 'fw1', to_point: { x: 65, y: 45 } },
+          ],
+        },
+      },
+    };
+    const { warnings } = lintScenario(scenario);
+    expect(warnings.some(w => w.includes('arrows') && w.includes('3'))).toBe(true);
+  });
+
+  it('warns when entity_shifts has more than 2 entries', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'triangle_formed',
+          explanation: 'Test.',
+          entity_shifts: [
+            { entity_id: 'cm1', to_x: 30, to_y: 55 },
+            { entity_id: 'cb1', to_x: 20, to_y: 40 },
+            { entity_id: 'fw1', to_x: 70, to_y: 50 },
+          ],
+        },
+      },
+    };
+    const { warnings } = lintScenario(scenario);
+    expect(warnings.some(w => w.includes('entity_shifts') && w.includes('2'))).toBe(true);
+  });
+
+  it('warns when on_success uses a negative consequence_type', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'pressure_maintained',
+          explanation: 'Press was maintained despite correct positioning.',
+        },
+      },
+    };
+    const { warnings } = lintScenario(scenario);
+    expect(warnings.some(w => w.includes('negative outcome type'))).toBe(true);
+  });
+
+  it('does NOT warn for on_failure using a negative consequence_type', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_failure: {
+          consequence_type: 'pressure_maintained',
+          explanation: 'Press held.',
+        },
+      },
+    };
+    const { warnings } = lintScenario(scenario);
+    expect(warnings.every(w => !w.includes('negative outcome type'))).toBe(true);
+  });
+
+  it('warns when on_success pressure_result is "maintained"', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'pass_opened',
+          explanation: 'Pass opens despite pressure remaining.',
+          pressure_result: 'maintained',
+        },
+      },
+    };
+    const { warnings } = lintScenario(scenario);
+    expect(warnings.some(w => w.includes('pressure_result') && w.includes('maintained'))).toBe(true);
+  });
+
+  it('no errors or warnings for a minimal valid consequence_frame', () => {
+    const base = loadS01();
+    const scenario: Scenario = {
+      ...base,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'pass_opened',
+          explanation: 'Short valid explanation.',
+        },
+      },
+    };
+    const { errors, warnings } = lintScenario(scenario);
+    // No consequence-specific errors
+    expect(errors.filter(e => e.includes('consequence_frame'))).toHaveLength(0);
+    // No consequence-specific warnings
+    expect(warnings.filter(w => w.includes('consequence_frame'))).toHaveLength(0);
+  });
+});

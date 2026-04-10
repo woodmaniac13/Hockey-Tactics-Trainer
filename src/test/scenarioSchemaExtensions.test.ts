@@ -9,6 +9,8 @@ import {
   FieldZoneSchema,
   GameStateSchema,
   FeedbackHintsSchema,
+  OutcomePreviewSchema,
+  ConsequenceFrameSchema,
 } from '../scenarios/scenarioSchema';
 
 // ── Minimal valid scenario used as a base for extension tests ────────────────
@@ -347,5 +349,141 @@ describe('ScenarioSchema — fully extended scenario example', () => {
     const result = ScenarioSchema.safeParse(fullScenario);
     if (!result.success) console.error(result.error.format());
     expect(result.success).toBe(true);
+  });
+});
+
+// ── OutcomePreviewSchema ──────────────────────────────────────────────────────
+
+describe('OutcomePreviewSchema', () => {
+  it('accepts a minimal outcome with consequence_type + explanation', () => {
+    const outcome = {
+      consequence_type: 'pass_opened',
+      explanation: 'Moving into the staggered pocket opens a clean diagonal pass.',
+    };
+    expect(OutcomePreviewSchema.safeParse(outcome).success).toBe(true);
+  });
+
+  it('accepts a fully enriched outcome', () => {
+    const outcome = {
+      consequence_type: 'triangle_formed',
+      explanation: 'Your position restores a support triangle.',
+      arrows: [
+        { style: 'pass', from_entity_id: 'gk', to_entity_id: 'cm1', label: 'outlet' },
+        { style: 'run', from_entity_id: 'cm1', to_point: { x: 35, y: 45 } },
+      ],
+      entity_shifts: [
+        { entity_id: 'fw1', to_x: 65, to_y: 50, label: 'push up' },
+      ],
+      pass_option_states: [
+        { from_entity_id: 'gk', to_entity_id: 'cm1', state: 'open' },
+      ],
+      lane_highlight: {
+        label: 'outlet lane',
+        state: 'open',
+        geometry: { type: 'lane', x1: 10, y1: 48, x2: 30, y2: 55, width: 8 },
+      },
+      pressure_result: 'broken',
+      shape_result: 'triangle_formed',
+    };
+    expect(OutcomePreviewSchema.safeParse(outcome).success).toBe(true);
+  });
+
+  it('rejects an outcome with an unknown consequence_type', () => {
+    const outcome = { consequence_type: 'goal_scored', explanation: 'Test.' };
+    expect(OutcomePreviewSchema.safeParse(outcome).success).toBe(false);
+  });
+
+  it('rejects an outcome with an empty explanation', () => {
+    const outcome = { consequence_type: 'pass_opened', explanation: '' };
+    expect(OutcomePreviewSchema.safeParse(outcome).success).toBe(false);
+  });
+
+  it('rejects an unknown arrow style', () => {
+    const outcome = {
+      consequence_type: 'pass_opened',
+      explanation: 'Test.',
+      arrows: [{ style: 'teleport', from_entity_id: 'gk', to_entity_id: 'cm1' }],
+    };
+    expect(OutcomePreviewSchema.safeParse(outcome).success).toBe(false);
+  });
+
+  it('rejects an entity_shift with to_x out of range', () => {
+    const outcome = {
+      consequence_type: 'pass_opened',
+      explanation: 'Test.',
+      entity_shifts: [{ entity_id: 'cm1', to_x: 110, to_y: 50 }],
+    };
+    expect(OutcomePreviewSchema.safeParse(outcome).success).toBe(false);
+  });
+
+  it('rejects unknown fields (strict mode)', () => {
+    const outcome = { consequence_type: 'pass_opened', explanation: 'Test.', extra: true };
+    expect(OutcomePreviewSchema.safeParse(outcome).success).toBe(false);
+  });
+});
+
+// ── ConsequenceFrameSchema ────────────────────────────────────────────────────
+
+describe('ConsequenceFrameSchema', () => {
+  it('accepts an empty consequence frame (both branches optional)', () => {
+    expect(ConsequenceFrameSchema.safeParse({}).success).toBe(true);
+  });
+
+  it('accepts a frame with only on_success', () => {
+    const frame = {
+      on_success: { consequence_type: 'pass_opened', explanation: 'Outlet opens.' },
+    };
+    expect(ConsequenceFrameSchema.safeParse(frame).success).toBe(true);
+  });
+
+  it('accepts a frame with only on_failure', () => {
+    const frame = {
+      on_failure: { consequence_type: 'pressure_maintained', explanation: 'Press held.' },
+    };
+    expect(ConsequenceFrameSchema.safeParse(frame).success).toBe(true);
+  });
+
+  it('accepts a frame with both branches', () => {
+    const frame = {
+      on_success: { consequence_type: 'pass_opened', explanation: 'Outlet opens.' },
+      on_failure: { consequence_type: 'pass_blocked', explanation: 'Lane blocked.' },
+    };
+    expect(ConsequenceFrameSchema.safeParse(frame).success).toBe(true);
+  });
+
+  it('rejects unknown fields (strict mode)', () => {
+    const frame = { on_success: null, extra: true };
+    expect(ConsequenceFrameSchema.safeParse(frame).success).toBe(false);
+  });
+});
+
+// ── ScenarioSchema — consequence_frame field ──────────────────────────────────
+
+describe('ScenarioSchema — consequence_frame field', () => {
+  it('accepts a scenario with a minimal consequence_frame', () => {
+    const scenario = {
+      ...baseScenario,
+      consequence_frame: {
+        on_success: {
+          consequence_type: 'pass_opened',
+          explanation: 'Moving into the pocket opens the outlet pass.',
+        },
+      },
+    };
+    expect(ScenarioSchema.safeParse(scenario).success).toBe(true);
+  });
+
+  it('accepts a scenario without consequence_frame (field remains optional)', () => {
+    expect(ScenarioSchema.safeParse(baseScenario).success).toBe(true);
+  });
+
+  it('rejects a consequence_frame with invalid consequence_type', () => {
+    const scenario = {
+      ...baseScenario,
+      consequence_frame: {
+        on_success: { consequence_type: 'unknown_type', explanation: 'Test.' },
+      },
+    };
+    expect(ScenarioSchema.safeParse(scenario).success).toBe(false);
   });
 });

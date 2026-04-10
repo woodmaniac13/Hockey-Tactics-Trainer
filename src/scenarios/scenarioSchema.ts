@@ -247,6 +247,83 @@ export const EntityRelationshipSchema = z.object({
   notes: z.string().optional(),
 }).strict();
 
+/** Controlled vocabulary for arrow styles used in consequence overlays. */
+export const ArrowStyleSchema = z.enum(['pass', 'run', 'pressure', 'cover_shift']);
+
+/** A single board arrow for a consequence overlay. */
+export const ArrowSchema = z.object({
+  style: ArrowStyleSchema,
+  from_entity_id: z.string().optional(),
+  to_entity_id: z.string().optional(),
+  from_point: PointSchema.optional(),
+  to_point: PointSchema.optional(),
+  label: z.string().optional(),
+}).strict();
+
+/** An entity visually shifting to a future ghost position in the consequence frame. */
+export const EntityShiftSchema = z.object({
+  entity_id: z.string(),
+  to_x: z.number().min(0).max(100),
+  to_y: z.number().min(0).max(100),
+  label: z.string().optional(),
+}).strict();
+
+/** State of a passing option between two entities after the move. */
+export const PassOptionStateSchema = z.object({
+  from_entity_id: z.string(),
+  to_entity_id: z.string(),
+  state: z.enum(['open', 'blocked', 'risky']),
+  label: z.string().optional(),
+}).strict();
+
+/** Controlled vocabulary of tactical consequence types. */
+export const ConsequenceTypeSchema = z.enum([
+  'pass_opened',
+  'pass_blocked',
+  'pressure_broken',
+  'pressure_maintained',
+  'shape_restored',
+  'shape_broken',
+  'cover_gained',
+  'cover_lost',
+  'lane_opened',
+  'lane_closed',
+  'triangle_formed',
+  'triangle_broken',
+  'width_gained',
+  'width_lost',
+  'depth_created',
+  'overloaded_zone',
+]);
+
+/**
+ * Authored one-step tactical consequence for board overlay and feedback display.
+ * `consequence_type` and `explanation` are required; all other fields are optional.
+ */
+export const OutcomePreviewSchema = z.object({
+  consequence_type: ConsequenceTypeSchema,
+  explanation: z.string().min(1),
+  arrows: z.array(ArrowSchema).optional(),
+  entity_shifts: z.array(EntityShiftSchema).optional(),
+  pass_option_states: z.array(PassOptionStateSchema).optional(),
+  lane_highlight: z.object({
+    label: z.string(),
+    state: z.enum(['open', 'blocked']),
+    geometry: TacticalRegionGeometrySchema,
+  }).strict().optional(),
+  pressure_result: z.enum(['broken', 'maintained', 'intensified']).optional(),
+  shape_result: z.enum(['triangle_formed', 'line_restored', 'overloaded', 'exposed']).optional(),
+}).strict();
+
+/**
+ * Consequence frame for a scenario — contains an optional success and failure branch.
+ * `on_success` → shown for IDEAL/VALID/ALTERNATE_VALID; `on_failure` → PARTIAL/INVALID.
+ */
+export const ConsequenceFrameSchema = z.object({
+  on_success: OutcomePreviewSchema.optional(),
+  on_failure: OutcomePreviewSchema.optional(),
+}).strict();
+
 export const ScenarioSchema = z.object({
   scenario_id: z.string(),
   version: z.number().int().positive(),
@@ -290,7 +367,16 @@ export const ScenarioSchema = z.object({
    * When present the evaluator uses this list directly instead of inferring
    * alignment from tags. Falls back to the tag-driven heuristic when absent.
    */
-  correct_reasoning: z.array(z.enum(['create_passing_angle', 'provide_cover', 'enable_switch', 'support_under_pressure'])).optional(),
+  correct_reasoning: z.array(z.enum([
+    'create_passing_angle',
+    'provide_cover',
+    'enable_switch',
+    'support_under_pressure',
+    'maintain_width',
+    'restore_shape',
+    'break_pressure',
+    'occupy_depth',
+  ])).optional(),
   // ── Entity relationship annotations (optional, authoring-only) ────────
   /**
    * Declared spatial/tactical relationships between entities.
@@ -299,6 +385,13 @@ export const ScenarioSchema = z.object({
    * entity coordinates and warns on geometric inconsistencies.
    */
   entity_relationships: z.array(EntityRelationshipSchema).optional(),
+  // ── Authored tactical consequence (optional) ────────────────────────────
+  /**
+   * Describes the one-step tactical outcome after the correct or incorrect move.
+   * Not evaluated — used only for board overlay and feedback display.
+   * `on_success` → shown for IDEAL/VALID/ALTERNATE_VALID; `on_failure` → PARTIAL/INVALID.
+   */
+  consequence_frame: ConsequenceFrameSchema.optional(),
 }).strict();
 
 export const WeightProfileWeightsSchema = z.object({

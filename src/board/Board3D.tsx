@@ -123,7 +123,6 @@ function FieldLines() {
     gridLines.push({ pts: [[-FIELD_X_HALF, H, wz], [FIELD_X_HALF, H, wz]] });
     // Horizontal (constant pitchY → constant worldX)
     const wx = (i * 10 - 50) * SCALE_X;
-    gridLines.push({ pts: [[-FIELD_X_HALF, H, -FIELD_Z_HALF], [-FIELD_X_HALF, H, FIELD_Z_HALF]] });
     gridLines.push({ pts: [[wx, H, -FIELD_Z_HALF], [wx, H, FIELD_Z_HALF]] });
   }
 

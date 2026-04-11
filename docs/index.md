@@ -63,4 +63,4 @@ Complete index of all Hockey Tactics Trainer documentation, organized by categor
 
 | Document | Description |
 |---|---|
-| [process/proposed-schema-extensions-and-roadmap.md](process/proposed-schema-extensions-and-roadmap.md) | Proposal for extending scenario semantics with optional metadata for tactical concepts, role context, pressure detail, curriculum structure, and authored feedback, plus a phased implementation roadmap. Phases 1–5 are complete; the LLM generation pipeline and consequence frame system are implemented. |
+| [process/proposed-schema-extensions-and-roadmap.md](process/proposed-schema-extensions-and-roadmap.md) | Proposal for extending scenario semantics with optional metadata for tactical concepts, role context, pressure detail, curriculum structure, and authored feedback, plus a phased implementation roadmap. Phases 1–6 are complete (including the LLM generation pipeline and consequence frame system). |

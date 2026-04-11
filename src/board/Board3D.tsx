@@ -1,10 +1,23 @@
 /// <reference types="@react-three/fiber" />
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, Line, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Scenario, Point, TacticalRegionGeometry, OutcomePreview } from '../types';
 import { resolveRegionGeometry } from '../utils/regions';
+import {
+  type PovCameraState,
+  type TouchGestureState,
+  initPovCamera,
+  createGestureState,
+  updatePovCamera,
+  handleTouchStart,
+  handleTouchMove,
+  handleTouchEnd,
+  handlePointerPan,
+  handleWheel,
+  computeOrbitPosition,
+} from './camera/povCamera';
 
 // ── Coordinate system ────────────────────────────────────────────────────────
 // pitch-x (0 = own goal, 100 = opponent goal) → world Z (+25 near cam → −25 far)
@@ -27,9 +40,10 @@ function worldToPitch(wx: number, wz: number): Point {
 }
 
 // ── Camera presets ───────────────────────────────────────────────────────────
-type CameraPreset = 'behind_attack' | 'top_down' | 'sideline';
+type CameraPreset = 'behind_attack' | 'top_down' | 'sideline' | 'pov';
+type FixedCameraPreset = Exclude<CameraPreset, 'pov'>;
 
-const CAMERA_PRESETS: Record<CameraPreset, {
+const CAMERA_PRESETS: Record<FixedCameraPreset, {
   position: [number, number, number];
   target: [number, number, number];
 }> = {
@@ -715,6 +729,8 @@ function CameraController({
   const { camera } = useThree();
 
   useEffect(() => {
+    // POV mode is managed by PovCameraController — skip preset application
+    if (preset === 'pov') return;
     const p = CAMERA_PRESETS[preset];
     camera.position.set(...p.position);
     const orbit = orbitRef.current as { target: THREE.Vector3; update: () => void } | null;
@@ -724,6 +740,23 @@ function CameraController({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preset]);
+
+  return null;
+}
+
+// ── POV camera controller (useFrame-based, inside Canvas) ────────────────────
+function PovCameraController({
+  povRef,
+}: {
+  povRef: React.MutableRefObject<PovCameraState | null>;
+}) {
+  const { camera } = useThree();
+
+  useFrame((_, dt) => {
+    const pov = povRef.current;
+    if (!pov || !pov.enabled) return;
+    updatePovCamera(pov, camera as THREE.PerspectiveCamera, dt);
+  });
 
   return null;
 }
@@ -740,6 +773,7 @@ interface SceneProps {
   isDraggingRef: React.MutableRefObject<boolean>;
   orbitRef: React.MutableRefObject<unknown>;
   cameraPreset: CameraPreset;
+  povRef: React.MutableRefObject<PovCameraState | null>;
   onDragStart: () => void;
   onDragEnd: () => void;
 }
@@ -755,6 +789,7 @@ function SceneContent({
   isDraggingRef,
   orbitRef,
   cameraPreset,
+  povRef,
   onDragStart,
   onDragEnd,
 }: SceneProps) {
@@ -780,10 +815,11 @@ function SceneContent({
         shadow-mapSize={[1024, 1024]}
       />
 
-      {/* Orbit controls */}
+      {/* Orbit controls — disabled when POV mode is active */}
       <OrbitControls
         ref={orbitRef as React.MutableRefObject<null>}
         makeDefault
+        enabled={cameraPreset !== 'pov'}
         maxPolarAngle={Math.PI / 2.08}
         minDistance={5}
         maxDistance={65}
@@ -791,6 +827,9 @@ function SceneContent({
         dampingFactor={0.07}
         target={CAMERA_PRESETS.behind_attack.target}
       />
+
+      {/* POV camera controller (useFrame loop) */}
+      <PovCameraController povRef={povRef} />
 
       {/* Field */}
       <FieldGround />
@@ -903,6 +942,7 @@ const PRESET_LABELS: Record<CameraPreset, string> = {
   behind_attack: '▶ Attack',
   top_down:      '⬆ Top',
   sideline:      '↔ Side',
+  pov:           '👁 POV',
 };
 
 // ── Board3D (main export) ────────────────────────────────────────────────────
@@ -917,6 +957,10 @@ export default function Board3D({
 }: Board3DProps) {
   const isDraggingRef = useRef(false);
   const orbitRef      = useRef<unknown>(null);
+  const povRef        = useRef<PovCameraState | null>(null);
+  const gestureRef    = useRef<TouchGestureState>(createGestureState());
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const pointerPovRef = useRef<{ lastX: number; lastY: number; down: boolean }>({ lastX: 0, lastY: 0, down: false });
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('behind_attack');
 
   const handleDragStart = useCallback(() => {
@@ -927,14 +971,123 @@ export default function Board3D({
 
   const handleDragEnd = useCallback(() => {
     isDraggingRef.current = false;
-    const orbit = orbitRef.current as { enabled: boolean } | null;
-    if (orbit) orbit.enabled = true;
+    if (cameraPreset !== 'pov') {
+      const orbit = orbitRef.current as { enabled: boolean } | null;
+      if (orbit) orbit.enabled = true;
+    }
+  }, [cameraPreset]);
+
+  // Initialise POV camera when entering POV mode
+  /** Minimum world-space distance between player and ball to use ball as active play target. */
+  const MIN_BALL_DISTANCE_FOR_TARGET = 0.5;
+  /** Fallback world-space origin used when the target player entity is not found. */
+  const DEFAULT_WORLD_ORIGIN = new THREE.Vector3(0, 0, 0);
+
+  const handlePresetChange = useCallback((preset: CameraPreset) => {
+    setCameraPreset(preset);
+
+    if (preset === 'pov') {
+      // Seed from target player and ball
+      const targetTm = scenario.teammates.find(t => t.id === scenario.target_player);
+      const playerPos = targetTm
+        ? new THREE.Vector3(...pitchToWorld(playerPosition.x, playerPosition.y))
+        : DEFAULT_WORLD_ORIGIN.clone();
+
+      const ballWorldPos = new THREE.Vector3(...pitchToWorld(scenario.ball.x, scenario.ball.y));
+
+      // Use ball as active play target if sufficiently far from player
+      const dist = playerPos.distanceTo(ballWorldPos);
+      const activeTarget = dist > MIN_BALL_DISTANCE_FOR_TARGET ? ballWorldPos : null;
+
+      povRef.current = initPovCamera(playerPos, activeTarget);
+      gestureRef.current = createGestureState();
+
+      // Disable orbit controls
+      const orbit = orbitRef.current as { enabled: boolean } | null;
+      if (orbit) orbit.enabled = false;
+    } else {
+      // Disable POV
+      if (povRef.current) povRef.current.enabled = false;
+      // Re-enable orbit controls
+      const orbit = orbitRef.current as { enabled: boolean } | null;
+      if (orbit) orbit.enabled = true;
+    }
+  }, [scenario, playerPosition]);
+
+  // Touch gesture handlers for POV mode on the canvas container
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (cameraPreset !== 'pov' || !povRef.current) return;
+      e.preventDefault();
+      handleTouchStart(gestureRef.current, e);
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (cameraPreset !== 'pov' || !povRef.current) return;
+      e.preventDefault();
+      const pov = povRef.current;
+      const camPos = computeOrbitPosition(pov.pivot, pov.yaw, pov.pitch, pov.distance);
+      handleTouchMove(gestureRef.current, pov, camPos, e);
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (cameraPreset !== 'pov' || !povRef.current) return;
+      handleTouchEnd(gestureRef.current, e);
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    el.addEventListener('touchcancel', onTouchEnd);
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [cameraPreset]);
+
+  // Mouse/pointer fallback for POV desktop panning
+  const onPointerDownPov = useCallback((e: React.PointerEvent) => {
+    if (cameraPreset !== 'pov' || !povRef.current) return;
+    pointerPovRef.current = { lastX: e.clientX, lastY: e.clientY, down: true };
+  }, [cameraPreset]);
+
+  const onPointerMovePov = useCallback((e: React.PointerEvent) => {
+    if (cameraPreset !== 'pov' || !povRef.current || !pointerPovRef.current.down) return;
+    const dx = e.clientX - pointerPovRef.current.lastX;
+    const dy = e.clientY - pointerPovRef.current.lastY;
+    const pov = povRef.current;
+    const camPos = computeOrbitPosition(pov.pivot, pov.yaw, pov.pitch, pov.distance);
+    handlePointerPan(pov, camPos, dx, dy);
+    pointerPovRef.current.lastX = e.clientX;
+    pointerPovRef.current.lastY = e.clientY;
+  }, [cameraPreset]);
+
+  const onPointerUpPov = useCallback(() => {
+    pointerPovRef.current.down = false;
   }, []);
+
+  // Wheel zoom for POV mode
+  const onWheelPov = useCallback((e: React.WheelEvent) => {
+    if (cameraPreset !== 'pov' || !povRef.current) return;
+    handleWheel(povRef.current, e.deltaY);
+  }, [cameraPreset]);
 
   return (
     <div style={{ position: 'relative', width: '100%', borderRadius: '8px', overflow: 'hidden' }}>
       {/* 3-D canvas */}
-      <div style={{ width: '100%', aspectRatio: '91.4 / 55' }}>
+      <div
+        ref={canvasContainerRef}
+        style={{ width: '100%', aspectRatio: '91.4 / 55' }}
+        onPointerDown={onPointerDownPov}
+        onPointerMove={onPointerMovePov}
+        onPointerUp={onPointerUpPov}
+        onPointerLeave={onPointerUpPov}
+        onWheel={onWheelPov}
+      >
         <Canvas
           shadows
           camera={{ position: CAMERA_PRESETS.behind_attack.position, fov: 50 }}
@@ -951,6 +1104,7 @@ export default function Board3D({
             isDraggingRef={isDraggingRef}
             orbitRef={orbitRef}
             cameraPreset={cameraPreset}
+            povRef={povRef}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           />
@@ -965,10 +1119,10 @@ export default function Board3D({
         display: 'flex',
         gap: '4px',
       }}>
-        {(Object.keys(CAMERA_PRESETS) as CameraPreset[]).map(key => (
+        {(Object.keys(PRESET_LABELS) as CameraPreset[]).map(key => (
           <button
             key={key}
-            onClick={() => setCameraPreset(key)}
+            onClick={() => handlePresetChange(key)}
             style={{
               padding: '4px 9px',
               borderRadius: '12px',

@@ -33,7 +33,7 @@ const CAMERA_PRESETS: Record<CameraPreset, {
   position: [number, number, number];
   target: [number, number, number];
 }> = {
-  behind_attack: { position: [0, 14, 30],  target: [0, 0, -10] },
+  behind_attack: { position: [0, 14, -30],  target: [0, 0, 10] },
   top_down:      { position: [0, 44, 0],   target: [0, 0,   0] },
   sideline:      { position: [-22, 10, 0], target: [0, 0,   0] },
 };
@@ -246,62 +246,65 @@ function PlayerMesh({
   const bodyMat = <meshLambertMaterial color={color} />;
 
   return (
-    <group position={[wx, 0, wz]} rotation={[0, facingAngle, 0]}>
-      {/* Left leg */}
-      <mesh position={[-0.07, legH / 2, 0]} castShadow>
-        <cylinderGeometry args={[legR * 0.8, legR, legH, 6]} />{bodyMat}
-      </mesh>
-      {/* Right leg */}
-      <mesh position={[0.07, legH / 2, 0]} castShadow>
-        <cylinderGeometry args={[legR * 0.8, legR, legH, 6]} />{bodyMat}
-      </mesh>
-      {/* Torso */}
-      <mesh position={[0, legH + bodyH / 2, 0]} castShadow>
-        <cylinderGeometry args={[bodyR * 0.72, bodyR, bodyH, 8]} />{bodyMat}
-      </mesh>
-      {/* Head */}
-      <mesh position={[0, legH + bodyH + headR + 0.02, 0]} castShadow>
-        <sphereGeometry args={[headR, 10, 8]} />
-        <meshLambertMaterial color="#f0c09a" />
-      </mesh>
-      {/* Hockey stick */}
-      <mesh position={[0.13, legH + bodyH * 0.35, 0.22]} rotation={[0.55, 0, 0.15]} castShadow>
-        <cylinderGeometry args={[0.02, 0.027, 0.62, 5]} />
-        <meshLambertMaterial color="#8B6914" />
-      </mesh>
-      {/* Target player selection ring */}
-      {isTarget && (
-        <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.22, 0.30, 32]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.85} side={THREE.DoubleSide} />
+    <group>
+      {/* Player body (rotated to face the ball) */}
+      <group position={[wx, 0, wz]} rotation={[0, facingAngle, 0]}>
+        {/* Left leg */}
+        <mesh position={[-0.07, legH / 2, 0]} castShadow>
+          <cylinderGeometry args={[legR * 0.8, legR, legH, 6]} />{bodyMat}
         </mesh>
-      )}
-      {/* Hit-area sphere (transparent) — captures pointer for drag */}
-      {isTarget && (
-        <mesh
-          position={[0, legH + bodyH / 2, 0]}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            onDragStart?.();
-          }}
-        >
-          <sphereGeometry args={[0.42, 8, 8]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        {/* Right leg */}
+        <mesh position={[0.07, legH / 2, 0]} castShadow>
+          <cylinderGeometry args={[legR * 0.8, legR, legH, 6]} />{bodyMat}
         </mesh>
-      )}
-      {/* Role label — always faces camera via Billboard */}
-      <Billboard position={[0, legH + bodyH + headR * 2 + 0.16, 0]}>
-        <Text
-          fontSize={0.19}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.025}
-          outlineColor="#000000"
-        >
-          {role.substring(0, 2).toUpperCase()}
-        </Text>
-      </Billboard>
+        {/* Torso */}
+        <mesh position={[0, legH + bodyH / 2, 0]} castShadow>
+          <cylinderGeometry args={[bodyR * 0.72, bodyR, bodyH, 8]} />{bodyMat}
+        </mesh>
+        {/* Head */}
+        <mesh position={[0, legH + bodyH + headR + 0.02, 0]} castShadow>
+          <sphereGeometry args={[headR, 10, 8]} />
+          <meshLambertMaterial color="#f0c09a" />
+        </mesh>
+        {/* Hockey stick */}
+        <mesh position={[0.13, legH + bodyH * 0.35, 0.22]} rotation={[0.55, 0, 0.15]} castShadow>
+          <cylinderGeometry args={[0.02, 0.027, 0.62, 5]} />
+          <meshLambertMaterial color="#8B6914" />
+        </mesh>
+        {/* Target player selection ring */}
+        {isTarget && (
+          <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.22, 0.30, 32]} />
+            <meshBasicMaterial color="#ffffff" transparent opacity={0.85} side={THREE.DoubleSide} />
+          </mesh>
+        )}
+        {/* Hit-area sphere (transparent) — captures pointer for drag */}
+        {isTarget && (
+          <mesh
+            position={[0, legH + bodyH / 2, 0]}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              onDragStart?.();
+            }}
+          >
+            <sphereGeometry args={[0.42, 8, 8]} />
+            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+          </mesh>
+        )}
+      </group>
+      {/* Role label — flat on ground, large and readable */}
+      <Text
+        position={[wx, 0.04, wz + 0.55]}
+        rotation={[-Math.PI / 2, 0, Math.PI]}
+        fontSize={0.5}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.04}
+        outlineColor="#000000"
+      >
+        {role.substring(0, 2).toUpperCase()}
+      </Text>
     </group>
   );
 }

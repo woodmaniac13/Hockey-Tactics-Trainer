@@ -1,0 +1,128 @@
+{
+  "scenario_id": "DRAFT_cb_central_recovery_lane",
+  "version": 1,
+  "title": "CB Central Recovery Lane",
+  "description": "You are the central centre-back after a midfield turnover. Recover quickly to close the central transition lane.",
+  "phase": "transition",
+  "team_orientation": "home_attacks_positive_x",
+  "target_player": "cb_c",
+  "ball": {
+    "x": 62,
+    "y": 50
+  },
+  "teammates": [
+    {
+      "id": "cb_c",
+      "role": "CB",
+      "team": "home",
+      "x": 18,
+      "y": 50,
+      "position_hint": "cb_defensive_central"
+    },
+    {
+      "id": "cb_r",
+      "role": "CB",
+      "team": "home",
+      "x": 15,
+      "y": 22,
+      "position_hint": "cb_defensive_right"
+    },
+    {
+      "id": "dm",
+      "role": "DM",
+      "team": "home",
+      "x": 32,
+      "y": 50,
+      "position_hint": "dm_defensive_mid"
+    },
+    {
+      "id": "cm",
+      "role": "CM",
+      "team": "home",
+      "x": 48,
+      "y": 50,
+      "position_hint": "cm_midfield_central"
+    }
+  ],
+  "opponents": [
+    {
+      "id": "opp_am",
+      "role": "AM",
+      "team": "away",
+      "x": 62,
+      "y": 50,
+      "position_hint": "am_attacking_central"
+    },
+    {
+      "id": "opp_fw",
+      "role": "FW",
+      "team": "away",
+      "x": 72,
+      "y": 50,
+      "position_hint": "fw_attacking_central"
+    }
+  ],
+  "pressure": {
+    "direction": "central",
+    "intensity": "high",
+    "forced_side": "outside"
+  },
+  "ideal_regions": [
+    {
+      "label": "central_recovery",
+      "purpose": "central_protection",
+      "named_zone": "central_recovery_zone"
+    }
+  ],
+  "acceptable_regions": [
+    {
+      "label": "right_recovery",
+      "purpose": "recovery_run",
+      "named_zone": "right_recovery_corridor"
+    }
+  ],
+  "weight_profile": "transition_v1",
+  "constraint_thresholds": {},
+  "difficulty": 4,
+  "tags": [
+    "recovery_shape",
+    "recovery_defence",
+    "transition",
+    "cover",
+    "pressure_response"
+  ],
+  "line_group": "back",
+  "primary_concept": "recovery_shape",
+  "secondary_concepts": [
+    "cover",
+    "pressure_response"
+  ],
+  "teaching_point": "Sprint first to central protection, then adjust to the ball once the lane is blocked.",
+  "target_role_family": "back",
+  "situation": "recovery_defence",
+  "field_zone": "middle_third_central",
+  "game_state": "turnover",
+  "scenario_archetype": "central_recovery_cover",
+  "feedback_hints": {
+    "success": "You recovered centrally and delayed the opponent's direct transition route.",
+    "common_error": "You chased the ball line and left the center exposed.",
+    "teaching_emphasis": "In transition, protect the middle first before pressing wide.",
+    "success_points": [
+      "You recovered into the most dangerous central lane immediately.",
+      "Your run restored compactness between midfield and back line."
+    ],
+    "error_points": [
+      "Your recovery path was too ball-focused and not lane-focused.",
+      "The opponent could play directly through the center behind you."
+    ],
+    "alternate_points": [
+      "A staggered central-right recovery can still work if teammate pressure is immediate."
+    ]
+  },
+  "correct_reasoning": [
+    "restore_shape",
+    "provide_cover"
+  ],
+  "curriculum_group": "transition_defence",
+  "learning_stage": 1
+}

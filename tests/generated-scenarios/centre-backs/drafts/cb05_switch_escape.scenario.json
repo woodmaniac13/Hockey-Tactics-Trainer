@@ -1,0 +1,129 @@
+{
+  "scenario_id": "DRAFT_cb_switch_to_escape_sideline_trap",
+  "version": 1,
+  "title": "CB Switch to Escape Sideline Trap",
+  "description": "You are the left centre-back with pressure closing near the sideline. Position to enable a safe switch and keep possession.",
+  "phase": "attack",
+  "team_orientation": "home_attacks_positive_x",
+  "target_player": "cb_l",
+  "ball": {
+    "x": 20,
+    "y": 88
+  },
+  "teammates": [
+    {
+      "id": "cb_l",
+      "role": "CB",
+      "team": "home",
+      "x": 15,
+      "y": 78,
+      "position_hint": "cb_defensive_left"
+    },
+    {
+      "id": "lb",
+      "role": "LB",
+      "team": "home",
+      "x": 20,
+      "y": 88,
+      "position_hint": "lb_defensive_left"
+    },
+    {
+      "id": "cb_c",
+      "role": "CB",
+      "team": "home",
+      "x": 18,
+      "y": 50,
+      "position_hint": "cb_defensive_central"
+    },
+    {
+      "id": "dm",
+      "role": "DM",
+      "team": "home",
+      "x": 30,
+      "y": 65,
+      "position_hint": "dm_screen_left"
+    }
+  ],
+  "opponents": [
+    {
+      "id": "opp_fw_l",
+      "role": "FW",
+      "team": "away",
+      "x": 22,
+      "y": 72,
+      "position_hint": "opp_fw_pressing_left"
+    },
+    {
+      "id": "opp_mf_l",
+      "role": "MF",
+      "team": "away",
+      "x": 38,
+      "y": 72,
+      "position_hint": "opp_mf_midblock_left"
+    }
+  ],
+  "pressure": {
+    "direction": "outside_in",
+    "intensity": "high",
+    "forced_side": "outside",
+    "trap_zone": "sideline_trap_left"
+  },
+  "ideal_regions": [
+    {
+      "label": "switch_lane",
+      "purpose": "switch_option",
+      "named_zone": "defensive_switch_corridor"
+    }
+  ],
+  "acceptable_regions": [
+    {
+      "label": "left_escape",
+      "purpose": "pressure_relief",
+      "named_zone": "left_back_escape_pocket"
+    }
+  ],
+  "weight_profile": "attack_v1",
+  "constraint_thresholds": {},
+  "difficulty": 4,
+  "tags": [
+    "pressure_response",
+    "sideline_trap",
+    "attack",
+    "transfer",
+    "support"
+  ],
+  "line_group": "back",
+  "primary_concept": "pressure_response",
+  "secondary_concepts": [
+    "transfer",
+    "support"
+  ],
+  "teaching_point": "Show early as the inside switch so the trap cannot lock the touchline.",
+  "target_role_family": "back",
+  "situation": "sideline_trap",
+  "field_zone": "defensive_third_left",
+  "game_state": "set_press",
+  "scenario_archetype": "sideline_trap_support",
+  "feedback_hints": {
+    "success": "You offered a safe switch outlet that broke the sideline trap.",
+    "common_error": "You held too wide and stayed inside the pressing lane.",
+    "teaching_emphasis": "Your body orientation should invite the switch before pressure arrives.",
+    "success_points": [
+      "You positioned where one touch could move the ball away from pressure.",
+      "Your lane supported a switch without passing through the trap."
+    ],
+    "error_points": [
+      "Staying wide kept you in the same pressure funnel.",
+      "Your angle did not provide a safe transfer option."
+    ],
+    "alternate_points": [
+      "A deeper central outlet is still useful if immediate pressure is high."
+    ]
+  },
+  "correct_reasoning": [
+    "enable_switch",
+    "break_pressure"
+  ],
+  "curriculum_group": "build_out_progressions",
+  "learning_stage": 1
+}

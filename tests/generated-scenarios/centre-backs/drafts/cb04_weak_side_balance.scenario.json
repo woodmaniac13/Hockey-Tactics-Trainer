@@ -1,0 +1,128 @@
+{
+  "scenario_id": "DRAFT_weak_side_cb_balancing_shape",
+  "version": 1,
+  "title": "Weak-Side CB Balancing Shape",
+  "description": "You are the weak-side centre-back while the ball is trapped on the opposite flank. Hold balance to protect switch and central depth.",
+  "phase": "defence",
+  "team_orientation": "home_attacks_positive_x",
+  "target_player": "cb_l",
+  "ball": {
+    "x": 70,
+    "y": 12
+  },
+  "teammates": [
+    {
+      "id": "cb_l",
+      "role": "CB",
+      "team": "home",
+      "x": 15,
+      "y": 78,
+      "position_hint": "cb_defensive_left"
+    },
+    {
+      "id": "cb_c",
+      "role": "CB",
+      "team": "home",
+      "x": 18,
+      "y": 50,
+      "position_hint": "cb_defensive_central"
+    },
+    {
+      "id": "lb",
+      "role": "LB",
+      "team": "home",
+      "x": 35,
+      "y": 85,
+      "position_hint": "lb_midblock_left"
+    },
+    {
+      "id": "dm",
+      "role": "DM",
+      "team": "home",
+      "x": 30,
+      "y": 65,
+      "position_hint": "dm_screen_left"
+    }
+  ],
+  "opponents": [
+    {
+      "id": "opp_wg_r",
+      "role": "WG",
+      "team": "away",
+      "x": 70,
+      "y": 12,
+      "position_hint": "opp_wg_wide_right"
+    },
+    {
+      "id": "opp_fw_l",
+      "role": "FW",
+      "team": "away",
+      "x": 72,
+      "y": 78,
+      "position_hint": "fw_attacking_left"
+    }
+  ],
+  "pressure": {
+    "direction": "outside_in",
+    "intensity": "medium",
+    "forced_side": "outside"
+  },
+  "ideal_regions": [
+    {
+      "label": "left_cover_balance",
+      "purpose": "defensive_cover",
+      "named_zone": "left_cover_position"
+    }
+  ],
+  "acceptable_regions": [
+    {
+      "label": "central_shadow",
+      "purpose": "central_protection",
+      "named_zone": "central_cover_shadow"
+    }
+  ],
+  "weight_profile": "defence_v1",
+  "constraint_thresholds": {},
+  "difficulty": 3,
+  "tags": [
+    "cover",
+    "defensive_shape",
+    "defence",
+    "width_depth",
+    "spacing"
+  ],
+  "line_group": "back",
+  "primary_concept": "cover",
+  "secondary_concepts": [
+    "width_depth",
+    "spacing"
+  ],
+  "teaching_point": "Stay connected to the center while keeping enough depth to deal with the weak-side switch.",
+  "target_role_family": "back",
+  "situation": "defensive_shape",
+  "field_zone": "middle_third_left",
+  "game_state": "open_play",
+  "scenario_archetype": "weak_side_balance",
+  "feedback_hints": {
+    "success": "You balanced the line and protected both the central lane and weak-side switch.",
+    "common_error": "You over-shifted toward the ball side and left weak-side depth uncovered.",
+    "teaching_emphasis": "Weak-side center-back must protect what the ball side cannot see.",
+    "success_points": [
+      "You held an inside shoulder position to defend the switch lane.",
+      "Your depth protected the space behind the midfield line."
+    ],
+    "error_points": [
+      "Over-shifting made the far-side switch too easy.",
+      "You were too high to protect depth if the trap was broken."
+    ],
+    "alternate_points": [
+      "A slightly narrower position can still be valid if the weak-side fullback drops."
+    ]
+  },
+  "correct_reasoning": [
+    "provide_cover",
+    "occupy_depth"
+  ],
+  "curriculum_group": "unit_compactness",
+  "learning_stage": 1
+}

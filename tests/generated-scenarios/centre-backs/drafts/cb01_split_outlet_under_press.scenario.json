@@ -1,0 +1,131 @@
+{
+  "scenario_id": "DRAFT_cb_split_outlet_under_press",
+  "version": 1,
+  "title": "CB Split Outlet Under Press",
+  "description": "You are the central centre-back receiving from the goalkeeper under a central press. Split to keep a safe exit lane open.",
+  "phase": "attack",
+  "team_orientation": "home_attacks_positive_x",
+  "target_player": "cb_c",
+  "ball": {
+    "x": 3,
+    "y": 50
+  },
+  "teammates": [
+    {
+      "id": "gk",
+      "role": "GK",
+      "team": "home",
+      "x": 3,
+      "y": 50,
+      "position_hint": "gk_own_goal"
+    },
+    {
+      "id": "cb_c",
+      "role": "CB",
+      "team": "home",
+      "x": 18,
+      "y": 50,
+      "position_hint": "cb_defensive_central"
+    },
+    {
+      "id": "cb_l",
+      "role": "CB",
+      "team": "home",
+      "x": 15,
+      "y": 78,
+      "position_hint": "cb_defensive_left"
+    },
+    {
+      "id": "dm",
+      "role": "DM",
+      "team": "home",
+      "x": 32,
+      "y": 50,
+      "position_hint": "dm_defensive_mid"
+    }
+  ],
+  "opponents": [
+    {
+      "id": "opp_cf",
+      "role": "CF",
+      "team": "away",
+      "x": 20,
+      "y": 50,
+      "position_hint": "opp_cf_pressing_high"
+    },
+    {
+      "id": "opp_fw_r",
+      "role": "FW",
+      "team": "away",
+      "x": 22,
+      "y": 28,
+      "position_hint": "opp_fw_pressing_right"
+    }
+  ],
+  "pressure": {
+    "direction": "central",
+    "intensity": "high",
+    "forced_side": "inside"
+  },
+  "ideal_regions": [
+    {
+      "label": "cb_outlet_lane",
+      "purpose": "pressure_relief",
+      "reference_frame": "ball",
+      "named_zone": "cb_outlet_right"
+    }
+  ],
+  "acceptable_regions": [
+    {
+      "label": "switch_corridor",
+      "purpose": "switch_option",
+      "reference_frame": "ball",
+      "named_zone": "defensive_switch_corridor"
+    }
+  ],
+  "weight_profile": "attack_v1",
+  "constraint_thresholds": {},
+  "difficulty": 2,
+  "tags": [
+    "pressure_response",
+    "build_out_under_press",
+    "attack",
+    "support",
+    "spacing"
+  ],
+  "line_group": "back",
+  "primary_concept": "pressure_response",
+  "secondary_concepts": [
+    "support",
+    "spacing"
+  ],
+  "teaching_point": "Split early across the press shadow so the goalkeeper has a clean first pass.",
+  "target_role_family": "back",
+  "situation": "build_out_under_press",
+  "field_zone": "defensive_third_central",
+  "game_state": "set_press",
+  "scenario_archetype": "fullback_escape_option",
+  "feedback_hints": {
+    "success": "You split into a clear outlet lane and helped secure first phase build-out.",
+    "common_error": "You stayed too central behind the presser, so the passing lane remained blocked.",
+    "alternate_valid": "This angle still gave a usable escape option even if not the best lane.",
+    "teaching_emphasis": "Move before the pass arrives so your body shape faces both sides.",
+    "success_points": [
+      "You moved outside the direct press shadow before receiving.",
+      "Your position gave the goalkeeper a clear diagonal lane."
+    ],
+    "error_points": [
+      "Staying flat made it easy for one presser to block both you and the lane.",
+      "Your receiving angle did not open a second option after the first touch."
+    ],
+    "alternate_points": [
+      "The lane was playable, but a wider split would create more time on the ball."
+    ]
+  },
+  "correct_reasoning": [
+    "support_under_pressure",
+    "break_pressure"
+  ],
+  "curriculum_group": "build_out_basics",
+  "learning_stage": 1
+}

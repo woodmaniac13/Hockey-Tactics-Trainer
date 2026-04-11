@@ -1,0 +1,128 @@
+{
+  "scenario_id": "DRAFT_cb_tucks_in_behind_wide_press",
+  "version": 1,
+  "title": "CB Tucks In Behind Wide Press",
+  "description": "You are the left centre-back. The right back steps out to press wide; adjust your position to protect the inside lane.",
+  "phase": "defence",
+  "team_orientation": "home_attacks_positive_x",
+  "target_player": "cb_l",
+  "ball": {
+    "x": 20,
+    "y": 50
+  },
+  "teammates": [
+    {
+      "id": "cb_l",
+      "role": "CB",
+      "team": "home",
+      "x": 15,
+      "y": 78,
+      "position_hint": "cb_defensive_left"
+    },
+    {
+      "id": "cb_c",
+      "role": "CB",
+      "team": "home",
+      "x": 18,
+      "y": 50,
+      "position_hint": "cb_defensive_central"
+    },
+    {
+      "id": "rb",
+      "role": "RB",
+      "team": "home",
+      "x": 20,
+      "y": 12,
+      "position_hint": "rb_defensive_right"
+    },
+    {
+      "id": "dm",
+      "role": "DM",
+      "team": "home",
+      "x": 30,
+      "y": 35,
+      "position_hint": "dm_screen_right"
+    }
+  ],
+  "opponents": [
+    {
+      "id": "opp_wg",
+      "role": "WG",
+      "team": "away",
+      "x": 70,
+      "y": 12,
+      "position_hint": "opp_wg_wide_right"
+    },
+    {
+      "id": "opp_cf",
+      "role": "CF",
+      "team": "away",
+      "x": 20,
+      "y": 50,
+      "position_hint": "opp_cf_pressing_high"
+    }
+  ],
+  "pressure": {
+    "direction": "outside_in",
+    "intensity": "medium",
+    "forced_side": "outside"
+  },
+  "ideal_regions": [
+    {
+      "label": "central_cover",
+      "purpose": "defensive_cover",
+      "named_zone": "defensive_block_central"
+    }
+  ],
+  "acceptable_regions": [
+    {
+      "label": "left_cover",
+      "purpose": "secondary_support_option",
+      "named_zone": "left_cover_position"
+    }
+  ],
+  "weight_profile": "defence_v1",
+  "constraint_thresholds": {},
+  "difficulty": 3,
+  "tags": [
+    "cover",
+    "defensive_shape",
+    "defence",
+    "recovery_shape",
+    "spacing"
+  ],
+  "line_group": "back",
+  "primary_concept": "cover",
+  "secondary_concepts": [
+    "recovery_shape",
+    "spacing"
+  ],
+  "teaching_point": "Slide centrally and slightly deeper than the pressing fullback to protect the direct channel to goal.",
+  "target_role_family": "back",
+  "situation": "defensive_shape",
+  "field_zone": "defensive_third_right",
+  "game_state": "open_play",
+  "scenario_archetype": "help_side_cover",
+  "feedback_hints": {
+    "success": "You provided help-side cover and removed the direct central threat.",
+    "common_error": "You stayed too wide, leaving a gap between centre-back and fullback.",
+    "teaching_emphasis": "Your first job is to protect the central lane while the wide duel happens.",
+    "success_points": [
+      "You moved into a goal-side cover lane behind the first press.",
+      "Your position could intercept or delay an inside pass."
+    ],
+    "error_points": [
+      "Remaining wide left the half-space lane open.",
+      "Your depth did not support the pressing fullback if beaten."
+    ],
+    "alternate_points": [
+      "A slightly higher position can still work if midfield screen support is nearby."
+    ]
+  },
+  "correct_reasoning": [
+    "provide_cover",
+    "restore_shape"
+  ],
+  "curriculum_group": "defensive_cover_principles",
+  "learning_stage": 1
+}

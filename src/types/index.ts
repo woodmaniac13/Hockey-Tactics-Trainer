@@ -157,6 +157,12 @@ export type FeedbackHints = {
   common_error?: string;
   alternate_valid?: string;
   teaching_emphasis?: string;
+  /** Authored per-bullet strengths shown for IDEAL/VALID results. */
+  success_points?: string[];
+  /** Authored per-bullet failures shown for PARTIAL/INVALID results. */
+  error_points?: string[];
+  /** Authored per-bullet notes shown for ALTERNATE_VALID results. */
+  alternate_points?: string[];
 };
 
 /** Typed catalog of scenario archetypes for authoring consistency and AI generation. */

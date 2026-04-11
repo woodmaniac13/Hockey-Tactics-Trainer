@@ -143,7 +143,21 @@
     "success": "Good support angle \u2014 you made yourself available for the goalkeeper and helped break the press.",
     "common_error": "You were too flat or too central, making it easy for the opponent to cover both you and the passing lane.",
     "alternate_valid": "This was still a workable support position even if not in the ideal pocket.",
-    "teaching_emphasis": "Stagger your position to offer the goalkeeper a clear, angled outlet behind the first press line."
+    "teaching_emphasis": "Stagger your position to offer the goalkeeper a clear, angled outlet behind the first press line.",
+    "success_points": [
+      "You created a staggered outlet behind the first press line.",
+      "You gave the goalkeeper a clean diagonal pass.",
+      "Your support angle helped form a safe build-out triangle."
+    ],
+    "error_points": [
+      "You stayed too flat to the goalkeeper, so the press could screen both player and lane.",
+      "You did not separate enough above or below the first presser.",
+      "Your position did not clearly relieve the goalkeeper under pressure."
+    ],
+    "alternate_points": [
+      "This was a workable outlet even though it was not in the best support pocket.",
+      "You still offered an escape option outside the first line of pressure."
+    ]
   },
   "correct_reasoning": [
     "create_passing_angle",

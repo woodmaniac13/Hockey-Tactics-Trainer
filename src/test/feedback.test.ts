@@ -144,7 +144,7 @@ describe('generateFeedback', () => {
     expect(fb.positives).not.toContain('You provided defensive cover');
   });
 
-  it('shows all relevant positives when no weightProfile is provided', () => {
+  it('shows top-weighted positives (up to 3) when no weightProfile is provided', () => {
     const highScores: EvaluationResult = {
       ...baseEvalResult,
       component_scores: {
@@ -159,9 +159,10 @@ describe('generateFeedback', () => {
       },
     };
     const fb = generateFeedback(highScores, baseScenario);
-    // Without a profile, all components are eligible
+    // Without a profile all weights default to 1; after IDEAL gating (max 3)
+    // only the first three components in sort order are surfaced.
     expect(fb.positives).toContain('You created a strong support angle');
-    expect(fb.positives).toContain('You provided defensive cover');
+    expect(fb.positives.length).toBeLessThanOrEqual(3);
   });
 
   it('uses higher threshold (0.8) for positives', () => {

@@ -1094,8 +1094,9 @@ export default function Board3D({
     const dy = e.clientY - dg.lastY;
     const pov = povRef.current;
     const el = canvasContainerRef.current;
-    const rect: ViewportRect | null = el
-      ? { left: el.getBoundingClientRect().left, top: el.getBoundingClientRect().top, width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height }
+    const r = el ? el.getBoundingClientRect() : null;
+    const rect: ViewportRect | null = r
+      ? { left: r.left, top: r.top, width: r.width, height: r.height }
       : null;
 
     if (dg.mode === 'pan' && rect) {

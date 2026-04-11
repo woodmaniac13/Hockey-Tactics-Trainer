@@ -135,6 +135,10 @@ export function screenPointToNdc(
   );
 }
 
+/**
+ * Shared raycaster instance. Safe because JS is single-threaded and event handlers
+ * run synchronously — the raycaster is never used concurrently.
+ */
 const _raycaster = new THREE.Raycaster();
 
 /** Cast a ray from the camera through a screen point. */
@@ -246,6 +250,10 @@ function buildTempCamera(
   return temp;
 }
 
+function normalizeAngle(angle: number): number {
+  return ((angle % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
+}
+
 // ── State clamping ─────────────────────────────────────────────────────────────
 
 /** Authoritative clamp for all POV state fields. */
@@ -259,8 +267,8 @@ export function clampPovState(pov: PovCameraState): void {
   pov.targetPitch = clamp(pov.targetPitch, MIN_PITCH, MAX_PITCH);
 
   // Yaw — normalise to [−π, π]
-  pov.yaw = ((pov.yaw % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
-  pov.targetYaw = ((pov.targetYaw % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
+  pov.yaw = normalizeAngle(pov.yaw);
+  pov.targetYaw = normalizeAngle(pov.targetYaw);
 
   // Ground plane invariant
   pov.pivot.y = 0;

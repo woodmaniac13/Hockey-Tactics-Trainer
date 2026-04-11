@@ -124,7 +124,7 @@ export function generateFeedback(
   const hints = scenario.feedback_hints;
 
   // 1. Determine summary from authored hints first, so the contradiction
-  //    cleanup pass can compare against it below.
+  //    cleanup pass in section 4 can compare against it.
   let summary = SUMMARIES[result.result_type];
   if (hints) {
     if ((result.result_type === 'IDEAL' || result.result_type === 'VALID') && hints.success) {
@@ -190,13 +190,11 @@ export function generateFeedback(
 
   // 4a. For IDEAL results, suppress improvements where the component score is
   //     above 0.5 — those are not genuine weaknesses worth surfacing.
-  //     Index correspondence with improvementCandidates is preserved because
-  //     `improvements` was derived from the leading entries of that sorted array.
+  //     Re-filter directly from improvementCandidates to avoid any reliance on
+  //     index correspondence with the previously built improvements array.
   if (result.result_type === 'IDEAL') {
-    improvements = improvements.filter((_, i) => {
-      const entry = improvementCandidates[i];
-      return entry !== undefined && entry.score <= 0.5;
-    });
+    const genuinelyWeak = improvementCandidates.filter(e => e.score <= 0.5);
+    improvements = genuinelyWeak.slice(0, gate.maxImprovements).map(c => IMPROVEMENTS[c.key]);
   }
 
   // 4b. When the summary carries clearly failure-oriented language, strip any

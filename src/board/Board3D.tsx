@@ -1,5 +1,5 @@
 /// <reference types="@react-three/fiber" />
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Line, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
@@ -38,19 +38,43 @@ const CAMERA_PRESETS: Record<CameraPreset, {
   sideline:      { position: [-22, 10, 0], target: [0, 0,   0] },
 };
 
-// ── Field ground ─────────────────────────────────────────────────────────────
+// ── Field ground (blue hockey turf with mowing-stripe pattern) ───────────────
+function useMowingTexture() {
+  return useMemo(() => {
+    const canvas = document.createElement('canvas');
+    const stripeCount = 12;       // number of mowing stripes along length
+    canvas.width  = 64;           // small is fine — repeats across plane
+    canvas.height = stripeCount * 32;
+    const ctx = canvas.getContext('2d')!;
+    const light = '#1976D2';      // lighter blue stripe
+    const dark  = '#1565C0';      // darker  blue stripe
+    const stripeH = canvas.height / stripeCount;
+    for (let i = 0; i < stripeCount; i++) {
+      ctx.fillStyle = i % 2 === 0 ? light : dark;
+      ctx.fillRect(0, i * stripeH, canvas.width, stripeH);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    return tex;
+  }, []);
+}
+
 function FieldGround() {
+  const stripeTex = useMowingTexture();
   return (
     <>
-      {/* Blue surround / run-off zone */}
+      {/* Dark blue surround / run-off zone */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
         <planeGeometry args={[90, 100]} />
-        <meshLambertMaterial color="#1a5c9e" />
+        <meshLambertMaterial color="#0D47A1" />
       </mesh>
-      {/* Green pitch */}
+      {/* Blue pitch with mowing stripe texture */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[FIELD_X_HALF * 2, FIELD_Z_HALF * 2]} />
-        <meshLambertMaterial color="#2d7a2d" />
+        <meshLambertMaterial map={stripeTex} />
       </mesh>
     </>
   );
@@ -115,17 +139,6 @@ function FieldLines() {
   const homePenaltySpot = genArc(0,  20, 0.15, 0.15, 0, Math.PI * 2, 16);
   const awayPenaltySpot = genArc(0, -20, 0.15, 0.15, 0, Math.PI * 2, 16);
 
-  // Subtle grid: lines every 10 pitch units
-  const gridLines: { pts: [number, number, number][] }[] = [];
-  for (let i = 1; i < 10; i++) {
-    // Vertical (constant pitchX → constant worldZ)
-    const wz = (50 - i * 10) * SCALE_Z;
-    gridLines.push({ pts: [[-FIELD_X_HALF, H, wz], [FIELD_X_HALF, H, wz]] });
-    // Horizontal (constant pitchY → constant worldX)
-    const wx = (i * 10 - 50) * SCALE_X;
-    gridLines.push({ pts: [[wx, H, -FIELD_Z_HALF], [wx, H, FIELD_Z_HALF]] });
-  }
-
   return (
     <group>
       <Line points={bdy}              color={c} lineWidth={lw} />
@@ -138,9 +151,6 @@ function FieldLines() {
       <Line points={centerSpot}       color={c} lineWidth={lw + 1} />
       <Line points={homePenaltySpot}  color={c} lineWidth={lw + 1} />
       <Line points={awayPenaltySpot}  color={c} lineWidth={lw + 1} />
-      {gridLines.map((g, i) => (
-        <Line key={`grid${i}`} points={g.pts} color="rgba(255,255,255,0.05)" lineWidth={0.8} />
-      ))}
     </group>
   );
 }
@@ -592,7 +602,7 @@ function EntityShiftGhosts({
         const [cx, , cz] = pitchToWorld(current.x, current.y);
         const [tx, , tz] = pitchToWorld(shift.to_x, shift.to_y);
         const isTeammate = teammateIds.has(shift.entity_id);
-        const ghostColor = isTeammate ? '#2980b9' : '#e74c3c';
+        const ghostColor = isTeammate ? '#FFFFFF' : '#FF1744';
         const segs = dashedLinePoints([cx, 0.55, cz], [tx, 0.55, tz]);
         return (
           <group key={i}>
@@ -790,7 +800,7 @@ function SceneContent({
         <PlayerMesh
           key={opp.id}
           pitchX={opp.x} pitchY={opp.y}
-          color="#c0392b"
+          color="#FF1744"
           isTarget={false}
           ballPX={scenario.ball.x} ballPY={scenario.ball.y}
           role={opp.role}
@@ -803,7 +813,7 @@ function SceneContent({
           <PlayerMesh
             key={tm.id}
             pitchX={tm.x} pitchY={tm.y}
-            color="#2471a3"
+            color="#FFFFFF"
             isTarget={false}
             ballPX={scenario.ball.x} ballPY={scenario.ball.y}
             role={tm.role}
@@ -817,7 +827,7 @@ function SceneContent({
         return (
           <PlayerMesh
             pitchX={playerPosition.x} pitchY={playerPosition.y}
-            color="#3498db"
+            color="#00E676"
             isTarget={true}
             ballPX={scenario.ball.x} ballPY={scenario.ball.y}
             role={targetTm?.role ?? 'TP'}
@@ -987,9 +997,9 @@ export default function Board3D({
         borderRadius: '10px',
         backdropFilter: 'blur(4px)',
       }}>
-        <span style={{ color: '#3498db' }}>■</span> You
-        <span style={{ color: '#2471a3' }}>■</span> Team
-        <span style={{ color: '#c0392b' }}>■</span> Opp
+        <span style={{ color: '#00E676' }}>■</span> You
+        <span style={{ color: '#FFFFFF' }}>■</span> Team
+        <span style={{ color: '#FF1744' }}>■</span> Opp
         <span style={{ color: '#f1c40f' }}>●</span> Ball
       </div>
     </div>

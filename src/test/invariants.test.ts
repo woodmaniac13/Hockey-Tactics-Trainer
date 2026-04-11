@@ -69,6 +69,31 @@ describe('1. Ideal-region center invariants', () => {
   }
 });
 
+// ─── 1b. Acceptable-region center invariants ────────────────────────────────
+
+describe('1b. Acceptable-region center invariants', () => {
+  for (const { scenario, profile } of scenarios) {
+    describe(`scenario ${scenario.scenario_id}`, () => {
+      for (const region of scenario.acceptable_regions) {
+        const geo = resolveRegionGeometry(region, scenario);
+        if (!geo) continue;
+        const center = getRegionCenter(geo);
+        const label = ('label' in region && region.label) || geo.type;
+
+        it(`center of acceptable region "${label}" should not be INVALID`, () => {
+          const result = evaluate(scenario, center, profile);
+          expect(result.result_type).not.toBe('INVALID');
+        });
+
+        it(`center of acceptable region "${label}" should have region_fit > 0`, () => {
+          const result = evaluate(scenario, center, profile);
+          expect(result.region_fit_score).toBeGreaterThan(0);
+        });
+      }
+    });
+  }
+});
+
 // ─── 2. Far-out-of-region invariants ────────────────────────────────────────
 
 describe('2. Far-out-of-region invariants', () => {

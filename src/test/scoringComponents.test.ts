@@ -679,3 +679,87 @@ describe('Monotonicity tests', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edge-case: division by zero and degenerate config values
+// ---------------------------------------------------------------------------
+describe('computeDistanceToBallScore — edge cases', () => {
+  it('returns 1.0 when optimalMin is 0 and dist is 0', () => {
+    expect(computeDistanceToBallScore(0, 0, 10)).toBe(1.0);
+  });
+
+  it('returns 1.0 when optimalMin is 0 and dist is within band', () => {
+    expect(computeDistanceToBallScore(5, 0, 10)).toBe(1.0);
+  });
+
+  it('returns 0 when optimalMax is 0 and dist > 0', () => {
+    expect(computeDistanceToBallScore(5, 0, 0)).toBe(0);
+  });
+
+  it('returns 1.0 when both are 0 and dist is 0', () => {
+    expect(computeDistanceToBallScore(0, 0, 0)).toBe(1.0);
+  });
+
+  it('never returns NaN or Infinity for any positive distance with optimalMin=0', () => {
+    for (let d = 0; d <= 50; d += 5) {
+      const score = computeDistanceToBallScore(d, 0, 20);
+      expect(Number.isFinite(score)).toBe(true);
+      expect(score).toBeGreaterThanOrEqual(0);
+      expect(score).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('never returns NaN or Infinity for any positive distance with optimalMax=0', () => {
+    for (let d = 0; d <= 50; d += 5) {
+      const score = computeDistanceToBallScore(d, 0, 0);
+      expect(Number.isFinite(score)).toBe(true);
+      expect(score).toBeGreaterThanOrEqual(0);
+      expect(score).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Edge-case: interiorRatio with degenerate geometries
+// ---------------------------------------------------------------------------
+describe('interiorRatio — degenerate geometries', () => {
+  const { interiorRatio } = __testing;
+
+  it('returns 0 for a zero-length lane', () => {
+    const score = interiorRatio({ x: 10, y: 10 }, {
+      type: 'lane', x1: 10, y1: 10, x2: 10, y2: 10, width: 5,
+    });
+    expect(score).toBe(0);
+  });
+
+  it('returns 0 for a degenerate polygon (all vertices coincident)', () => {
+    const score = interiorRatio({ x: 5, y: 5 }, {
+      type: 'polygon',
+      vertices: [{ x: 5, y: 5 }, { x: 5, y: 5 }, { x: 5, y: 5 }],
+    });
+    expect(score).toBe(0);
+  });
+
+  it('returns 0 for an empty polygon', () => {
+    const score = interiorRatio({ x: 0, y: 0 }, {
+      type: 'polygon',
+      vertices: [],
+    });
+    expect(score).toBe(0);
+  });
+
+  it('never returns NaN or Infinity for degenerate geometries', () => {
+    const cases = [
+      { type: 'lane' as const, x1: 0, y1: 0, x2: 0, y2: 0, width: 1 },
+      { type: 'polygon' as const, vertices: [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }] },
+      { type: 'circle' as const, x: 0, y: 0, r: 0.001 },
+      { type: 'rectangle' as const, x: 0, y: 0, width: 0.001, height: 0.001 },
+    ];
+    for (const geo of cases) {
+      const score = interiorRatio({ x: 0, y: 0 }, geo);
+      expect(Number.isFinite(score), `${geo.type} should be finite`).toBe(true);
+      expect(score).toBeGreaterThanOrEqual(0);
+      expect(score).toBeLessThanOrEqual(1);
+    }
+  });
+});

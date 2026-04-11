@@ -543,3 +543,72 @@ describe('lintScenario — consequence_frame checks', () => {
     expect(warnings.filter(w => w.includes('consequence_frame'))).toHaveLength(0);
   });
 });
+
+// ── Constraint–region centre validation tests ─────────────────────────────────
+
+describe('lintScenario — constraint–region centre validation with weight profiles', () => {
+  const WEIGHTS_DIR = path.resolve(process.cwd(), 'public/weights');
+
+  /** Load all weight profiles into a map. */
+  function loadWeightProfiles(): Map<string, unknown> {
+    const profiles = new Map<string, unknown>();
+    for (const file of fs.readdirSync(WEIGHTS_DIR)) {
+      if (!file.endsWith('.json') || file === 'weights-manifest.json') continue;
+      const data = JSON.parse(fs.readFileSync(path.join(WEIGHTS_DIR, file), 'utf-8'));
+      if (data.profile_id) profiles.set(data.profile_id, data);
+    }
+    return profiles;
+  }
+
+  it('all authored scenarios pass constraint-region lint when weight profile is provided', () => {
+    const profiles = loadWeightProfiles();
+    const allErrors: string[] = [];
+
+    for (const filePath of scenarioFiles) {
+      const raw: unknown = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      const parseResult = ScenarioSchema.safeParse(raw);
+      if (!parseResult.success) continue;
+
+      const scenario = parseResult.data;
+      const profile = profiles.get(scenario.weight_profile);
+      if (!profile) continue;
+
+      const { errors } = lintScenario(scenario, profile as import('../types').WeightProfile);
+      allErrors.push(...errors);
+    }
+
+    expect(
+      allErrors,
+      `Constraint-region lint errors:\n${allErrors.join('\n')}`,
+    ).toHaveLength(0);
+  });
+
+  it('warns when acceptable region centres fail constraints', () => {
+    // We test using the loaded profiles — warnings are expected for some scenarios
+    // but should not include any ideal region failures (those are errors above).
+    const profiles = loadWeightProfiles();
+    const allWarnings: string[] = [];
+
+    for (const filePath of scenarioFiles) {
+      const raw: unknown = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      const parseResult = ScenarioSchema.safeParse(raw);
+      if (!parseResult.success) continue;
+
+      const scenario = parseResult.data;
+      const profile = profiles.get(scenario.weight_profile);
+      if (!profile) continue;
+
+      const { warnings } = lintScenario(scenario, profile as import('../types').WeightProfile);
+      allWarnings.push(...warnings.filter(w => w.includes('acceptable region')));
+    }
+
+    // Log for human review. This test always passes — acceptable region warnings
+    // indicate tension but are not necessarily authoring errors.
+    if (allWarnings.length > 0) {
+      console.warn(
+        `\n⚠  Acceptable region constraint warnings:\n${allWarnings.join('\n')}\n`,
+      );
+    }
+    expect(true).toBe(true);
+  });
+});

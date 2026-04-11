@@ -1,7 +1,7 @@
 /// <reference types="@react-three/fiber" />
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, Line } from '@react-three/drei';
+import { OrbitControls, Line, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Scenario, Point, TacticalRegionGeometry, OutcomePreview } from '../types';
 import { resolveRegionGeometry } from '../utils/regions';
@@ -115,6 +115,18 @@ function FieldLines() {
   const homePenaltySpot = genArc(0,  20, 0.15, 0.15, 0, Math.PI * 2, 16);
   const awayPenaltySpot = genArc(0, -20, 0.15, 0.15, 0, Math.PI * 2, 16);
 
+  // Subtle grid: lines every 10 pitch units
+  const gridLines: { pts: [number, number, number][] }[] = [];
+  for (let i = 1; i < 10; i++) {
+    // Vertical (constant pitchX → constant worldZ)
+    const wz = (50 - i * 10) * SCALE_Z;
+    gridLines.push({ pts: [[-FIELD_X_HALF, H, wz], [FIELD_X_HALF, H, wz]] });
+    // Horizontal (constant pitchY → constant worldX)
+    const wx = (i * 10 - 50) * SCALE_X;
+    gridLines.push({ pts: [[-FIELD_X_HALF, H, -FIELD_Z_HALF], [-FIELD_X_HALF, H, FIELD_Z_HALF]] });
+    gridLines.push({ pts: [[wx, H, -FIELD_Z_HALF], [wx, H, FIELD_Z_HALF]] });
+  }
+
   return (
     <group>
       <Line points={bdy}              color={c} lineWidth={lw} />
@@ -127,6 +139,9 @@ function FieldLines() {
       <Line points={centerSpot}       color={c} lineWidth={lw + 1} />
       <Line points={homePenaltySpot}  color={c} lineWidth={lw + 1} />
       <Line points={awayPenaltySpot}  color={c} lineWidth={lw + 1} />
+      {gridLines.map((g, i) => (
+        <Line key={`grid${i}`} points={g.pts} color="rgba(255,255,255,0.05)" lineWidth={0.8} />
+      ))}
     </group>
   );
 }
@@ -198,7 +213,7 @@ function GoalMesh({ zCenter, depthDir }: { zCenter: number; depthDir: 1 | -1 }) 
 
 // ── Player mesh ──────────────────────────────────────────────────────────────
 function PlayerMesh({
-  pitchX, pitchY, color, isTarget, ballPX, ballPY,
+  pitchX, pitchY, color, isTarget, ballPX, ballPY, role,
   onDragStart,
 }: {
   pitchX: number;
@@ -207,6 +222,7 @@ function PlayerMesh({
   isTarget: boolean;
   ballPX: number;
   ballPY: number;
+  role: string;
   onDragStart?: () => void;
 }) {
   const [wx, , wz] = pitchToWorld(pitchX, pitchY);
@@ -264,6 +280,19 @@ function PlayerMesh({
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       )}
+      {/* Role label — always faces camera via Billboard */}
+      <Billboard position={[0, legH + bodyH + headR * 2 + 0.16, 0]}>
+        <Text
+          fontSize={0.19}
+          color="#ffffff"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.025}
+          outlineColor="#000000"
+        >
+          {role.substring(0, 2).toUpperCase()}
+        </Text>
+      </Billboard>
     </group>
   );
 }
@@ -276,6 +305,49 @@ function BallMesh({ pitchX, pitchY }: { pitchX: number; pitchY: number }) {
       <sphereGeometry args={[0.07, 12, 10]} />
       <meshLambertMaterial color="#f1c40f" />
     </mesh>
+  );
+}
+
+// ── Dashed line helper ────────────────────────────────────────────────────────
+/** Splits a straight 3-D line into alternating dash/gap segments. */
+function dashedLinePoints(
+  from: [number, number, number],
+  to: [number, number, number],
+  dashLen = 0.55,
+  gapLen  = 0.40,
+): [number, number, number][][] {
+  const [x1, y1, z1] = from;
+  const [x2, y2, z2] = to;
+  const dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
+  const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (len < 0.01) return [];
+  const segs: [number, number, number][][] = [];
+  let t = 0;
+  while (t < len) {
+    const t1 = t / len;
+    const t2 = Math.min((t + dashLen) / len, 1);
+    segs.push([
+      [x1 + dx * t1, y1 + dy * t1, z1 + dz * t1],
+      [x1 + dx * t2, y1 + dy * t2, z1 + dz * t2],
+    ]);
+    t += dashLen + gapLen;
+  }
+  return segs;
+}
+
+// ── Ball → target player dashed line (evaluation view) ───────────────────────
+function BallToPlayerLine({ ballPX, ballPY, playerPX, playerPY }: {
+  ballPX: number; ballPY: number; playerPX: number; playerPY: number;
+}) {
+  const [bx, , bz] = pitchToWorld(ballPX, ballPY, 0.06);
+  const [px, , pz] = pitchToWorld(playerPX, playerPY, 0.06);
+  const segs = dashedLinePoints([bx, 0.06, bz], [px, 0.06, pz], 0.45, 0.35);
+  return (
+    <>
+      {segs.map((pts, i) => (
+        <Line key={i} points={pts as [number,number,number][]} color="rgba(255,255,255,0.5)" lineWidth={1.5} />
+      ))}
+    </>
   );
 }
 
@@ -360,16 +432,47 @@ function RegionOverlays({
   scenario,
   boardViewMode,
   consequenceOverlay,
+  entityPositions,
 }: {
   scenario: Scenario;
   boardViewMode: 'evaluation' | 'consequence';
   consequenceOverlay: OutcomePreview | null | undefined;
+  entityPositions: Map<string, Point>;
 }) {
   if (boardViewMode === 'consequence' && consequenceOverlay) {
-    if (!consequenceOverlay.lane_highlight) return null;
-    const lh  = consequenceOverlay.lane_highlight;
-    const col = lh.state === 'open' ? '#2ecc71' : '#e74c3c';
-    return <GeometryOverlay geo={lh.geometry} color={col} opacity={0.32} />;
+    const passStateColors: Record<string, string> = {
+      open: '#2ecc71', blocked: '#e74c3c', risky: '#e67e22',
+    };
+    return (
+      <>
+        {/* Pass-option lane strips */}
+        {consequenceOverlay.pass_option_states?.map((pos, i) => {
+          const fromPt = entityPositions.get(pos.from_entity_id);
+          const toPt   = entityPositions.get(pos.to_entity_id);
+          if (!fromPt || !toPt) return null;
+          const laneGeo: TacticalRegionGeometry = {
+            type: 'lane', x1: fromPt.x, y1: fromPt.y,
+            x2: toPt.x, y2: toPt.y, width: 3,
+          };
+          return (
+            <GeometryOverlay
+              key={`po${i}`}
+              geo={laneGeo}
+              color={passStateColors[pos.state] ?? '#ffffff'}
+              opacity={0.22}
+            />
+          );
+        })}
+        {/* Lane highlight fill */}
+        {consequenceOverlay.lane_highlight && (
+          <GeometryOverlay
+            geo={consequenceOverlay.lane_highlight.geometry}
+            color={consequenceOverlay.lane_highlight.state === 'open' ? '#2ecc71' : '#e74c3c'}
+            opacity={0.32}
+          />
+        )}
+      </>
+    );
   }
 
   return (
@@ -418,30 +521,144 @@ function ConsequenceArrows({
         const len = Math.sqrt(dx * dx + dz * dz);
         if (len < 0.3) return null;
 
-        const col = colorMap[arrow.style] ?? '#ffffff';
-        // Shorten both ends slightly
+        const col       = colorMap[arrow.style] ?? '#ffffff';
+        const isRun     = arrow.style === 'run';
+        const lineWidth = arrow.style === 'pressure' ? 3 : 2;
+
+        // Shorten ends slightly to leave room for arrowhead
         const sx = x1 + (dx / len) * 0.12;
         const sz = z1 + (dz / len) * 0.12;
         const ex = x2 - (dx / len) * 0.22;
         const ez = z2 - (dz / len) * 0.22;
-        const pts: [number, number, number][] = [[sx, 0.55, sz], [ex, 0.55, ez]];
 
-        // Arrowhead cone: default points +Y; rotate R_x(-π/2) to point +Z, then R_y(ay) for direction.
+        // Arrowhead cone
         const coneCx = x2 - (dx / len) * 0.14;
         const coneCz = z2 - (dz / len) * 0.14;
-        const ay = Math.atan2(dx, dz); // see coordinate derivation in GeometryOverlay
+        const ay = Math.atan2(dx, dz);
+
+        // Arrowhead: open (unfilled tip) for run; filled cone for others
+        const arrowhead = isRun ? (
+          // Open arrowhead — two short lines forming a V
+          <>
+            <Line
+              points={[[coneCx - (dz / len) * 0.13, 0.55, coneCz + (dx / len) * 0.13], [x2, 0.55, z2]]}
+              color={col} lineWidth={lineWidth}
+            />
+            <Line
+              points={[[coneCx + (dz / len) * 0.13, 0.55, coneCz - (dx / len) * 0.13], [x2, 0.55, z2]]}
+              color={col} lineWidth={lineWidth}
+            />
+          </>
+        ) : (
+          <mesh position={[coneCx, 0.55, coneCz]} rotation={[-Math.PI / 2, ay, 0]}>
+            <coneGeometry args={[0.09, 0.22, 8]} />
+            <meshBasicMaterial color={col} />
+          </mesh>
+        );
 
         return (
           <group key={i}>
-            <Line points={pts} color={col} lineWidth={arrow.style === 'pressure' ? 3 : 2} />
-            <mesh position={[coneCx, 0.55, coneCz]} rotation={[-Math.PI / 2, ay, 0]}>
-              <coneGeometry args={[0.09, 0.22, 8]} />
-              <meshBasicMaterial color={col} />
+            {isRun ? (
+              // Dashed line for run arrows
+              dashedLinePoints([sx, 0.55, sz], [ex, 0.55, ez]).map((pts, j) => (
+                <Line key={j} points={pts as [number,number,number][]} color={col} lineWidth={lineWidth} />
+              ))
+            ) : (
+              <Line points={[[sx, 0.55, sz], [ex, 0.55, ez]]} color={col} lineWidth={lineWidth} />
+            )}
+            {arrowhead}
+          </group>
+        );
+      })}
+    </>
+  );
+}
+
+// ── Entity shift ghosts (consequence view) ────────────────────────────────────
+function EntityShiftGhosts({
+  overlay,
+  entityPositions,
+  teammateIds,
+}: {
+  overlay: OutcomePreview;
+  entityPositions: Map<string, Point>;
+  teammateIds: Set<string>;
+}) {
+  if (!overlay.entity_shifts) return null;
+  return (
+    <>
+      {overlay.entity_shifts.slice(0, 2).map((shift, i) => {
+        const current = entityPositions.get(shift.entity_id);
+        if (!current) return null;
+        const [cx, , cz] = pitchToWorld(current.x, current.y);
+        const [tx, , tz] = pitchToWorld(shift.to_x, shift.to_y);
+        const isTeammate = teammateIds.has(shift.entity_id);
+        const ghostColor = isTeammate ? '#2980b9' : '#e74c3c';
+        const segs = dashedLinePoints([cx, 0.55, cz], [tx, 0.55, tz]);
+        return (
+          <group key={i}>
+            {segs.map((pts, j) => (
+              <Line key={j} points={pts as [number,number,number][]} color="#64b9ff" lineWidth={2} />
+            ))}
+            {/* Ghost cylinder at target position */}
+            <mesh position={[tx, 0.5, tz]} renderOrder={1}>
+              <cylinderGeometry args={[0.22, 0.22, 1.0, 10]} />
+              <meshBasicMaterial color={ghostColor} transparent opacity={0.35} depthWrite={false} />
+            </mesh>
+            <mesh position={[tx, 0.5, tz]} renderOrder={1}>
+              <cylinderGeometry args={[0.23, 0.23, 1.0, 10]} />
+              <meshBasicMaterial color="#ffffff" wireframe transparent opacity={0.45} depthWrite={false} />
             </mesh>
           </group>
         );
       })}
     </>
+  );
+}
+
+// ── Shape result badge (consequence view) ────────────────────────────────────
+const SHAPE_LABELS: Record<NonNullable<OutcomePreview['shape_result']>, string> = {
+  triangle_formed: '△ Triangle',
+  line_restored:   '— Line restored',
+  overloaded:      '⊕ Overloaded',
+  exposed:         '⚠ Exposed',
+};
+
+function ShapeResultLabel({
+  overlay,
+  entityPositions,
+}: {
+  overlay: OutcomePreview;
+  entityPositions: Map<string, Point>;
+}) {
+  if (!overlay.shape_result) return null;
+  const label = SHAPE_LABELS[overlay.shape_result];
+
+  // Position: centroid of entity shift targets, or above ball
+  let refX = 0, refZ = 0;
+  if (overlay.entity_shifts && overlay.entity_shifts.length > 0) {
+    const shifts = overlay.entity_shifts.slice(0, 2);
+    refX = shifts.reduce((s, sh) => s + (sh.to_y - 50) * SCALE_X, 0) / shifts.length;
+    refZ = shifts.reduce((s, sh) => s + (50 - sh.to_x) * SCALE_Z, 0) / shifts.length;
+  } else {
+    const ball = entityPositions.get('ball');
+    if (ball) { refX = (ball.y - 50) * SCALE_X; refZ = (50 - ball.x) * SCALE_Z; }
+  }
+
+  return (
+    <Billboard position={[refX, 2.2, refZ]}>
+      <Text
+        fontSize={0.28}
+        color="#e0e0e0"
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.04}
+        outlineColor="#000000"
+        fillOpacity={0.95}
+      >
+        {label}
+      </Text>
+    </Billboard>
   );
 }
 
@@ -537,6 +754,8 @@ function SceneContent({
   entityPositions.set('ball', scenario.ball);
   entityPositions.set(scenario.target_player, playerPosition);
 
+  const teammateIds = new Set(scenario.teammates.map(t => t.id));
+
   return (
     <>
       {/* Sky / ambient */}
@@ -575,6 +794,7 @@ function SceneContent({
           color="#c0392b"
           isTarget={false}
           ballPX={scenario.ball.x} ballPY={scenario.ball.y}
+          role={opp.role}
         />
       ))}
 
@@ -587,21 +807,36 @@ function SceneContent({
             color="#2471a3"
             isTarget={false}
             ballPX={scenario.ball.x} ballPY={scenario.ball.y}
+            role={tm.role}
           />
         ),
       )}
 
       {/* Target player (draggable) */}
-      <PlayerMesh
-        pitchX={playerPosition.x} pitchY={playerPosition.y}
-        color="#3498db"
-        isTarget={true}
-        ballPX={scenario.ball.x} ballPY={scenario.ball.y}
-        onDragStart={onDragStart}
-      />
+      {(() => {
+        const targetTm = scenario.teammates.find(t => t.id === scenario.target_player);
+        return (
+          <PlayerMesh
+            pitchX={playerPosition.x} pitchY={playerPosition.y}
+            color="#3498db"
+            isTarget={true}
+            ballPX={scenario.ball.x} ballPY={scenario.ball.y}
+            role={targetTm?.role ?? 'TP'}
+            onDragStart={onDragStart}
+          />
+        );
+      })()}
 
       {/* Ball */}
       <BallMesh pitchX={scenario.ball.x} pitchY={scenario.ball.y} />
+
+      {/* Dashed line ball → target player (evaluation view, after submission) */}
+      {submitted && boardViewMode === 'evaluation' && (
+        <BallToPlayerLine
+          ballPX={scenario.ball.x} ballPY={scenario.ball.y}
+          playerPX={playerPosition.x} playerPY={playerPosition.y}
+        />
+      )}
 
       {/* Tactical overlays (shown after submission) */}
       {submitted && showOverlays && (
@@ -609,12 +844,21 @@ function SceneContent({
           scenario={scenario}
           boardViewMode={boardViewMode}
           consequenceOverlay={consequenceOverlay}
+          entityPositions={entityPositions}
         />
       )}
 
-      {/* Consequence arrows */}
+      {/* Consequence arrows, entity shift ghosts, shape badge */}
       {submitted && showOverlays && boardViewMode === 'consequence' && consequenceOverlay && (
-        <ConsequenceArrows overlay={consequenceOverlay} entityPositions={entityPositions} />
+        <>
+          <ConsequenceArrows overlay={consequenceOverlay} entityPositions={entityPositions} />
+          <EntityShiftGhosts
+            overlay={consequenceOverlay}
+            entityPositions={entityPositions}
+            teammateIds={teammateIds}
+          />
+          <ShapeResultLabel overlay={consequenceOverlay} entityPositions={entityPositions} />
+        </>
       )}
 
       {/* Invisible drag-interaction plane */}

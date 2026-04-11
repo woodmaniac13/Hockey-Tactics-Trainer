@@ -448,3 +448,25 @@ export function evaluate(
     };
   }
 }
+
+// ─── Test-only exports ─────────────────────────────────────────────────────
+// These are exported solely for direct unit testing. Production code should
+// use the top-level `evaluate` function instead.
+export const __testing = {
+  computeSupportScore,
+  computePassingLaneScore,
+  computeSpacingScore,
+  computePressureReliefScore,
+  computeWidthDepthScore,
+  computeCoverScore,
+  computeRegionFitScore,
+  computeReasoningBonus,
+  computeDistanceToBallScore,
+  checkConstraints,
+  classifyResult,
+  isInsideCircle,
+  isInsideRectangle,
+  isInsidePolygon,
+  isInsideLane,
+  isResolvedGeometryHit,
+};

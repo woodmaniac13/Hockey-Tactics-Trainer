@@ -125,7 +125,7 @@
   "constraint_thresholds": {
     "support": 0.2,
     "passing_lane": 0.3,
-    "pressure_relief": 0.4
+    "pressure_relief": 0.05
   },
   "difficulty": 2,
   "tags": [
@@ -150,7 +150,7 @@
     "success": "You provided a clear outlet lane and helped the CB escape the high press.",
     "common_error": "You positioned too close or in line with the press, making it easy to block the outlet pass.",
     "alternate_valid": "This position still offered the CB a usable escape option even outside the primary lane.",
-    "teaching_emphasis": "Position in the lane beside the pressing opponent \u2014 not behind them \u2014 so the CB can play forward quickly.",
+    "teaching_emphasis": "Position in the lane beside the pressing opponent — not behind them — so the CB can play forward quickly.",
     "success_points": [
       "You offered an open outlet lane beside the pressing opponent, giving the CB a clean forward pass.",
       "Your position outside the press shadow meant the CB could play to you without the ball going through a presser.",
@@ -159,10 +159,10 @@
     "error_points": [
       "You positioned in line with or behind the press, letting the pressing opponent block the passing lane to you.",
       "You were too close to the CB, making it easy for a single opponent to cover both of you.",
-      "Your position did not provide a clear escape angle \u2014 the CB still had no safe forward option."
+      "Your position did not provide a clear escape angle — the CB still had no safe forward option."
     ],
     "alternate_points": [
-      "This was a usable outlet \u2014 slightly wide of ideal but still outside the press shadow.",
+      "This was a usable outlet — slightly wide of ideal but still outside the press shadow.",
       "You gave the CB an escape option even if not perfectly in the strongest part of the outlet lane."
     ]
   },

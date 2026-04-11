@@ -48,13 +48,8 @@ function seededRandom(seed: number) {
 
 // ─── 1. Ideal-region center invariants ──────────────────────────────────────
 
-// Known exceptions: ideal regions whose centre fails a constraint due to
-// deliberate tactical tension in the scenario design.
-//   S05 "strong_side_outlet_lane" — lane midpoint sits near opponents
-//     (opp_press, opp_cm), so pressure_relief (0.07) < constraint (0.4).
-const KNOWN_CENTER_EXCEPTIONS = new Set([
-  'S05:strong_side_outlet_lane',
-]);
+// After the constraint fixes, all ideal region centres should pass their
+// scenario's constraints. No known exceptions remain.
 
 describe('1. Ideal-region center invariants', () => {
   for (const { scenario, profile } of scenarios) {
@@ -64,22 +59,11 @@ describe('1. Ideal-region center invariants', () => {
         if (!geo) continue;
         const center = getRegionCenter(geo);
         const label = ('label' in region && region.label) || geo.type;
-        const key = `${scenario.scenario_id}:${label}`;
 
-        if (KNOWN_CENTER_EXCEPTIONS.has(key)) {
-          it(`center of ideal region "${label}" is a known constraint-tension exception`, () => {
-            const result = evaluate(scenario, center, profile);
-            // These are INVALID due to constraint failure, but region_fit should
-            // still be 1.0 (inside the ideal region).
-            expect(result.region_fit_score).toBe(1.0);
-            expect(result.failed_constraints.length).toBeGreaterThan(0);
-          });
-        } else {
-          it(`center of ideal region "${label}" should not be INVALID`, () => {
-            const result = evaluate(scenario, center, profile);
-            expect(result.result_type).not.toBe('INVALID');
-          });
-        }
+        it(`center of ideal region "${label}" should not be INVALID`, () => {
+          const result = evaluate(scenario, center, profile);
+          expect(result.result_type).not.toBe('INVALID');
+        });
       }
     });
   }
@@ -480,19 +464,18 @@ describe('7. Scenario sweep red-flag regression', () => {
       });
     }
 
-    // Positions that remain INVALID due to extreme support-angle geometry
-    // (toBall vector nearly parallel to pressure perpendicular at the
-    // same x as the ball). These are genuine fringe cases.
-    const remainingTension = [
+    // Positions that were previously INVALID due to extreme support-angle geometry
+    // are now passing after the support constraint was removed from S03. The
+    // support constraint was inappropriate for a forward-attack scenario where
+    // the acceptable zone (wide_attacking_zone) sits directly behind the ball.
+    const previousTension = [
       { x: 80, y: 45 }, { x: 80, y: 50 }, { x: 85, y: 60 },
     ];
 
-    for (const pos of remainingTension) {
-      it(`(${pos.x}, ${pos.y}) is a known fringe case (inside ideal but low support)`, () => {
+    for (const pos of previousTension) {
+      it(`(${pos.x}, ${pos.y}) should no longer be INVALID after support constraint removal`, () => {
         const result = evaluate(s03, pos, profile);
-        // Still INVALID but region_fit confirms inside ideal region
-        expect(result.region_fit_score).toBe(1.0);
-        expect(result.failed_constraints).toContain('support');
+        expect(result.result_type).not.toBe('INVALID');
       });
     }
   });

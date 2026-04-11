@@ -37,7 +37,14 @@ function computeDistanceToBallScore(
   optimalMax: number,
 ): number {
   if (dist >= optimalMin && dist <= optimalMax) return 1.0;
-  if (dist < optimalMin) return clamp(dist / optimalMin, 0, 1);
+  if (dist < optimalMin) {
+    // Guard: when optimalMin is 0, any dist < 0 is impossible (distances are non-negative),
+    // and dist === 0 would have been caught by the >= check above.
+    if (optimalMin <= 0) return 1.0;
+    return clamp(dist / optimalMin, 0, 1);
+  }
+  // Guard: when optimalMax is 0, dist > optimalMax means dist > 0, score degrades to 0.
+  if (optimalMax <= 0) return 0;
   return clamp(1 - (dist - optimalMax) / optimalMax, 0, 1);
 }
 
@@ -275,22 +282,25 @@ function interiorRatio(pos: Point, geo: TacticalRegionGeometry): number {
       const dx = geo.x2 - geo.x1;
       const dy = geo.y2 - geo.y1;
       const lenSq = dx * dx + dy * dy;
-      if (lenSq === 0) return 1;
+      // Degenerate lane (zero length) — no meaningful interior gradient.
+      if (lenSq === 0) return 0;
       const t = clamp(((pos.x - geo.x1) * dx + (pos.y - geo.y1) * dy) / lenSq, 0, 1);
       const projX = geo.x1 + t * dx;
       const projY = geo.y1 + t * dy;
       const lateralDist = Math.sqrt((pos.x - projX) ** 2 + (pos.y - projY) ** 2);
       const halfWidth = geo.width / 2;
+      if (halfWidth <= 0) return 0;
       return clamp(1 - lateralDist / halfWidth, 0, 1);
     }
     case 'polygon': {
       // Approximate: distance from centroid as a fraction of the max vertex distance.
       const n = geo.vertices.length;
-      if (n === 0) return 0.5;
+      if (n === 0) return 0;
       const cx = geo.vertices.reduce((s, v) => s + v.x, 0) / n;
       const cy = geo.vertices.reduce((s, v) => s + v.y, 0) / n;
       const maxR = Math.max(...geo.vertices.map(v => distance(v, { x: cx, y: cy })));
-      if (maxR === 0) return 1;
+      // Degenerate polygon (all vertices coincident) — no meaningful interior.
+      if (maxR === 0) return 0;
       const d = distance(pos, { x: cx, y: cy });
       return clamp(1 - d / maxR, 0, 1);
     }

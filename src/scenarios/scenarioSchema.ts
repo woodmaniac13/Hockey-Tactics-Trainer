@@ -213,6 +213,9 @@ export const FeedbackHintsSchema = z.object({
   common_error: z.string().optional(),
   alternate_valid: z.string().optional(),
   teaching_emphasis: z.string().optional(),
+  success_points: z.array(z.string()).optional(),
+  error_points: z.array(z.string()).optional(),
+  alternate_points: z.array(z.string()).optional(),
 }).strict();
 
 /** Typed catalog of scenario archetypes for authoring consistency and AI generation. */

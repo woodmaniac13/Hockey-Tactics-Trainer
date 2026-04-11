@@ -27,6 +27,34 @@ const IMPROVEMENTS: Record<string, string> = {
   cover: 'You were not in a strong covering position',
 };
 
+/**
+ * Per-outcome caps on positives and improvements.
+ * These gates are the primary mechanism for eliminating mixed-signal feedback —
+ * e.g. an INVALID result can never produce positives, and an IDEAL result shows
+ * at most one improvement.
+ */
+const OUTCOME_GATE: Record<ResultType, { maxPositives: number; maxImprovements: number }> = {
+  IDEAL:           { maxPositives: 3, maxImprovements: 1 },
+  VALID:           { maxPositives: 3, maxImprovements: 2 },
+  ALTERNATE_VALID: { maxPositives: 2, maxImprovements: 2 },
+  PARTIAL:         { maxPositives: 1, maxImprovements: 3 },
+  INVALID:         { maxPositives: 0, maxImprovements: 3 },
+  ERROR:           { maxPositives: 0, maxImprovements: 0 },
+};
+
+/**
+ * Generic positives that imply tactical success.
+ * Suppressed via the contradiction cleanup pass when the summary carries
+ * clearly failure-oriented language.
+ */
+const SUCCESS_IMPLYING_PHRASES: ReadonlySet<string> = new Set([
+  POSITIVES.width_depth,
+  POSITIVES.passing_lane,
+]);
+
+/** Fragments that identify a failure-oriented summary. */
+const FAILURE_SUMMARY_FRAGMENTS = ['too flat', 'too central', 'does not meet', 'not in'];
+
 function getTacticalExplanation(scenario: Scenario): string {
   // Use authored teaching_point as the primary tactical explanation when available.
   if (scenario.teaching_point) return scenario.teaching_point;
@@ -67,6 +95,12 @@ function getReasoningFeedback(
  * Authored `feedback_hints` on the scenario override the generic summaries when
  * the result type matches. The `teaching_emphasis` hint, if present, is passed
  * through to the result for persistent display after every attempt.
+ *
+ * Outcome gating (OUTCOME_GATE) enforces per-result-type caps on positives and
+ * improvements to eliminate mixed-signal feedback. Authored scenario bullet
+ * arrays (`success_points`, `error_points`, `alternate_points`) take precedence
+ * over the generic component-text fallback. A final contradiction cleanup pass
+ * removes remaining inconsistencies between the summary and the bullet lists.
  */
 export function generateFeedback(
   result: EvaluationResult,
@@ -86,27 +120,11 @@ export function generateFeedback(
     };
   }
 
-  const positives: string[] = [];
-  const improvements: string[] = [];
-
-  const componentKeys = ['support', 'passing_lane', 'spacing', 'pressure_relief', 'width_depth', 'cover'] as const;
-  for (const key of componentKeys) {
-    // Skip components that carry zero weight — they are irrelevant to this
-    // scenario and would only produce noise (e.g. "defensive cover" in a
-    // build-out scenario).
-    const weight = weightProfile?.weights[key] ?? 1;
-    if (weight === 0) continue;
-
-    const score = result.component_scores[key];
-    if (score >= 0.8 && POSITIVES[key]) {
-      positives.push(POSITIVES[key]);
-    } else if (score < 0.6 && IMPROVEMENTS[key]) {
-      improvements.push(IMPROVEMENTS[key]);
-    }
-  }
-
-  // Determine the authored summary override from feedback_hints based on result type
+  const gate = OUTCOME_GATE[result.result_type];
   const hints = scenario.feedback_hints;
+
+  // 1. Determine summary from authored hints first, so the contradiction
+  //    cleanup pass in section 4 can compare against it.
   let summary = SUMMARIES[result.result_type];
   if (hints) {
     if ((result.result_type === 'IDEAL' || result.result_type === 'VALID') && hints.success) {
@@ -116,6 +134,77 @@ export function generateFeedback(
     } else if (result.result_type === 'ALTERNATE_VALID' && hints.alternate_valid) {
       summary = hints.alternate_valid;
     }
+  }
+
+  // 2. Collect scored component candidates, skipping zero-weight components.
+  const componentKeys = ['support', 'passing_lane', 'spacing', 'pressure_relief', 'width_depth', 'cover'] as const;
+  type ComponentEntry = { key: typeof componentKeys[number]; score: number; weight: number };
+
+  const positiveCandidates: ComponentEntry[] = [];
+  const improvementCandidates: ComponentEntry[] = [];
+
+  for (const key of componentKeys) {
+    // Skip components that carry zero weight — they are irrelevant to this
+    // scenario and would only produce noise (e.g. "defensive cover" in a
+    // build-out scenario).
+    const weight = weightProfile?.weights[key] ?? 1;
+    if (weight === 0) continue;
+
+    const score = result.component_scores[key];
+    if (score >= 0.8) {
+      positiveCandidates.push({ key, score, weight });
+    } else if (score < 0.6) {
+      improvementCandidates.push({ key, score, weight });
+    }
+  }
+
+  // Sort by weighted importance: best positives first, worst improvements first.
+  positiveCandidates.sort((a, b) => (b.score * b.weight) - (a.score * a.weight));
+  improvementCandidates.sort((a, b) => (a.score * a.weight) - (b.score * b.weight));
+
+  // 3. Build positives and improvements, preferring authored scenario bullets
+  //    over generic component text. Fall back to generic only when authored
+  //    bullets are absent.
+  const isSuccess = result.result_type === 'IDEAL' || result.result_type === 'VALID';
+  const isFailure = result.result_type === 'PARTIAL' || result.result_type === 'INVALID';
+  const isAlt = result.result_type === 'ALTERNATE_VALID';
+
+  let positives: string[];
+  let improvements: string[];
+
+  if (isSuccess && hints?.success_points && hints.success_points.length > 0) {
+    positives = hints.success_points.slice(0, gate.maxPositives);
+    improvements = improvementCandidates.slice(0, gate.maxImprovements).map(c => IMPROVEMENTS[c.key]);
+  } else if (isAlt && hints?.alternate_points && hints.alternate_points.length > 0) {
+    positives = hints.alternate_points.slice(0, gate.maxPositives);
+    improvements = improvementCandidates.slice(0, gate.maxImprovements).map(c => IMPROVEMENTS[c.key]);
+  } else if (isFailure && hints?.error_points && hints.error_points.length > 0) {
+    positives = positiveCandidates.slice(0, gate.maxPositives).map(c => POSITIVES[c.key]);
+    improvements = hints.error_points.slice(0, gate.maxImprovements);
+  } else {
+    positives = positiveCandidates.slice(0, gate.maxPositives).map(c => POSITIVES[c.key]);
+    improvements = improvementCandidates.slice(0, gate.maxImprovements).map(c => IMPROVEMENTS[c.key]);
+  }
+
+  // 4. Contradiction cleanup pass.
+
+  // 4a. For IDEAL results, suppress improvements where the component score is
+  //     above 0.5 — those are not genuine weaknesses worth surfacing.
+  //     Re-filter directly from improvementCandidates to avoid any reliance on
+  //     index correspondence with the previously built improvements array.
+  if (result.result_type === 'IDEAL') {
+    const genuinelyWeak = improvementCandidates.filter(e => e.score <= 0.5);
+    improvements = genuinelyWeak.slice(0, gate.maxImprovements).map(c => IMPROVEMENTS[c.key]);
+  }
+
+  // 4b. When the summary carries clearly failure-oriented language, strip any
+  //     generic positives that imply tactical success — they would contradict
+  //     the coaching message.
+  const summaryIsFailure = FAILURE_SUMMARY_FRAGMENTS.some(f =>
+    summary.toLowerCase().includes(f),
+  );
+  if (summaryIsFailure) {
+    positives = positives.filter(p => !SUCCESS_IMPLYING_PHRASES.has(p));
   }
 
   return {

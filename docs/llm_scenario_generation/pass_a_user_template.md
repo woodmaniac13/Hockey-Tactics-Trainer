@@ -29,5 +29,7 @@ The scenario must:
 6. Include realistic pressure from `{{phase}}` context.
 7. Use semantic wrapper regions (label + purpose + geometry or named_zone).
 8. NOT include a `consequence_frame` field.
+9. Include `feedback_hints.success_points` (≥2 bullets), `feedback_hints.error_points` (≥2 bullets),
+   and `feedback_hints.alternate_points` (≥1 bullet) — all scenario-specific coaching language.
 
 Respond with the JSON object only — no explanation, no markdown.

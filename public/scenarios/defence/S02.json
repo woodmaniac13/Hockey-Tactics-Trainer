@@ -133,7 +133,21 @@
     "success": "Well positioned \u2014 you covered the central channel and protected against the through ball.",
     "common_error": "You followed your partner too wide, leaving the central channel exposed.",
     "alternate_valid": "This was still a defensible position even outside the ideal zone.",
-    "teaching_emphasis": "When your partner presses wide, your job is to protect the central channel \u2014 not to shadow the ball."
+    "teaching_emphasis": "When your partner presses wide, your job is to protect the central channel \u2014 not to shadow the ball.",
+    "success_points": [
+      "You dropped inside to protect the central channel while your partner pressed wide.",
+      "Your covering angle gave the goalkeeper a second line of defence against the through ball.",
+      "You stayed goalside and central, denying the striker a clean run in behind."
+    ],
+    "error_points": [
+      "You drifted too wide, shadowing your partner instead of protecting the central channel.",
+      "Your position was too high, leaving space in behind for a through ball.",
+      "You left the central corridor unguarded by moving away from the cover position."
+    ],
+    "alternate_points": [
+      "You were slightly outside the ideal pocket but still provided useful central cover.",
+      "The line of defence was still intact from this position, even if not optimal."
+    ]
   },
   "correct_reasoning": [
     "provide_cover"

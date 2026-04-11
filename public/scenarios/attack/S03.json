@@ -144,7 +144,21 @@
     "success": "You created a clear scoring option in the central channel or at the far post.",
     "common_error": "You stayed too wide or too deep, reducing the goal threat and congesting the wide player's space.",
     "alternate_valid": "This was still a workable position \u2014 it gave the ball carrier an option even if outside the ideal zone.",
-    "teaching_emphasis": "When the ball is wide, move to create depth and a second scoring option rather than clustering near the ball."
+    "teaching_emphasis": "When the ball is wide, move to create depth and a second scoring option rather than clustering near the ball.",
+    "success_points": [
+      "You made a diagonal run into the central channel, creating a genuine scoring threat.",
+      "Your movement gave the wide ball carrier a clear passing option inside the defensive block.",
+      "You separated from the nearest CB and created a second-post goal threat."
+    ],
+    "error_points": [
+      "You stayed too wide, clustering with the ball carrier and cutting off the passing lane inside.",
+      "You positioned too deep, letting the defence reorganise before you could threaten the circle.",
+      "Your run was too flat \u2014 you needed to move beyond the nearest defender to create space."
+    ],
+    "alternate_points": [
+      "This gave the ball carrier a usable option on the edge of the circle, even if not the ideal run.",
+      "Your position still offered a pass target even without reaching the best scoring pocket."
+    ]
   },
   "correct_reasoning": [
     "create_passing_angle",

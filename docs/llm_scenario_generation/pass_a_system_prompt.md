@@ -104,7 +104,14 @@ The output scenario must include all of the following:
 - `difficulty` (integer 1–5), `tags` (array of strings)
 - `line_group`, `primary_concept`, `situation`, `teaching_point`
 - `target_role_family`, `field_zone`, `scenario_archetype`
-- `feedback_hints` with at least `success` and `common_error`
+- `feedback_hints` with:
+  - `success` (short summary sentence for IDEAL/VALID outcomes)
+  - `common_error` (short summary sentence for PARTIAL/INVALID outcomes)
+  - `alternate_valid` (short summary sentence for ALTERNATE_VALID outcomes)
+  - `teaching_emphasis` (one-line coaching cue)
+  - `success_points` (array of ≥2 scenario-specific coaching bullets for correct positioning)
+  - `error_points` (array of ≥2 scenario-specific coaching bullets explaining the mistake)
+  - `alternate_points` (array of ≥1 coaching bullet for the alternate-valid case)
 - `correct_reasoning` (array of reasoning options)
 - `secondary_concepts` (array of additional concepts)
 

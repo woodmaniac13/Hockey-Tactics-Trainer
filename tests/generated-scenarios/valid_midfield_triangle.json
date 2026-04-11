@@ -86,7 +86,21 @@
     "success": "You found the gap in the triangle and gave the ball carrier a clean pass option.",
     "common_error": "Staying in the opponent's shadow means the ball carrier has no safe option and may be forced backward.",
     "alternate_valid": "A slightly deeper position still breaks the press — the ball carrier has an outlet.",
-    "teaching_emphasis": "The triangle only works when all three corners are visible to each other. Step off the shoulder to create the angle."
+    "teaching_emphasis": "The triangle only works when all three corners are visible to each other. Step off the shoulder to create the angle.",
+    "success_points": [
+      "You stepped off the opponent's shoulder into the triangle gap, creating a clear passing angle.",
+      "Your position gave the ball carrier a safe outlet and helped restore the midfield shape.",
+      "The triangle re-formed around your run, allowing the ball to progress through pressure."
+    ],
+    "error_points": [
+      "You stayed in the opponent's shadow, blocking the passing lane and keeping the triangle broken.",
+      "Your position was too close to the presser — the ball carrier could not play safely through the gap.",
+      "The triangle could not form without you stepping into the gap between opponents."
+    ],
+    "alternate_points": [
+      "A slightly deeper position still offered the ball carrier a usable outlet even outside the ideal pocket.",
+      "Your run still created an option even if it did not fully restore the triangle shape."
+    ]
   },
   "correct_reasoning": ["create_passing_angle", "support_under_pressure"],
   "consequence_frame": {

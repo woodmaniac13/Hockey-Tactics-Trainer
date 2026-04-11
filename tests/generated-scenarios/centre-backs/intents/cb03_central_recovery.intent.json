@@ -1,0 +1,99 @@
+{
+  "title": "CB Central Recovery Lane",
+  "description": "You are the central centre-back after a midfield turnover. Recover quickly to close the central transition lane.",
+  "scenario_archetype": "central_recovery_cover",
+  "phase": "transition",
+  "line_group": "back",
+  "primary_concept": "recovery_shape",
+  "secondary_concepts": [
+    "cover",
+    "pressure_response"
+  ],
+  "situation": "recovery_defence",
+  "field_zone": "middle_third_central",
+  "game_state": "turnover",
+  "difficulty": 4,
+  "teaching_point": "Sprint first to central protection, then adjust to the ball once the lane is blocked.",
+  "feedback_hints": {
+    "success": "You recovered centrally and delayed the opponent's direct transition route.",
+    "common_error": "You chased the ball line and left the center exposed.",
+    "teaching_emphasis": "In transition, protect the middle first before pressing wide.",
+    "success_points": [
+      "You recovered into the most dangerous central lane immediately.",
+      "Your run restored compactness between midfield and back line."
+    ],
+    "error_points": [
+      "Your recovery path was too ball-focused and not lane-focused.",
+      "The opponent could play directly through the center behind you."
+    ],
+    "alternate_points": [
+      "A staggered central-right recovery can still work if teammate pressure is immediate."
+    ]
+  },
+  "entities": [
+    {
+      "id": "cb_c",
+      "role": "CB",
+      "team": "home",
+      "position_hint": "cb_defensive_central",
+      "is_target": true
+    },
+    {
+      "id": "cb_r",
+      "role": "CB",
+      "team": "home",
+      "position_hint": "cb_defensive_right"
+    },
+    {
+      "id": "dm",
+      "role": "DM",
+      "team": "home",
+      "position_hint": "dm_defensive_mid"
+    },
+    {
+      "id": "cm",
+      "role": "CM",
+      "team": "home",
+      "position_hint": "cm_midfield_central"
+    },
+    {
+      "id": "opp_am",
+      "role": "AM",
+      "team": "away",
+      "position_hint": "am_attacking_central",
+      "is_ball_carrier": true
+    },
+    {
+      "id": "opp_fw",
+      "role": "FW",
+      "team": "away",
+      "position_hint": "fw_attacking_central"
+    }
+  ],
+  "ideal_zones": [
+    {
+      "label": "central_recovery",
+      "purpose": "central_protection",
+      "named_zone": "central_recovery_zone"
+    }
+  ],
+  "acceptable_zones": [
+    {
+      "label": "right_recovery",
+      "purpose": "recovery_run",
+      "named_zone": "right_recovery_corridor"
+    }
+  ],
+  "pressure": {
+    "direction": "central",
+    "intensity": "high",
+    "forced_side": "outside"
+  },
+  "correct_reasoning": [
+    "restore_shape",
+    "provide_cover"
+  ],
+  "curriculum_group": "transition_defence",
+  "learning_stage": 1,
+  "target_role_family": "back"
+}

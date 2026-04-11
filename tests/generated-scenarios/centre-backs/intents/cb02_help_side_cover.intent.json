@@ -1,0 +1,99 @@
+{
+  "title": "CB Tucks In Behind Wide Press",
+  "description": "You are the left centre-back. The right back steps out to press wide; adjust your position to protect the inside lane.",
+  "scenario_archetype": "help_side_cover",
+  "phase": "defence",
+  "line_group": "back",
+  "primary_concept": "cover",
+  "secondary_concepts": [
+    "recovery_shape",
+    "spacing"
+  ],
+  "situation": "defensive_shape",
+  "field_zone": "defensive_third_right",
+  "game_state": "open_play",
+  "difficulty": 3,
+  "teaching_point": "Slide centrally and slightly deeper than the pressing fullback to protect the direct channel to goal.",
+  "feedback_hints": {
+    "success": "You provided help-side cover and removed the direct central threat.",
+    "common_error": "You stayed too wide, leaving a gap between centre-back and fullback.",
+    "teaching_emphasis": "Your first job is to protect the central lane while the wide duel happens.",
+    "success_points": [
+      "You moved into a goal-side cover lane behind the first press.",
+      "Your position could intercept or delay an inside pass."
+    ],
+    "error_points": [
+      "Remaining wide left the half-space lane open.",
+      "Your depth did not support the pressing fullback if beaten."
+    ],
+    "alternate_points": [
+      "A slightly higher position can still work if midfield screen support is nearby."
+    ]
+  },
+  "entities": [
+    {
+      "id": "cb_l",
+      "role": "CB",
+      "team": "home",
+      "position_hint": "cb_defensive_left",
+      "is_target": true
+    },
+    {
+      "id": "cb_c",
+      "role": "CB",
+      "team": "home",
+      "position_hint": "cb_defensive_central"
+    },
+    {
+      "id": "rb",
+      "role": "RB",
+      "team": "home",
+      "position_hint": "rb_defensive_right"
+    },
+    {
+      "id": "dm",
+      "role": "DM",
+      "team": "home",
+      "position_hint": "dm_screen_right"
+    },
+    {
+      "id": "opp_wg",
+      "role": "WG",
+      "team": "away",
+      "position_hint": "opp_wg_wide_right"
+    },
+    {
+      "id": "opp_cf",
+      "role": "CF",
+      "team": "away",
+      "position_hint": "opp_cf_pressing_high",
+      "is_ball_carrier": true
+    }
+  ],
+  "ideal_zones": [
+    {
+      "label": "central_cover",
+      "purpose": "defensive_cover",
+      "named_zone": "defensive_block_central"
+    }
+  ],
+  "acceptable_zones": [
+    {
+      "label": "left_cover",
+      "purpose": "secondary_support_option",
+      "named_zone": "left_cover_position"
+    }
+  ],
+  "pressure": {
+    "direction": "outside_in",
+    "intensity": "medium",
+    "forced_side": "outside"
+  },
+  "correct_reasoning": [
+    "provide_cover",
+    "restore_shape"
+  ],
+  "curriculum_group": "defensive_cover_principles",
+  "learning_stage": 1,
+  "target_role_family": "back"
+}

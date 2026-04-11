@@ -315,15 +315,34 @@ function checkConstraints(
   return failed;
 }
 
+/**
+ * Classifies a scored evaluation into one of the result buckets.
+ *
+ * Bucket semantics:
+ *   IDEAL           — inside an ideal region with a high overall score.
+ *   VALID           — inside a recognised region with a decent score.
+ *   PARTIAL         — in or near a region, but overall score is mediocre.
+ *   ALTERNATE_VALID — outside all authored regions, yet tactically sound
+ *                     (constraints pass AND score ≥ 50).
+ *   INVALID         — fails constraints or score is too low.
+ *
+ * Ordering guarantees:
+ *   • PARTIAL is reachable when regionFitScore > 0 but score is 40–64.
+ *   • ALTERNATE_VALID requires a minimum score floor (50) so that a
+ *     low-scoring out-of-region placement does not earn undeserved credit.
+ */
 function classifyResult(
   finalScore: number,
   regionFitScore: number,
   constraintsPassed: boolean,
 ): ResultType {
-  if (constraintsPassed && regionFitScore === 1.0 && finalScore >= 80) return 'IDEAL';
-  if (constraintsPassed && regionFitScore === 0) return 'ALTERNATE_VALID';
-  if (constraintsPassed && (regionFitScore > 0 || finalScore >= 65)) return 'VALID';
-  if (constraintsPassed && finalScore >= 40) return 'PARTIAL';
+  if (!constraintsPassed) return 'INVALID';
+  if (regionFitScore === 1.0 && finalScore >= 80) return 'IDEAL';
+  // Inside an ideal region with all constraints met → at least VALID.
+  if (regionFitScore === 1.0) return 'VALID';
+  if (regionFitScore > 0 && finalScore >= 65) return 'VALID';
+  if (regionFitScore > 0 && finalScore >= 40) return 'PARTIAL';
+  if (regionFitScore === 0 && finalScore >= 50) return 'ALTERNATE_VALID';
   return 'INVALID';
 }
 

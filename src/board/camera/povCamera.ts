@@ -24,7 +24,7 @@ const MAX_DISTANCE = 30;
 const MIN_PITCH = -Math.PI / 2 + 0.05;
 const MAX_PITCH = -0.05;
 
-const BASE_PAN_SPEED = 0.008;
+const BASE_PAN_SPEED = 0.002;
 const TWIST_ROTATE_SPEED = 1.0;
 
 const YAW_SMOOTH = 0.14;
@@ -95,7 +95,7 @@ export function computeOrbitPosition(
 
   const offset = new THREE.Vector3(
     distance * cp * sy,
-    -distance * sp,
+    distance * sp,
     distance * cp * cy,
   );
 
@@ -171,9 +171,14 @@ export function panByScreenDelta(
  * Adjust zoom (distance) from a pinch scale delta.
  * scaleDelta > 1 means fingers moved apart → zoom in (reduce distance).
  */
+/** Fraction of raw pinch scale applied per gesture frame (0–1). */
+const PINCH_ZOOM_SENSITIVITY = 0.3;
+
 export function zoomByPinch(pov: PovCameraState, scaleDelta: number): void {
+  // Dampen the raw pinch ratio so small finger movements don't jump too far.
+  const dampened = 1 + (scaleDelta - 1) * PINCH_ZOOM_SENSITIVITY;
   // Invert: spreading fingers should zoom in (reduce distance)
-  pov.targetDistance *= 1 / scaleDelta;
+  pov.targetDistance *= 1 / dampened;
   pov.targetDistance = clamp(pov.targetDistance, MIN_DISTANCE, MAX_DISTANCE);
 }
 

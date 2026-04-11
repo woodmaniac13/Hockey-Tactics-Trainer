@@ -180,14 +180,15 @@ describe('evaluate — rich region types', () => {
     expect(result.region_fit_score).toBe(0.0);
   });
 
-  it('returns acceptable-region score for non-circle region (fixed 0.75)', () => {
+  it('returns gradient acceptable-region score for non-circle region (centre → 0.9)', () => {
     const scenario = {
       ...baseScenario,
       ideal_regions: [],
       acceptable_regions: [{ type: 'rectangle' as const, x: 40, y: 40, width: 20, height: 20 }],
     };
     const result = evaluate(scenario, { x: 50, y: 50 }, baseProfile);
-    expect(result.region_fit_score).toBe(0.75);
+    // At the centre of the rectangle, interiorRatio = 1.0 → score = 0.9
+    expect(result.region_fit_score).toBe(0.9);
   });
 
 });

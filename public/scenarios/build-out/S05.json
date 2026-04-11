@@ -123,7 +123,7 @@
   ],
   "weight_profile": "build_out_v1",
   "constraint_thresholds": {
-    "support": 0.4,
+    "support": 0.2,
     "passing_lane": 0.3,
     "pressure_relief": 0.4
   },

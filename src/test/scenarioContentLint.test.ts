@@ -284,6 +284,32 @@ describe('lintScenario — unit checks using S01 as base', () => {
     const { warnings } = lintScenario(scenario);
     expect(warnings.every(w => !w.includes('recommended_after'))).toBe(true);
   });
+
+  it('errors when constraint_thresholds contains a misspelled key', () => {
+    const scenario = {
+      ...loadS01(),
+      constraint_thresholds: {
+        support: 0.4,
+        presure_relief: 0.3, // intentional typo
+      },
+    } as Scenario;
+    const { errors } = lintScenario(scenario);
+    expect(errors.some(e => e.includes('constraint_thresholds') && e.includes('presure_relief'))).toBe(true);
+  });
+
+  it('no errors when constraint_thresholds uses only valid keys', () => {
+    const scenario = {
+      ...loadS01(),
+      constraint_thresholds: {
+        support: 0.4,
+        passing_lane: 0.3,
+        pressure_relief: 0.4,
+      },
+    } as Scenario;
+    const { errors } = lintScenario(scenario);
+    // Should not report constraint key errors
+    expect(errors.filter(e => e.includes('constraint_thresholds') && e.includes('unknown')).length).toBe(0);
+  });
 });
 
 // ── Consequence frame lint checks ─────────────────────────────────────────────

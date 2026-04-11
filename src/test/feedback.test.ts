@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateFeedback } from '../feedback/feedbackGenerator';
-import type { EvaluationResult, Scenario } from '../types';
+import type { EvaluationResult, Scenario, WeightProfile } from '../types';
 
 const baseEvalResult: EvaluationResult = {
   score: 85,
@@ -9,8 +9,8 @@ const baseEvalResult: EvaluationResult = {
     support: 0.9,
     passing_lane: 0.85,
     spacing: 0.8,
-    pressure_relief: 0.75,
-    width_depth: 0.7,
+    pressure_relief: 0.85,
+    width_depth: 0.8,
     cover: 0.6,
     region_fit: 1.0,
     reasoning_bonus: 1.0,
@@ -109,5 +109,70 @@ describe('generateFeedback', () => {
   it('includes reasoning feedback when reasoning provided', () => {
     const fb = generateFeedback(baseEvalResult, baseScenario, 'create_passing_angle');
     expect(fb.reasoning_feedback).toBeTruthy();
+  });
+
+  it('excludes positives for zero-weight components when weightProfile is provided', () => {
+    const profile: WeightProfile = {
+      profile_id: 'test_v1',
+      version: 1,
+      weights: {
+        support: 0.3,
+        passing_lane: 0.3,
+        spacing: 0.2,
+        pressure_relief: 0.2,
+        width_depth: 0.0,
+        cover: 0.0,
+        region_fit: 0.0,
+      },
+    };
+    const highScores: EvaluationResult = {
+      ...baseEvalResult,
+      component_scores: {
+        support: 0.9,
+        passing_lane: 0.9,
+        spacing: 0.9,
+        pressure_relief: 0.9,
+        width_depth: 0.9,
+        cover: 0.9,
+        region_fit: 1.0,
+        reasoning_bonus: 0,
+      },
+    };
+    const fb = generateFeedback(highScores, baseScenario, undefined, profile);
+    expect(fb.positives).toContain('You created a strong support angle');
+    expect(fb.positives).not.toContain('You preserved team structure');
+    expect(fb.positives).not.toContain('You provided defensive cover');
+  });
+
+  it('shows all relevant positives when no weightProfile is provided', () => {
+    const highScores: EvaluationResult = {
+      ...baseEvalResult,
+      component_scores: {
+        support: 0.9,
+        passing_lane: 0.9,
+        spacing: 0.9,
+        pressure_relief: 0.9,
+        width_depth: 0.9,
+        cover: 0.9,
+        region_fit: 1.0,
+        reasoning_bonus: 0,
+      },
+    };
+    const fb = generateFeedback(highScores, baseScenario);
+    // Without a profile, all components are eligible
+    expect(fb.positives).toContain('You created a strong support angle');
+    expect(fb.positives).toContain('You provided defensive cover');
+  });
+
+  it('uses higher threshold (0.8) for positives', () => {
+    const borderlineResult: EvaluationResult = {
+      ...baseEvalResult,
+      component_scores: {
+        ...baseEvalResult.component_scores,
+        support: 0.75, // below 0.8 — should not appear as positive
+      },
+    };
+    const fb = generateFeedback(borderlineResult, baseScenario);
+    expect(fb.positives).not.toContain('You created a strong support angle');
   });
 });

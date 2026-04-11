@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import type { Scenario, Point, WeightProfile, FeedbackResult, ProgressRecord, ScenarioPack, ScenarioState, ReasoningOption, LineGroup, PrimaryConceptVocab, SituationVocab, OutcomePreview } from '../types';
 import Board from '../board/Board';
+const Board3D = lazy(() => import('../board/Board3D'));
 import FeedbackPanel from '../components/FeedbackPanel';
 import ScenarioSelector from '../components/ScenarioSelector';
 import ReasoningCapture from '../components/ReasoningCapture';
@@ -42,6 +43,8 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
   const [filterSituation, setFilterSituation] = useState<SituationVocab | undefined>();
   /** Whether the board shows evaluation zones or the consequence overlay after submission. */
   const [boardViewMode, setBoardViewMode] = useState<'evaluation' | 'consequence'>('evaluation');
+  /** Whether the pitch is rendered in 2-D (canvas) or 3-D (Three.js). */
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const consequenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settings = getSettings();
   const isMobile = useIsMobile();
@@ -323,16 +326,52 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
             )}
 
             {/* Field (dominant on mobile) */}
+            <div style={{ padding: '4px 8px 0', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ display: 'flex', background: '#2c3e50', borderRadius: '20px', padding: '2px', gap: '2px' }}>
+                {(['2d', '3d'] as const).map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    style={{
+                      padding: '3px 12px',
+                      borderRadius: '18px',
+                      border: 'none',
+                      background: viewMode === mode ? '#3498db' : 'transparent',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontSize: '0.75rem',
+                      fontWeight: viewMode === mode ? 'bold' : 'normal',
+                    }}
+                  >
+                    {mode.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div style={{ flex: 1, padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              <Board
-                scenario={scenario}
-                playerPosition={playerPosition}
-                onPositionChange={pos => { if (!submitted) setPlayerPosition(pos); }}
-                submitted={submitted}
-                showOverlays={settings.show_overlays}
-                boardViewMode={boardViewMode}
-                consequenceOverlay={activeOutcomePreview}
-              />
+              {viewMode === '2d' ? (
+                <Board
+                  scenario={scenario}
+                  playerPosition={playerPosition}
+                  onPositionChange={pos => { if (!submitted) setPlayerPosition(pos); }}
+                  submitted={submitted}
+                  showOverlays={settings.show_overlays}
+                  boardViewMode={boardViewMode}
+                  consequenceOverlay={activeOutcomePreview}
+                />
+              ) : (
+                <Suspense fallback={<div style={{ color: '#aaa', padding: '40px', textAlign: 'center' }}>Loading 3D…</div>}>
+                  <Board3D
+                    scenario={scenario}
+                    playerPosition={playerPosition}
+                    onPositionChange={pos => { if (!submitted) setPlayerPosition(pos); }}
+                    submitted={submitted}
+                    showOverlays={settings.show_overlays}
+                    boardViewMode={boardViewMode}
+                    consequenceOverlay={activeOutcomePreview}
+                  />
+                </Suspense>
+              )}
             </div>
 
             {/* View-mode toggle — shown when submitted and consequence data is available */}
@@ -551,15 +590,53 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                 })()}
               </div>
 
-              <Board
-                scenario={scenario}
-                playerPosition={playerPosition}
-                onPositionChange={pos => { if (!submitted) setPlayerPosition(pos); }}
-                submitted={submitted}
-                showOverlays={settings.show_overlays}
-                boardViewMode={boardViewMode}
-                consequenceOverlay={activeOutcomePreview}
-              />
+              {/* 2D / 3D view toggle */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', background: '#2c3e50', borderRadius: '20px', padding: '2px', gap: '2px' }}>
+                  {(['2d', '3d'] as const).map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setViewMode(mode)}
+                      style={{
+                        padding: '4px 14px',
+                        borderRadius: '18px',
+                        border: 'none',
+                        background: viewMode === mode ? '#3498db' : 'transparent',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        fontWeight: viewMode === mode ? 'bold' : 'normal',
+                      }}
+                    >
+                      {mode.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {viewMode === '2d' ? (
+                <Board
+                  scenario={scenario}
+                  playerPosition={playerPosition}
+                  onPositionChange={pos => { if (!submitted) setPlayerPosition(pos); }}
+                  submitted={submitted}
+                  showOverlays={settings.show_overlays}
+                  boardViewMode={boardViewMode}
+                  consequenceOverlay={activeOutcomePreview}
+                />
+              ) : (
+                <Suspense fallback={<div style={{ color: '#aaa', padding: '60px', textAlign: 'center' }}>Loading 3D…</div>}>
+                  <Board3D
+                    scenario={scenario}
+                    playerPosition={playerPosition}
+                    onPositionChange={pos => { if (!submitted) setPlayerPosition(pos); }}
+                    submitted={submitted}
+                    showOverlays={settings.show_overlays}
+                    boardViewMode={boardViewMode}
+                    consequenceOverlay={activeOutcomePreview}
+                  />
+                </Suspense>
+              )}
 
               {/* View-mode toggle — shown when submitted and consequence data is available */}
               {submitted && activeOutcomePreview && (

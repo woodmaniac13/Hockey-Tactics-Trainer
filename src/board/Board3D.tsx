@@ -8,15 +8,18 @@ import { resolveRegionGeometry } from '../utils/regions';
 import {
   type PovCameraState,
   type TouchGestureState,
+  type DesktopGestureState,
+  type ViewportRect,
   initPovCamera,
   createGestureState,
+  createDesktopGestureState,
   updatePovCamera,
   handleTouchStart,
   handleTouchMove,
   handleTouchEnd,
   handlePointerPan,
+  handlePointerRotatePitch,
   handleWheel,
-  computeOrbitPosition,
 } from './camera/povCamera';
 
 // ── Coordinate system ────────────────────────────────────────────────────────
@@ -747,10 +750,17 @@ function CameraController({
 // ── POV camera controller (useFrame-based, inside Canvas) ────────────────────
 function PovCameraController({
   povRef,
+  activeCameraRef,
 }: {
   povRef: React.MutableRefObject<PovCameraState | null>;
+  activeCameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
 }) {
   const { camera } = useThree();
+
+  // Expose the R3F camera to the outer touch/pointer handlers
+  useEffect(() => {
+    activeCameraRef.current = camera as THREE.PerspectiveCamera;
+  }, [camera, activeCameraRef]);
 
   useFrame((_, dt) => {
     const pov = povRef.current;
@@ -774,6 +784,7 @@ interface SceneProps {
   orbitRef: React.MutableRefObject<unknown>;
   cameraPreset: CameraPreset;
   povRef: React.MutableRefObject<PovCameraState | null>;
+  activeCameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   onDragStart: () => void;
   onDragEnd: () => void;
 }
@@ -790,6 +801,7 @@ function SceneContent({
   orbitRef,
   cameraPreset,
   povRef,
+  activeCameraRef,
   onDragStart,
   onDragEnd,
 }: SceneProps) {
@@ -829,7 +841,7 @@ function SceneContent({
       />
 
       {/* POV camera controller (useFrame loop) */}
-      <PovCameraController povRef={povRef} />
+      <PovCameraController povRef={povRef} activeCameraRef={activeCameraRef} />
 
       {/* Field */}
       <FieldGround />
@@ -960,7 +972,8 @@ export default function Board3D({
   const povRef        = useRef<PovCameraState | null>(null);
   const gestureRef    = useRef<TouchGestureState>(createGestureState());
   const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const pointerPovRef = useRef<{ lastX: number; lastY: number; down: boolean }>({ lastX: 0, lastY: 0, down: false });
+  const activeCameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const desktopGestureRef = useRef<DesktopGestureState>(createDesktopGestureState());
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('behind_attack');
 
   const handleDragStart = useCallback(() => {
@@ -1019,21 +1032,30 @@ export default function Board3D({
     const el = canvasContainerRef.current;
     if (!el) return;
 
+    const getRect = (): ViewportRect => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, top: r.top, width: r.width, height: r.height };
+    };
+
     const onTouchStart = (e: TouchEvent) => {
       if (cameraPreset !== 'pov' || !povRef.current) return;
+      const cam = activeCameraRef.current;
+      if (!cam) return;
       e.preventDefault();
-      handleTouchStart(gestureRef.current, e);
+      handleTouchStart(gestureRef.current, e, cam, getRect());
     };
     const onTouchMove = (e: TouchEvent) => {
       if (cameraPreset !== 'pov' || !povRef.current) return;
+      const cam = activeCameraRef.current;
+      if (!cam) return;
       e.preventDefault();
-      const pov = povRef.current;
-      const camPos = computeOrbitPosition(pov.pivot, pov.yaw, pov.pitch, pov.distance);
-      handleTouchMove(gestureRef.current, pov, camPos, e);
+      handleTouchMove(gestureRef.current, povRef.current, cam, getRect(), e);
     };
     const onTouchEnd = (e: TouchEvent) => {
       if (cameraPreset !== 'pov' || !povRef.current) return;
-      handleTouchEnd(gestureRef.current, e);
+      const cam = activeCameraRef.current;
+      if (!cam) return;
+      handleTouchEnd(gestureRef.current, e, cam, getRect());
     };
 
     el.addEventListener('touchstart', onTouchStart, { passive: false });
@@ -1049,31 +1071,63 @@ export default function Board3D({
     };
   }, [cameraPreset]);
 
-  // Mouse/pointer fallback for POV desktop panning
+  // Mouse/pointer handlers for POV desktop — left drag = pan, right/Alt+left = rotate+pitch
   const onPointerDownPov = useCallback((e: React.PointerEvent) => {
     if (cameraPreset !== 'pov' || !povRef.current) return;
-    pointerPovRef.current = { lastX: e.clientX, lastY: e.clientY, down: true };
+    const isRotate = e.button === 2 || e.altKey;
+    desktopGestureRef.current = {
+      down: true,
+      mode: isRotate ? 'rotatePitch' : 'pan',
+      lastX: e.clientX,
+      lastY: e.clientY,
+    };
   }, [cameraPreset]);
 
   const onPointerMovePov = useCallback((e: React.PointerEvent) => {
-    if (cameraPreset !== 'pov' || !povRef.current || !pointerPovRef.current.down) return;
-    const dx = e.clientX - pointerPovRef.current.lastX;
-    const dy = e.clientY - pointerPovRef.current.lastY;
+    if (cameraPreset !== 'pov' || !povRef.current) return;
+    const dg = desktopGestureRef.current;
+    if (!dg.down) return;
+    const cam = activeCameraRef.current;
+    if (!cam) return;
+
+    const dx = e.clientX - dg.lastX;
+    const dy = e.clientY - dg.lastY;
     const pov = povRef.current;
-    const camPos = computeOrbitPosition(pov.pivot, pov.yaw, pov.pitch, pov.distance);
-    handlePointerPan(pov, camPos, dx, dy);
-    pointerPovRef.current.lastX = e.clientX;
-    pointerPovRef.current.lastY = e.clientY;
+    const el = canvasContainerRef.current;
+    const rect: ViewportRect | null = el
+      ? { left: el.getBoundingClientRect().left, top: el.getBoundingClientRect().top, width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height }
+      : null;
+
+    if (dg.mode === 'pan' && rect) {
+      handlePointerPan(pov, cam, rect, dg.lastX, dg.lastY, e.clientX, e.clientY);
+    } else if (dg.mode === 'rotatePitch') {
+      handlePointerRotatePitch(pov, dx, dy);
+    }
+
+    dg.lastX = e.clientX;
+    dg.lastY = e.clientY;
   }, [cameraPreset]);
 
   const onPointerUpPov = useCallback(() => {
-    pointerPovRef.current.down = false;
+    desktopGestureRef.current.down = false;
+    desktopGestureRef.current.mode = 'none';
   }, []);
 
-  // Wheel zoom for POV mode
+  // Prevent context menu on right-click so right-drag works for rotate/pitch
+  const onContextMenuPov = useCallback((e: React.MouseEvent) => {
+    if (cameraPreset === 'pov') e.preventDefault();
+  }, [cameraPreset]);
+
+  // Wheel zoom for POV mode — cursor-anchored
   const onWheelPov = useCallback((e: React.WheelEvent) => {
     if (cameraPreset !== 'pov' || !povRef.current) return;
-    handleWheel(povRef.current, e.deltaY);
+    const cam = activeCameraRef.current;
+    if (!cam) return;
+    const el = canvasContainerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const rect: ViewportRect = { left: r.left, top: r.top, width: r.width, height: r.height };
+    handleWheel(povRef.current, cam, rect, e.clientX, e.clientY, e.deltaY);
   }, [cameraPreset]);
 
   return (
@@ -1087,6 +1141,7 @@ export default function Board3D({
         onPointerUp={onPointerUpPov}
         onPointerLeave={onPointerUpPov}
         onWheel={onWheelPov}
+        onContextMenu={onContextMenuPov}
       >
         <Canvas
           shadows
@@ -1105,6 +1160,7 @@ export default function Board3D({
             orbitRef={orbitRef}
             cameraPreset={cameraPreset}
             povRef={povRef}
+            activeCameraRef={activeCameraRef}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           />

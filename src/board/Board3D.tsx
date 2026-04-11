@@ -978,6 +978,11 @@ export default function Board3D({
   }, [cameraPreset]);
 
   // Initialise POV camera when entering POV mode
+  /** Minimum world-space distance between player and ball to use ball as active play target. */
+  const MIN_BALL_DISTANCE_FOR_TARGET = 0.5;
+  /** Fallback world-space origin used when the target player entity is not found. */
+  const DEFAULT_WORLD_ORIGIN = new THREE.Vector3(0, 0, 0);
+
   const handlePresetChange = useCallback((preset: CameraPreset) => {
     setCameraPreset(preset);
 
@@ -986,13 +991,13 @@ export default function Board3D({
       const targetTm = scenario.teammates.find(t => t.id === scenario.target_player);
       const playerPos = targetTm
         ? new THREE.Vector3(...pitchToWorld(playerPosition.x, playerPosition.y))
-        : new THREE.Vector3(0, 0, 0);
+        : DEFAULT_WORLD_ORIGIN.clone();
 
       const ballWorldPos = new THREE.Vector3(...pitchToWorld(scenario.ball.x, scenario.ball.y));
 
-      // Use ball as active play target if different from player
+      // Use ball as active play target if sufficiently far from player
       const dist = playerPos.distanceTo(ballWorldPos);
-      const activeTarget = dist > 0.5 ? ballWorldPos : null;
+      const activeTarget = dist > MIN_BALL_DISTANCE_FOR_TARGET ? ballWorldPos : null;
 
       povRef.current = initPovCamera(playerPos, activeTarget);
       gestureRef.current = createGestureState();

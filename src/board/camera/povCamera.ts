@@ -31,6 +31,9 @@ const YAW_SMOOTH = 0.14;
 const PIVOT_SMOOTH = 0.14;
 const DISTANCE_SMOOTH = 0.12;
 
+/** Fallback offset when no active play target is available — places target in front of player. */
+const DEFAULT_TARGET_OFFSET = new THREE.Vector3(0, 0, -3);
+
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -112,7 +115,7 @@ export function initPovCamera(
   playerWorldPos: THREE.Vector3,
   targetWorldPos: THREE.Vector3 | null,
 ): PovCameraState {
-  const target = targetWorldPos ?? playerWorldPos.clone().add(new THREE.Vector3(0, 0, -3));
+  const target = targetWorldPos ?? playerWorldPos.clone().add(DEFAULT_TARGET_OFFSET);
 
   const pivot = playerWorldPos.clone().lerp(target, INITIAL_LOOK_WEIGHT);
 

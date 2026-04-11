@@ -111,7 +111,7 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
       return;
     }
     const result = evaluate(sc, playerPosition, profile, reasoning);
-    const fb = generateFeedback(result, sc, reasoning);
+    const fb = generateFeedback(result, sc, reasoning, profile);
     setFeedback(fb);
     setSubmitted(true);
     setShowReasoning(false);
@@ -334,6 +334,18 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                 consequenceOverlay={activeOutcomePreview}
               />
             </div>
+
+            {/* Zone legend — shown when evaluation overlays are visible */}
+            {submitted && settings.show_overlays && boardViewMode === 'evaluation' && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', padding: '4px 12px', flexShrink: 0, fontSize: '0.72rem', color: '#aaa' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ display: 'inline-block', width: '12px', height: '3px', background: 'rgba(100, 255, 100, 0.9)', borderRadius: '1px' }} /> Ideal zone
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ display: 'inline-block', width: '12px', height: '3px', background: 'rgba(255, 220, 50, 0.7)', borderRadius: '1px', borderTop: '1px dashed rgba(255, 220, 50, 0.7)' }} /> Acceptable zone
+                </span>
+              </div>
+            )}
 
             {/* View-mode toggle — shown when submitted and consequence data is available */}
             {submitted && activeOutcomePreview && (
@@ -560,6 +572,18 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
                 boardViewMode={boardViewMode}
                 consequenceOverlay={activeOutcomePreview}
               />
+
+              {/* Zone legend — shown when evaluation overlays are visible */}
+              {submitted && settings.show_overlays && boardViewMode === 'evaluation' && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', padding: '4px 0', fontSize: '0.75rem', color: '#aaa' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ display: 'inline-block', width: '12px', height: '3px', background: 'rgba(100, 255, 100, 0.9)', borderRadius: '1px' }} /> Ideal zone
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ display: 'inline-block', width: '12px', height: '3px', background: 'rgba(255, 220, 50, 0.7)', borderRadius: '1px', borderTop: '1px dashed rgba(255, 220, 50, 0.7)' }} /> Acceptable zone
+                  </span>
+                </div>
+              )}
 
               {/* View-mode toggle — shown when submitted and consequence data is available */}
               {submitted && activeOutcomePreview && (

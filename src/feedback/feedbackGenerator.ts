@@ -1,4 +1,4 @@
-import type { EvaluationResult, FeedbackResult, Scenario, ResultType, ReasoningOption } from '../types';
+import type { EvaluationResult, FeedbackResult, Scenario, ResultType, ReasoningOption, WeightProfile } from '../types';
 
 const SUMMARIES: Record<ResultType, string> = {
   IDEAL: 'Excellent positioning.',
@@ -60,6 +60,10 @@ function getReasoningFeedback(
  * Generates human-readable feedback from a scored evaluation result.
  *
  * The summary, positives, and improvements are derived from component scores.
+ * When a `weightProfile` is provided, only components with non-zero weight are
+ * considered — this prevents generic "You provided defensive cover" messages in
+ * scenarios where cover is irrelevant (weight 0).
+ *
  * Authored `feedback_hints` on the scenario override the generic summaries when
  * the result type matches. The `teaching_emphasis` hint, if present, is passed
  * through to the result for persistent display after every attempt.
@@ -68,6 +72,7 @@ export function generateFeedback(
   result: EvaluationResult,
   scenario: Scenario,
   reasoning?: ReasoningOption,
+  weightProfile?: WeightProfile,
 ): FeedbackResult {
   if (result.result_type === 'ERROR') {
     return {
@@ -86,8 +91,14 @@ export function generateFeedback(
 
   const componentKeys = ['support', 'passing_lane', 'spacing', 'pressure_relief', 'width_depth', 'cover'] as const;
   for (const key of componentKeys) {
+    // Skip components that carry zero weight — they are irrelevant to this
+    // scenario and would only produce noise (e.g. "defensive cover" in a
+    // build-out scenario).
+    const weight = weightProfile?.weights[key] ?? 1;
+    if (weight === 0) continue;
+
     const score = result.component_scores[key];
-    if (score >= 0.7 && POSITIVES[key]) {
+    if (score >= 0.8 && POSITIVES[key]) {
       positives.push(POSITIVES[key]);
     } else if (score < 0.6 && IMPROVEMENTS[key]) {
       improvements.push(IMPROVEMENTS[key]);

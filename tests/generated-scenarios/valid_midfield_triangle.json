@@ -1,0 +1,112 @@
+{
+  "scenario_id": "GEN_midfield_triangle_restore_01",
+  "version": 1,
+  "title": "Restore the Midfield Triangle",
+  "description": "You are a central midfielder. The team is building out of the middle third. Your triangle has broken down — reposition to restore the passing structure and relieve pressure on the ball carrier.",
+  "phase": "attack",
+  "team_orientation": "home_attacks_positive_x",
+  "target_player": "cm1",
+  "ball": { "x": 48, "y": 50 },
+  "teammates": [
+    { "id": "gk", "role": "GK", "team": "home", "x": 5, "y": 50 },
+    { "id": "cb1", "role": "CB", "team": "home", "x": 20, "y": 40 },
+    { "id": "cb2", "role": "CB", "team": "home", "x": 20, "y": 60 },
+    { "id": "dm1", "role": "DM", "team": "home", "x": 35, "y": 50, "position_hint": "dm_own_half_central" },
+    { "id": "cm1", "role": "CM", "team": "home", "x": 48, "y": 62, "position_hint": "cm_own_half_left" },
+    { "id": "mf1", "role": "MF", "team": "home", "x": 55, "y": 30 }
+  ],
+  "opponents": [
+    { "id": "opp1", "role": "MF", "team": "away", "x": 52, "y": 50 },
+    { "id": "opp2", "role": "MF", "team": "away", "x": 45, "y": 38 },
+    { "id": "opp3", "role": "FW", "team": "away", "x": 38, "y": 55 }
+  ],
+  "pressure": {
+    "direction": "central",
+    "intensity": "medium",
+    "primary_presser_id": "opp2",
+    "blocked_lane": "dm1_to_mf1"
+  },
+  "ideal_regions": [
+    {
+      "label": "triangle_apex_left_of_ball",
+      "purpose": "primary_support_option",
+      "reference_frame": "ball",
+      "geometry": {
+        "type": "circle",
+        "x": 44,
+        "y": 40,
+        "r": 8
+      }
+    },
+    {
+      "label": "central_midfield_support_pocket",
+      "purpose": "passing_lane_support",
+      "reference_frame": "pitch",
+      "geometry": {
+        "type": "circle",
+        "x": 46,
+        "y": 42,
+        "r": 7
+      }
+    }
+  ],
+  "acceptable_regions": [
+    {
+      "label": "midfield_central_block",
+      "purpose": "secondary_support_option",
+      "reference_frame": "pitch",
+      "geometry": {
+        "type": "circle",
+        "x": 50,
+        "y": 44,
+        "r": 11
+      }
+    }
+  ],
+  "weight_profile": "attack_v1",
+  "constraint_thresholds": {
+    "support": 0.4,
+    "passing_lane": 0.35,
+    "spacing": 0.3
+  },
+  "difficulty": 3,
+  "tags": ["support", "spacing", "attack", "midfield"],
+  "line_group": "midfield",
+  "primary_concept": "support",
+  "secondary_concepts": ["spacing", "pressure_response"],
+  "teaching_point": "Step off the opponent's shoulder into the triangle gap to give the ball carrier a safe passing option and restore the midfield shape.",
+  "target_role_family": "midfield",
+  "situation": "build_out_under_press",
+  "field_zone": "middle_third_central",
+  "game_state": "open_play",
+  "scenario_archetype": "midfield_triangle_restore",
+  "curriculum_group": "build_out",
+  "learning_stage": 2,
+  "feedback_hints": {
+    "success": "You found the gap in the triangle and gave the ball carrier a clean pass option.",
+    "common_error": "Staying in the opponent's shadow means the ball carrier has no safe option and may be forced backward.",
+    "alternate_valid": "A slightly deeper position still breaks the press — the ball carrier has an outlet.",
+    "teaching_emphasis": "The triangle only works when all three corners are visible to each other. Step off the shoulder to create the angle."
+  },
+  "correct_reasoning": ["create_passing_angle", "support_under_pressure"],
+  "consequence_frame": {
+    "on_success": {
+      "consequence_type": "triangle_formed",
+      "explanation": "The midfield triangle is restored — the ball carrier has a safe pass into the pocket and can play out of pressure.",
+      "arrows": [
+        { "style": "pass", "from_entity_id": "dm1", "to_entity_id": "cm1", "label": "pass option" }
+      ],
+      "pressure_result": "broken",
+      "shape_result": "triangle_formed"
+    },
+    "on_failure": {
+      "consequence_type": "pressure_maintained",
+      "explanation": "The triangle cannot form — the ball carrier is forced sideways or backward under continued pressure.",
+      "arrows": [
+        { "style": "pressure", "from_entity_id": "opp2", "to_entity_id": "dm1", "label": "press" }
+      ],
+      "pressure_result": "maintained",
+      "shape_result": "exposed"
+    }
+  }
+}

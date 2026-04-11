@@ -181,7 +181,7 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
               ← Back
             </button>
           ) : (
-            <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#e0e0e0' }}>⚽ Tactical Trainer</div>
+            <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#e0e0e0' }}>🏑 Tactical Trainer</div>
           )}
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
@@ -436,7 +436,7 @@ export default function TrainingPage({ scenarioMap, weightProfiles, packs, onLoa
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#1a1a2e' }}>
       {/* Header */}
       <header style={{ padding: '12px 20px', background: '#0f3460', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#e0e0e0' }}>⚽ Field Hockey Tactical Trainer</div>
+        <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#e0e0e0' }}>🏑 Field Hockey Tactical Trainer</div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={() => setActiveTab('training')}

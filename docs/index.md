@@ -33,7 +33,29 @@ Complete index of all Hockey Tactics Trainer documentation, organized by categor
 | Document | Description |
 |---|---|
 | [guides/scenario-authoring-guide.md](guides/scenario-authoring-guide.md) | Step-by-step guide for creating, validating, testing, and committing new scenarios. Covers region design (all shapes), difficulty calibration, and common mistakes. |
+| [guides/llm-scenario-generation-guide.md](guides/llm-scenario-generation-guide.md) | Complete reference for LLM-assisted scenario generation: pitch coordinate system, entity placement, region design, field zones, pressure modelling, consequence frames, and common LLM pitfalls. Include this document as system context when prompting an LLM. |
 | [guides/deployment-guide.md](guides/deployment-guide.md) | How to build and deploy the app to GitHub Pages, including environment setup and CI/CD. |
+
+---
+
+## LLM Scenario Generation
+
+| Document | Description |
+|---|---|
+| [guides/llm-scenario-generation-guide.md](guides/llm-scenario-generation-guide.md) | Full prompt reference for LLM-assisted scenario authoring (pitch coordinates, entity placement, regions, lint rules, consequence frames). |
+| [llm_scenario_generation/pass_a_system_prompt.md](llm_scenario_generation/pass_a_system_prompt.md) | Pass A system prompt template — instructs the model to generate the core scenario JSON. |
+| [llm_scenario_generation/pass_a_user_template.md](llm_scenario_generation/pass_a_user_template.md) | Pass A user prompt template — injects the generation brief placeholders. |
+| [llm_scenario_generation/pass_b_system_prompt.md](llm_scenario_generation/pass_b_system_prompt.md) | Pass B system prompt template — instructs the model to generate the consequence frame. |
+| [llm_scenario_generation/pass_b_user_template.md](llm_scenario_generation/pass_b_user_template.md) | Pass B user prompt template — injects the accepted scenario JSON. |
+| [llm_scenario_generation/repair_system_prompt.md](llm_scenario_generation/repair_system_prompt.md) | Repair system prompt template — instructs the model to fix validation failures. |
+| [llm_scenario_generation/repair_user_template.md](llm_scenario_generation/repair_user_template.md) | Repair user prompt template — injects the broken JSON and issue list. |
+
+**Pipeline code:** `src/llm/generateScenario.ts` orchestrates the two-pass pipeline. See also `src/llm/promptTypes.ts` for the `ScenarioGenerationBrief` type, `src/llm/validateGeneratedScenario.ts` for generated-content lint rules, and `src/scenarios/scenarioIntent.ts` for the coordinate-free ScenarioIntent format.
+
+**CLI scripts:**
+- `npx tsx scripts/generate-scenario-from-intent.ts <intent.json>` — convert a ScenarioIntent to a draft Scenario
+- `npx tsx scripts/scenario-coverage-report.ts` — generate a coverage matrix of existing scenario content
+- `npx tsx scripts/lint-scenarios.ts` — lint all scenarios in `public/scenarios/`
 
 ---
 
@@ -41,4 +63,4 @@ Complete index of all Hockey Tactics Trainer documentation, organized by categor
 
 | Document | Description |
 |---|---|
-| [process/proposed-schema-extensions-and-roadmap.md](process/proposed-schema-extensions-and-roadmap.md) | Proposal for extending scenario semantics with optional metadata for tactical concepts, role context, pressure detail, curriculum structure, and authored feedback, plus a phased implementation roadmap. |
+| [process/proposed-schema-extensions-and-roadmap.md](process/proposed-schema-extensions-and-roadmap.md) | Proposal for extending scenario semantics with optional metadata for tactical concepts, role context, pressure detail, curriculum structure, and authored feedback, plus a phased implementation roadmap. Phases 1–5 are complete; the LLM generation pipeline and consequence frame system are implemented. |

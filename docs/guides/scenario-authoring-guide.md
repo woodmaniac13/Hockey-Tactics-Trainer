@@ -438,7 +438,11 @@ Planned (not required for MVP):
 - visual scenario editor
 - drag-and-place authoring UI
 - automatic region suggestion
-- AI-assisted scenario generation
+
+**Already available:**
+- [LLM Scenario Generation Guide](llm-scenario-generation-guide.md) — two-pass LLM pipeline that generates validated scenario JSON from a typed brief. See `src/llm/generateScenario.ts` and `docs/llm_scenario_generation/` for prompt templates.
+- [ScenarioIntent](../specifications/scenario-schema-definition.md) — coordinate-free authoring format that resolves to full scenarios via `npx tsx scripts/generate-scenario-from-intent.ts`.
+- `npx tsx scripts/scenario-coverage-report.ts` — generates a content coverage matrix to identify gaps for LLM generation.
 
 ---
 

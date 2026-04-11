@@ -39,6 +39,18 @@ Browser Runtime
  ├── Persistence Layer
  └── Import/Export Module
 
+Offline / Script Runtime
+ ├── LLM Scenario Generation Pipeline (src/llm/)
+ │    ├── Pass A Generation (core scenario)
+ │    ├── Pass B Generation (consequence frame)
+ │    ├── Validation + Repair Loop
+ │    └── Prompt Templates (docs/llm_scenario_generation/)
+ ├── ScenarioIntent Converter (src/scenarios/scenarioIntent.ts)
+ └── CLI Scripts (scripts/)
+      ├── generate-scenario-from-intent.ts
+      ├── lint-scenarios.ts
+      └── scenario-coverage-report.ts
+
 
 ⸻
 
@@ -214,6 +226,39 @@ Requirements
 
 ⸻
 
+9. LLM Scenario Generation Pipeline
+
+Defined in:
+	•	src/llm/generateScenario.ts (pipeline orchestration)
+	•	src/llm/promptTypes.ts (typed brief, options, state)
+	•	docs/guides/llm-scenario-generation-guide.md (complete prompt reference)
+
+Responsibilities
+	•	generate new scenario JSON from a typed ScenarioGenerationBrief
+	•	two-pass architecture: Pass A (core scenario), Pass B (consequence frame)
+	•	validate generated output through three layers: Zod schema, content lint, generated-content lint
+	•	repair invalid output via a model-driven repair loop (up to N attempts)
+	•	merge accepted consequence frame into the final scenario
+
+Components
+	•	buildPassAPrompt — constructs Pass A prompts from a brief and template
+	•	buildPassBPrompt — constructs Pass B prompts from an accepted scenario
+	•	buildRepairPrompt — constructs repair prompts from broken JSON and issues
+	•	repairScenario — parse, validate, and accumulate issues for repair loop
+	•	validateGeneratedScenario — stricter lint rules for generated content
+	•	mergeConsequenceFrame — merges consequence frame into scenario
+	•	promptLoader — loads prompt template files from docs/llm_scenario_generation/
+
+Requirements
+	•	model-agnostic: no model provider hard-coded; caller supplies ModelCallFn
+	•	prompt templates are plain markdown files, editable without code changes
+	•	generated scenarios must pass the same validation as hand-authored ones
+	•	repair loop must converge or fail with actionable error messages
+
+Related: ScenarioIntent (src/scenarios/scenarioIntent.ts) provides a coordinate-free authoring format that resolves to full scenarios using canonical position anchors and named pitch zones.
+
+⸻
+
 Data Flow
 
 Scenario Load Flow
@@ -270,11 +315,30 @@ File Structure (Expected)
   /board
   /evaluation
   /feedback
+  /hooks
+  /llm
+  /pages
+  /progression
   /scenarios
   /storage
   /utils
   /types
-  /pages
+  /test
+
+/scripts
+  generate-scenario-from-intent.ts
+  lint-scenarios.ts
+  scenario-coverage-report.ts
+
+/tests
+  /generated-scenarios
+
+/docs
+  /design
+  /specifications
+  /guides
+  /llm_scenario_generation
+  /process
 
 /public
   /scenarios
@@ -356,6 +420,12 @@ Future additions may include:
 	•	richer authoring tools
 	•	advanced analytics
 
+Already implemented:
+	•	LLM-assisted scenario generation (two-pass pipeline with repair loop)
+	•	ScenarioIntent coordinate-free authoring format
+	•	scenario coverage reporting for content gap analysis
+	•	consequence frame visual feedback overlay
+
 These should not break:
 	•	static deployment
 	•	deterministic evaluation
@@ -388,6 +458,12 @@ Phase 2
 Phase 3
 	•	authoring helpers
 	•	import/export improvements
+
+Phase 4 (complete)
+	•	LLM scenario generation pipeline
+	•	ScenarioIntent converter
+	•	consequence frame system
+	•	content coverage tooling
 
 ⸻
 

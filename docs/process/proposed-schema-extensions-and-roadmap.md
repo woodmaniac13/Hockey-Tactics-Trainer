@@ -556,7 +556,43 @@ Estimated impact: low engineering cost, high content value.
 
 ---
 
-### Phase 6 — Role vocabulary and archetype expansion
+### Phase 6 — LLM Scenario Generation Pipeline ✅ (complete)
+
+**Goals**
+- enable automated scenario generation using LLMs
+- provide a model-agnostic two-pass generation pipeline with validation and repair
+- support consequence frame generation as a separate pass
+- provide coordinate-free authoring via the ScenarioIntent format
+
+**Changes**
+- `src/llm/generateScenario.ts` — `runGenerationPipeline()` orchestrates Pass A (core scenario) → validate → repair → Pass B (consequence frame) → validate → repair → merge
+- `src/llm/promptTypes.ts` — `ScenarioGenerationBrief`, `ModelCallFn`, `GenerationPipelineState`, `GenerationOptions` types
+- `src/llm/buildPassAPrompt.ts` — builds Pass A system + user prompts from a brief and template
+- `src/llm/buildPassBPrompt.ts` — builds Pass B prompts from an accepted scenario and template
+- `src/llm/buildRepairPrompt.ts` — builds repair prompts from broken JSON and issue list
+- `src/llm/repairScenario.ts` — `parseAndValidateScenario()`, `parseAndValidateConsequenceFrame()`, `extractJson()` for parsing model output
+- `src/llm/validateGeneratedScenario.ts` — `lintGeneratedScenario()` applies stricter checks for generated content (required archetype/field_zone/target_role_family, consequence frame board primitives, polarity validation, generic explanation detection, board clutter check)
+- `src/llm/mergeConsequenceFrame.ts` — merges accepted consequence frame into scenario
+- `src/llm/promptLoader.ts` — loads prompt template `.md` files from `docs/llm_scenario_generation/`
+- `docs/llm_scenario_generation/` — six markdown prompt templates (pass_a_system, pass_a_user, pass_b_system, pass_b_user, repair_system, repair_user)
+- `docs/guides/llm-scenario-generation-guide.md` — comprehensive guide for LLM-assisted generation (pitch coordinates, entity placement, region design, lint rules, consequence frames)
+- `src/scenarios/scenarioIntent.ts` — `ScenarioIntent` pre-schema (no coordinates required) and `intentToScenario()` converter
+- `scripts/generate-scenario-from-intent.ts` — CLI script to convert ScenarioIntent JSON to draft Scenario
+- `scripts/scenario-coverage-report.ts` — CLI script to generate content coverage matrix
+- `tests/generated-scenarios/` — test fixtures for generated scenario validation
+- `src/test/scenarioGeneration.test.ts` — pipeline unit tests
+- `src/test/llmSemanticGeneration.test.ts` — semantic generation validation tests
+- `npm run generate-scenario` and `npm run coverage-report` npm scripts
+
+**Success criteria**
+- pipeline generates structurally valid, lint-clean scenarios from a typed brief ✓
+- consequence frames pass generated-content lint (board primitives, polarity) ✓
+- ScenarioIntent converter resolves symbolic positions to real coordinates ✓
+- no model provider is hard-coded — callers supply `ModelCallFn` ✓
+
+---
+
+### Phase 7 — Role vocabulary and archetype expansion
 
 **Goals**
 - grow `CANONICAL_ROLES` as new scenario content is added
@@ -575,7 +611,7 @@ Estimated impact: low engineering cost, high content value.
 
 ---
 
-### Phase 7 — Relationship-aware scoring improvements
+### Phase 8 — Relationship-aware scoring improvements
 
 **Goals**
 - support richer hockey semantics in scoring
@@ -586,7 +622,7 @@ Estimated impact: low engineering cost, high content value.
 - line-of-pressure positioning
 - weak-side balancing
 
-**Recommendation**: do not start here. Only pursue after the content library is stable and covers all archetypes.
+**Recommendation**: do not start here. Only pursue after the content library is stable and covers all archetypes. Use the LLM generation pipeline (Phase 6) and `scripts/scenario-coverage-report.ts` to identify and fill coverage gaps first.
 
 ---
 
@@ -600,13 +636,14 @@ Estimated impact: low engineering cost, high content value.
 5. add UI filters (Phase 2)
 6. define archetype catalog (Phase 4)
 7. content QA lint layer (Phase 5)
+8. LLM scenario generation pipeline with two-pass validation + repair (Phase 6)
 
 **Active / next**
-8. expand scenario library — cover all 10 archetypes and all 9 situations (Phase 6)
+9. expand scenario library — cover all 10 archetypes and all 9 situations (Phase 7)
 
 **Future**
-9. relationship-aware scoring (Phase 7)
-10. richer automated scenario QA maps and field heatmaps
+10. relationship-aware scoring (Phase 8)
+11. richer automated scenario QA maps and field heatmaps
 
 ---
 

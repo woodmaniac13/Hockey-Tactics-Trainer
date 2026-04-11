@@ -47,6 +47,7 @@ The app is a **static React SPA**. All logic runs client-side.
 | `src/components/` | Shared UI components |
 | `src/pages/` | Top-level page views |
 | `src/types/` | All shared TypeScript types |
+| `src/llm/` | LLM scenario generation pipeline (two-pass generation, validation, repair) |
 | `src/utils/` | Geometry utilities (distance, angle, perpendicular, etc.) |
 | `public/scenarios/` | Static scenario JSON files, organized by category |
 | `public/weights/` | Weight profile JSON files + `weights-manifest.json` |
@@ -60,6 +61,15 @@ The app is a **static React SPA**. All logic runs client-side.
 6. Reasoning bonus
 7. Final weighted score (normalized at runtime if weights don't sum to 1.0)
 8. Feedback generation
+9. Consequence frame display (visual "what happens next" overlay)
+
+**LLM scenario generation pipeline:**
+1. Pass A — generate core scenario JSON from a typed brief
+2. Validate (Zod schema → content lint → generated-content lint)
+3. Repair loop (up to N attempts if validation fails)
+4. Pass B — generate consequence frame from the accepted scenario
+5. Validate + repair loop for the consequence frame
+6. Merge consequence frame into the scenario
 
 ---
 
@@ -76,14 +86,22 @@ Hockey-Tactics-Trainer/
 │   ├── evaluation/         # Evaluation engine (evaluator.ts)
 │   ├── feedback/           # Feedback text generation
 │   ├── hooks/              # React hooks (e.g. useIsMobile)
+│   ├── llm/               # LLM scenario generation pipeline
 │   ├── pages/              # Page-level views
 │   ├── progression/        # Unlock and progression logic
-│   ├── scenarios/          # Scenario loading and manifest parsing
+│   ├── scenarios/          # Scenario loading, manifest parsing, schema, lint, intent converter
 │   ├── storage/            # localStorage read/write
 │   ├── test/               # Unit and integration tests
 │   ├── types/              # Shared TypeScript types (index.ts)
-│   └── utils/              # Geometry helpers
+│   └── utils/              # Geometry helpers and pitch constants
+├── scripts/                # CLI scripts (lint, intent converter, coverage report)
+├── tests/                  # Generated-scenario test fixtures
 ├── docs/                   # All documentation (see docs/index.md)
+│   ├── design/             # Design document
+│   ├── specifications/     # Schema, evaluation, architecture, etc.
+│   ├── guides/             # Authoring, deployment, LLM generation guides
+│   ├── llm_scenario_generation/  # Prompt templates for two-pass LLM pipeline
+│   └── process/            # Roadmap and schema extension proposals
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
@@ -102,6 +120,7 @@ Key documents:
 - [Scenario Schema](docs/specifications/scenario-schema-definition.md) — scenario JSON format
 - [Weight Profile Spec](docs/specifications/weight-profile-spec.md) — weight profiles and normalization
 - [Scenario Authoring Guide](docs/guides/scenario-authoring-guide.md) — how to write new scenarios
+- [LLM Scenario Generation Guide](docs/guides/llm-scenario-generation-guide.md) — full reference for LLM-assisted scenario generation
 - [Deployment Guide](docs/guides/deployment-guide.md) — GitHub Pages deployment
 
 ---
@@ -116,6 +135,7 @@ Key documents:
 | Vitest | Unit testing |
 | Zod | Runtime schema validation |
 | GitHub Pages | Hosting |
+| tsx | CLI script runner (intent converter, lint, coverage report) |
 
 ---
 
@@ -127,6 +147,9 @@ Key documents:
 - **Multiple valid solutions:** The `ALTERNATE_VALID` result allows correct positions that fall outside authored regions.
 - **Polymorphic regions:** Scenario regions support circle, rectangle, polygon, and lane shapes. The legacy `{ x, y, r }` circle format remains valid.
 - **Runtime weight normalization:** Weight profiles may use raw weights; the evaluator normalizes them and emits a warning.
+- **Model-agnostic LLM pipeline:** The generation pipeline (`src/llm/`) takes a `ModelCallFn` callback — no model provider is hard-coded. Prompts are loaded from markdown templates in `docs/llm_scenario_generation/`.
+- **Three-layer validation:** Generated scenarios pass through Zod schema validation, content lint (`lintScenario`), and generated-content lint (`lintGeneratedScenario`) before acceptance.
+- **Consequence frame feedback:** After submission, the board shows a visual "what happens next" overlay (arrows, entity shifts, pass option states) driven by the scenario's `consequence_frame`.
 
 ---
 
@@ -139,6 +162,35 @@ Key documents:
 5. Commit and push — GitHub Pages deploys automatically.
 
 See [Scenario Authoring Guide](docs/guides/scenario-authoring-guide.md) for full details.
+
+---
+
+## How to Generate a Scenario with the LLM Pipeline
+
+The project includes a **two-pass LLM generation pipeline** (`src/llm/`) that can produce complete, validated scenario JSON from a typed brief. The pipeline is model-agnostic — you supply your own `ModelCallFn`.
+
+1. Create a `ScenarioGenerationBrief` object specifying archetype, phase, difficulty, field zone, etc.
+2. Load prompt templates from `docs/llm_scenario_generation/` (or use `loadAllPromptTemplates()` from `src/llm/promptLoader.ts`).
+3. Call `runGenerationPipeline(brief, callModel, templates)` from `src/llm/generateScenario.ts`.
+4. The pipeline generates the core scenario (Pass A), validates it, optionally repairs it, then generates the consequence frame (Pass B) and merges the result.
+5. Lint the output with `npx tsx scripts/lint-scenarios.ts`.
+6. Add the validated scenario to `public/scenarios/<category>/` and the content manifest.
+
+See [LLM Scenario Generation Guide](docs/guides/llm-scenario-generation-guide.md) for the complete prompt reference, pitch coordinate system, and common LLM pitfalls.
+
+---
+
+## How to Generate a Scenario from a ScenarioIntent
+
+For a coordinate-free authoring workflow, use the **ScenarioIntent** format:
+
+1. Write a `ScenarioIntent` JSON (semantic descriptions only — no raw coordinates needed).
+2. Run `npx tsx scripts/generate-scenario-from-intent.ts <intent.json> --print`.
+3. The script resolves `position_hint` values to coordinates and `named_zone` values to geometries.
+4. Review the draft, fix any PLACEHOLDER regions, and run the content lint.
+5. Move the final JSON to `public/scenarios/<category>/` and update the manifest.
+
+See `src/scenarios/scenarioIntent.ts` for the schema and `scripts/generate-scenario-from-intent.ts` for CLI usage.
 
 ---
 

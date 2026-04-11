@@ -182,6 +182,7 @@ function getRegionCenter(geo: TacticalRegionGeometry): { x: number; y: number } 
     case 'lane': return { x: (geo.x1 + geo.x2) / 2, y: (geo.y1 + geo.y2) / 2 };
     case 'polygon': {
       const n = geo.vertices.length;
+      if (n === 0) return { x: 0, y: 0 };
       return {
         x: geo.vertices.reduce((s, v) => s + v.x, 0) / n,
         y: geo.vertices.reduce((s, v) => s + v.y, 0) / n,

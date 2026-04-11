@@ -88,16 +88,16 @@ function computePassingLaneScore(
   weightProfile: WeightProfile,
 ): number {
   const blockThreshold = weightProfile.component_config?.passing_lane?.block_threshold ?? 5;
-  let blocked = false;
+  let minLaneDist = Infinity;
   for (const opp of scenario.opponents) {
     const dist = pointToLineDistance({ x: opp.x, y: opp.y }, ball, playerPos);
-    if (dist < blockThreshold) {
-      blocked = true;
-      break;
-    }
+    if (dist < minLaneDist) minLaneDist = dist;
   }
-  if (!blocked) return 1.0;
-  return 0.5;
+  // Smooth gradient: fully open (1.0) when no opponent is within the threshold,
+  // then linearly degrade from 0.8 down to 0.3 as the closest opponent sits
+  // closer to the passing lane centre.
+  if (minLaneDist >= blockThreshold) return 1.0;
+  return lerp(clamp(minLaneDist / blockThreshold, 0, 1), 0.3, 0.8);
 }
 
 function computeSpacingScore(
@@ -157,7 +157,9 @@ function computeWidthDepthScore(
   } else {
     yScore = clamp(1 - (yDiff - optimalMax) / optimalMax, 0, 1);
   }
-  if (scenario.phase === 'attack' || scenario.phase === 'defence') return lerp(0.5, xScore, yScore);
+  // Attack and defence phases prioritise depth (x-axis separation) over width,
+  // because forward/backward positioning matters more than lateral spacing.
+  if (scenario.phase === 'attack' || scenario.phase === 'defence') return lerp(0.7, xScore, yScore);
   return (xScore + yScore) / 2;
 }
 
@@ -165,7 +167,10 @@ function computeCoverScore(
   playerPos: Point,
   scenario: Scenario,
 ): number {
-  if (scenario.phase !== 'defence') return 0.7;
+  // Cover is only meaningful in defensive scenarios. In other phases the
+  // weight profile should set cover weight to 0, but returning 0 here
+  // ensures that even a non-zero weight produces no free contribution.
+  if (scenario.phase !== 'defence') return 0.0;
   const centralY = 50;
   const yDist = Math.abs(playerPos.y - centralY);
   const xScore = clamp(1 - playerPos.x / 100, 0, 1);
@@ -235,19 +240,63 @@ function computeRegionFitScore(playerPos: Point, scenario: Scenario): number {
   }
   for (const region of scenario.acceptable_regions) {
     if (isRegionHit(playerPos, region, scenario)) {
-      // Resolve to geometry to determine whether to apply the circle gradient.
       const resolved = resolveRegionGeometry(region, scenario);
-      if (resolved && resolved.type === 'circle') {
-        const cr = resolved as { x: number; y: number; r: number };
-        const d = distance(playerPos, { x: cr.x, y: cr.y });
-        const ratio = 1 - d / cr.r;
-        return lerp(ratio, 0.6, 0.9);
-      }
-      // For non-circle shapes, return a fixed mid-range acceptable score.
-      return 0.75;
+      if (!resolved) return 0.75;
+      const ratio = interiorRatio(playerPos, resolved);
+      // Map interior ratio [0, 1] → score [0.6, 0.9]: edge = 0.6, centre = 0.9.
+      return lerp(ratio, 0.6, 0.9);
     }
   }
   return 0.0;
+}
+
+/**
+ * Returns 0 at the boundary of a region and 1 at the geometric centre.
+ * Used to produce a smooth gradient for acceptable-region scoring.
+ */
+function interiorRatio(pos: Point, geo: TacticalRegionGeometry): number {
+  switch (geo.type) {
+    case 'circle': {
+      const d = distance(pos, { x: geo.x, y: geo.y });
+      return clamp(1 - d / geo.r, 0, 1);
+    }
+    case 'rectangle': {
+      // Distance from each edge as a fraction of the half-dimension.
+      const hw = geo.width / 2;
+      const hh = geo.height / 2;
+      const cx = geo.x + hw;
+      const cy = geo.y + hh;
+      const dx = hw > 0 ? 1 - Math.abs(pos.x - cx) / hw : 1;
+      const dy = hh > 0 ? 1 - Math.abs(pos.y - cy) / hh : 1;
+      return clamp(Math.min(dx, dy), 0, 1);
+    }
+    case 'lane': {
+      // Spine projection: how far along the lane (0–1) and how close to centre
+      const dx = geo.x2 - geo.x1;
+      const dy = geo.y2 - geo.y1;
+      const lenSq = dx * dx + dy * dy;
+      if (lenSq === 0) return 1;
+      const t = clamp(((pos.x - geo.x1) * dx + (pos.y - geo.y1) * dy) / lenSq, 0, 1);
+      const projX = geo.x1 + t * dx;
+      const projY = geo.y1 + t * dy;
+      const lateralDist = Math.sqrt((pos.x - projX) ** 2 + (pos.y - projY) ** 2);
+      const halfWidth = geo.width / 2;
+      return clamp(1 - lateralDist / halfWidth, 0, 1);
+    }
+    case 'polygon': {
+      // Approximate: distance from centroid as a fraction of the max vertex distance.
+      const n = geo.vertices.length;
+      if (n === 0) return 0.5;
+      const cx = geo.vertices.reduce((s, v) => s + v.x, 0) / n;
+      const cy = geo.vertices.reduce((s, v) => s + v.y, 0) / n;
+      const maxR = Math.max(...geo.vertices.map(v => distance(v, { x: cx, y: cy })));
+      if (maxR === 0) return 1;
+      const d = distance(pos, { x: cx, y: cy });
+      return clamp(1 - d / maxR, 0, 1);
+    }
+    default:
+      return 0.5;
+  }
 }
 
 function isRegionHit(playerPos: Point, region: TacticalRegion, scenario: Scenario): boolean {
@@ -469,4 +518,5 @@ export const __testing = {
   isInsidePolygon,
   isInsideLane,
   isResolvedGeometryHit,
+  interiorRatio,
 };

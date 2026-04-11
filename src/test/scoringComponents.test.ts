@@ -256,12 +256,12 @@ describe('computeWidthDepthScore', () => {
     expect(score).toBe(0);
   });
 
-  it('attack phase uses lerp(0.5, x, y) — verify with asymmetric scores', () => {
+  it('attack phase weights depth (x) more than width (y) via lerp(0.7, x, y)', () => {
     // xDiff=2 → xScore=2/8=0.25, yDiff=12 → yScore=1.0
-    // lerp(0.5, 0.25, 1.0) = 0.625
+    // lerp(0.7, 0.25, 1.0) = 0.25 + 0.7*(1.0-0.25) = 0.775
     const pos: Point = { x: 32, y: 62 };
     const score = computeWidthDepthScore(pos, baseScenario.ball, baseScenario);
-    expect(score).toBeCloseTo(0.625, 2);
+    expect(score).toBeCloseTo(0.775, 2);
   });
 
   it('transition phase uses plain average', () => {
@@ -368,31 +368,42 @@ describe('computePassingLaneScore', () => {
     expect(score).toBe(1.0);
   });
 
-  it('returns 0.5 when opponent is on the direct line', () => {
+  it('returns low score when opponent is directly on the passing lane', () => {
     // opp1 at {40, 48}. Ball at {30, 50}. Player at {50, 46}.
     // Line from {30,50} to {50,46}: opp at {40,48} should be close to this line.
     const pos: Point = { x: 50, y: 46 };
     const score = computePassingLaneScore(pos, baseScenario.ball, baseScenario, baseProfile);
-    expect(score).toBe(0.5);
+    // Opponent very close to the lane → score near 0.3
+    expect(score).toBeGreaterThanOrEqual(0.3);
+    expect(score).toBeLessThan(1.0);
   });
 
-  it('hard jump from 1.0 to 0.5 — not a smooth gradient', () => {
+  it('smooth gradient — score degrades as opponent approaches lane', () => {
+    const pos: Point = { x: 45, y: 62 };
+
     // Scenario with no opponents → 1.0
     const noOppScenario: Scenario = { ...baseScenario, opponents: [] };
-    const pos: Point = { x: 45, y: 62 };
     const scoreClean = computePassingLaneScore(pos, noOppScenario.ball, noOppScenario, baseProfile);
     expect(scoreClean).toBe(1.0);
 
-    // Place an opponent directly on the line between ball and player
+    // Place an opponent directly on the line between ball and player → low score
     const blockedScenario: Scenario = {
       ...baseScenario,
       opponents: [{ id: 'opp1', role: 'CF', team: 'away', x: 37.5, y: 56 }],
     };
     const scoreBlocked = computePassingLaneScore(pos, blockedScenario.ball, blockedScenario, baseProfile);
-    expect(scoreBlocked).toBe(0.5);
+    expect(scoreBlocked).toBeGreaterThanOrEqual(0.3);
+    expect(scoreBlocked).toBeLessThanOrEqual(0.8);
 
-    // Verify there's no value between 0.5 and 1.0
-    expect(scoreClean - scoreBlocked).toBe(0.5);
+    // Place an opponent just inside the threshold → higher than directly-on
+    const nearScenario: Scenario = {
+      ...baseScenario,
+      opponents: [{ id: 'opp1', role: 'CF', team: 'away', x: 37.5, y: 60 }],
+    };
+    const scoreNear = computePassingLaneScore(pos, nearScenario.ball, nearScenario, baseProfile);
+    // Near-blocked should score between blocked and clean
+    expect(scoreNear).toBeGreaterThanOrEqual(scoreBlocked);
+    expect(scoreNear).toBeLessThanOrEqual(scoreClean);
   });
 
   it('returns 1.0 when opponent is outside block_threshold', () => {
@@ -406,7 +417,7 @@ describe('computePassingLaneScore', () => {
     expect(score).toBe(1.0);
   });
 
-  it('scores are either 1.0 or 0.5 (binary)', () => {
+  it('scores are in [0.3, 1.0] range (smooth gradient)', () => {
     const positions: Point[] = [
       { x: 45, y: 62 },
       { x: 50, y: 46 },
@@ -415,7 +426,8 @@ describe('computePassingLaneScore', () => {
     ];
     for (const pos of positions) {
       const score = computePassingLaneScore(pos, baseScenario.ball, baseScenario, baseProfile);
-      expect(score === 1.0 || score === 0.5).toBe(true);
+      expect(score).toBeGreaterThanOrEqual(0.3);
+      expect(score).toBeLessThanOrEqual(1.0);
     }
   });
 });
@@ -424,16 +436,16 @@ describe('computePassingLaneScore', () => {
 // 7. computeCoverScore
 // ---------------------------------------------------------------------------
 describe('computeCoverScore', () => {
-  it('returns 0.7 for non-defence phase', () => {
+  it('returns 0.0 for non-defence phase', () => {
     // baseScenario.phase = 'attack'
     const score = computeCoverScore({ x: 50, y: 50 }, baseScenario);
-    expect(score).toBe(0.7);
+    expect(score).toBe(0.0);
   });
 
-  it('returns 0.7 for transition phase', () => {
+  it('returns 0.0 for transition phase', () => {
     const scenario: Scenario = { ...baseScenario, phase: 'transition' };
     const score = computeCoverScore({ x: 50, y: 50 }, scenario);
-    expect(score).toBe(0.7);
+    expect(score).toBe(0.0);
   });
 
   it('returns high score near (0, 50) in defence', () => {

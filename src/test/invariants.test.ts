@@ -50,13 +50,9 @@ function seededRandom(seed: number) {
 
 // Known exceptions: ideal regions whose centre fails a constraint due to
 // deliberate tactical tension in the scenario design.
-//   S03 "far_post_run" — width_hold purpose far from ball; support score
-//     (0.36) < constraint (0.4) because the position prioritises width over
-//     proximity-based support.
 //   S05 "strong_side_outlet_lane" — lane midpoint sits near opponents
 //     (opp_press, opp_cm), so pressure_relief (0.07) < constraint (0.4).
 const KNOWN_CENTER_EXCEPTIONS = new Set([
-  'S03:far_post_run',
   'S05:strong_side_outlet_lane',
 ]);
 
@@ -204,12 +200,9 @@ describe('5. Property-style randomized tests', () => {
   // We still assert a floor: even in tensioned regions, region_fit = 1.0
   // should lift scores above zero. The default threshold is 80%; regions
   // with documented tension use a relaxed floor.
-  //   S03 regions: support constraint tension (far from ball).
   //   S05 lane: almost all points fail pressure_relief ≥ 0.4 because the
   //     lane runs alongside nearby opponents (opp_press, opp_cm).
   const REGION_MIN_PASS: Record<string, number> = {
-    'S03:central_attacking_pocket': 5,
-    'S03:far_post_run': 5,
     'S05:strong_side_outlet_lane': 1,
   };
   const DEFAULT_MIN_PASS = 16; // 80% of 20

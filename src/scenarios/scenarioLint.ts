@@ -286,6 +286,25 @@ export function lintScenario(scenario: Scenario): LintResult {
     }
   }
 
+  // Constraint key validation: every key in constraint_thresholds must match a
+  // known scoring component name. Typos (e.g. "presure_relief") silently
+  // produce ineffective constraints without this check.
+  const KNOWN_CONSTRAINT_KEYS: ReadonlySet<string> = new Set([
+    'support', 'passing_lane', 'spacing', 'pressure_relief', 'width_depth', 'cover',
+  ]);
+  if (scenario.constraint_thresholds) {
+    const unknownKeys = Object.keys(scenario.constraint_thresholds).filter(
+      k => !KNOWN_CONSTRAINT_KEYS.has(k),
+    );
+    if (unknownKeys.length > 0) {
+      errors.push(
+        `[${id}] constraint_thresholds contains unknown key(s): ` +
+          `${unknownKeys.map(k => `"${k}"`).join(', ')} — ` +
+          `valid keys are: ${[...KNOWN_CONSTRAINT_KEYS].join(', ')}`,
+      );
+    }
+  }
+
   // Phase B: field_zone vs. ball x-axis position (which third)
   // Mismatched thirds are the most common LLM coordinate error and are flagged
   // as a blocking error. The y-axis channel check is advisory (warning) below.

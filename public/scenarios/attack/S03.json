@@ -117,7 +117,7 @@
   ],
   "weight_profile": "attack_v1",
   "constraint_thresholds": {
-    "support": 0.4,
+    "support": 0.2,
     "passing_lane": 0.4,
     "width_depth": 0.3
   },

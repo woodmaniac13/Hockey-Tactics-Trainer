@@ -173,8 +173,8 @@ describe('IDEAL contradiction cleanup', () => {
 // 3. Failure summary contradiction cleanup
 // ---------------------------------------------------------------------------
 
-describe('Failure summary contradiction cleanup', () => {
-  it("summary containing 'too flat': success-implying positives stripped", () => {
+describe('Failure outcome contradiction cleanup', () => {
+  it('PARTIAL: success-implying positives stripped regardless of summary wording', () => {
     const scenario: Scenario = {
       ...baseScenario,
       feedback_hints: { common_error: 'Position is too flat to be effective' },
@@ -186,26 +186,37 @@ describe('Failure summary contradiction cleanup', () => {
     expect(fb.positives).not.toContain('You made yourself available for a pass');
   });
 
-  it("summary containing 'does not meet': success-implying positives stripped", () => {
+  it('PARTIAL with non-standard failure wording: success-implying still stripped', () => {
     const scenario: Scenario = {
       ...baseScenario,
-      feedback_hints: { common_error: 'Positioning does not meet tactical needs' },
+      feedback_hints: { common_error: 'You stayed too deep behind the defender' },
     };
     const result = makeEval('PARTIAL', { width_depth: 0.9, passing_lane: 0.9 });
     const fb = generateFeedback(result, scenario, undefined, uniformProfile);
+    // Previously would not be stripped because wording didn't match fragments;
+    // now stripped because PARTIAL is outcome-driven.
     expect(fb.positives).not.toContain('You preserved team structure');
     expect(fb.positives).not.toContain('You made yourself available for a pass');
   });
 
-  it('summary without failure fragments: positives preserved', () => {
+  it('IDEAL with success summary: positives preserved', () => {
     const scenario: Scenario = {
       ...baseScenario,
       feedback_hints: { success: 'Great positioning overall' },
     };
     const result = makeEval('IDEAL', allHighScores);
     const fb = generateFeedback(result, scenario, undefined, uniformProfile);
-    // 'Great positioning overall' has no failure fragments, positives should remain
     expect(fb.positives.length).toBeGreaterThan(0);
+  });
+
+  it('VALID: success-implying positives NOT stripped (not failure-oriented)', () => {
+    const result = makeEval('VALID', { width_depth: 0.9, passing_lane: 0.9 });
+    const fb = generateFeedback(result, baseScenario, undefined, uniformProfile);
+    // VALID is not failure-oriented, so positives should survive
+    const hasSome = fb.positives.some(p =>
+      p === 'You preserved team structure' || p === 'You made yourself available for a pass',
+    );
+    expect(hasSome).toBe(true);
   });
 });
 

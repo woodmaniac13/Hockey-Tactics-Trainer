@@ -44,16 +44,13 @@ const OUTCOME_GATE: Record<ResultType, { maxPositives: number; maxImprovements: 
 
 /**
  * Generic positives that imply tactical success.
- * Suppressed via the contradiction cleanup pass when the summary carries
- * clearly failure-oriented language.
+ * Suppressed via the contradiction cleanup pass when the outcome is
+ * failure-oriented (PARTIAL or INVALID).
  */
 const SUCCESS_IMPLYING_PHRASES: ReadonlySet<string> = new Set([
   POSITIVES.width_depth,
   POSITIVES.passing_lane,
 ]);
-
-/** Fragments that identify a failure-oriented summary. */
-const FAILURE_SUMMARY_FRAGMENTS = ['too flat', 'too central', 'does not meet', 'not in'];
 
 function getTacticalExplanation(scenario: Scenario): string {
   // Use authored teaching_point as the primary tactical explanation when available.
@@ -197,13 +194,12 @@ export function generateFeedback(
     improvements = genuinelyWeak.slice(0, gate.maxImprovements).map(c => IMPROVEMENTS[c.key]);
   }
 
-  // 4b. When the summary carries clearly failure-oriented language, strip any
+  // 4b. When the outcome is failure-oriented (PARTIAL or INVALID), strip any
   //     generic positives that imply tactical success — they would contradict
-  //     the coaching message.
-  const summaryIsFailure = FAILURE_SUMMARY_FRAGMENTS.some(f =>
-    summary.toLowerCase().includes(f),
-  );
-  if (summaryIsFailure) {
+  //     the coaching message regardless of what the summary text says.
+  //     This is outcome-driven rather than phrase-matched, avoiding brittleness
+  //     when authors use different failure-message wording.
+  if (isFailure) {
     positives = positives.filter(p => !SUCCESS_IMPLYING_PHRASES.has(p));
   }
 

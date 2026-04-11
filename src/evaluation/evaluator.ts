@@ -56,7 +56,13 @@ function computeSupportScore(
     angleScore = 0.8;
   } else {
     const perpPressure = perpendicular(pressureVec);
-    const angle = angleBetween(toBall, perpPressure);
+    // Fold the angle into 0–90° so that staggering to either side of the
+    // pressure axis is rewarded equally. Without this, only one side of
+    // the perpendicular scores well (e.g. y < ball.y for outside_in
+    // pressure), causing positions in a valid ideal pocket on the other
+    // side to fail the support constraint.
+    const rawAngle = angleBetween(toBall, perpPressure);
+    const angle = rawAngle > 90 ? 180 - rawAngle : rawAngle;
     if (angle >= 30 && angle <= 60) angleScore = 1.0;
     else if (angle >= 15 && angle < 30) angleScore = lerp((angle - 15) / 15, 0.6, 1.0);
     else if (angle > 60 && angle <= 75) angleScore = lerp((75 - angle) / 15, 0.6, 1.0);

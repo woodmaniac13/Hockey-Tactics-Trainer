@@ -154,6 +154,30 @@ export function lintGeneratedScenario(
     );
   }
 
+  // ── Feedback hint bullet arrays (required for generated content) ──────────
+
+  const hints = scenario.feedback_hints;
+  if (!hints?.success_points || hints.success_points.length === 0) {
+    errors.push(
+      `[${id}] Generated scenario must include feedback_hints.success_points ` +
+        `(≥1 scenario-specific coaching bullet for IDEAL/VALID outcomes)`,
+    );
+  }
+
+  if (!hints?.error_points || hints.error_points.length === 0) {
+    errors.push(
+      `[${id}] Generated scenario must include feedback_hints.error_points ` +
+        `(≥1 scenario-specific coaching bullet for PARTIAL/INVALID outcomes)`,
+    );
+  }
+
+  if (!hints?.alternate_points || hints.alternate_points.length === 0) {
+    warnings.push(
+      `[${id}] Generated scenario should include feedback_hints.alternate_points ` +
+        `(coaching bullets for ALTERNATE_VALID outcomes)`,
+    );
+  }
+
   // ── Strongly expected fields (treated as warnings for generated content) ─
 
   if (!scenario.correct_reasoning || scenario.correct_reasoning.length === 0) {

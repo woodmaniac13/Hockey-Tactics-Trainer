@@ -106,7 +106,13 @@ const validScenario: Scenario = {
   field_zone: 'middle_third_central',
   game_state: 'open_play',
   scenario_archetype: 'midfield_triangle_restore',
-  feedback_hints: { success: 'Good angle.', common_error: 'Too deep.' },
+  feedback_hints: {
+    success: 'Good angle.',
+    common_error: 'Too deep.',
+    success_points: ['You stepped into the triangle gap and gave the ball carrier a clean passing option.', 'Your support angle was clear of the presser.'],
+    error_points: ['You stayed in the presser\'s shadow, blocking the passing lane.', 'Your position did not create a visible angle for the ball carrier.'],
+    alternate_points: ['A slightly wider position still offered a usable outlet.'],
+  },
   correct_reasoning: ['create_passing_angle'],
 };
 

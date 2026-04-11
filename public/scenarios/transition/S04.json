@@ -151,7 +151,21 @@
     "success": "Great run \u2014 you found space behind the defensive line and created a clear counter-attack option.",
     "common_error": "You hesitated or stayed too deep, allowing the defence to reorganise before you could threaten the space.",
     "alternate_valid": "This was still a usable support position for the transition even if not in the ideal lane.",
-    "teaching_emphasis": "On a turnover, commit to the forward run immediately \u2014 the space behind their midfield line closes quickly."
+    "teaching_emphasis": "On a turnover, commit to the forward run immediately \u2014 the space behind their midfield line closes quickly.",
+    "success_points": [
+      "You committed immediately to the forward run, exploiting the space before the defence could recover.",
+      "Your run gave the ball carrier a clear transition option behind the midfield line.",
+      "You timed the run to arrive in the channel as the ball was played, maintaining counter-attack tempo."
+    ],
+    "error_points": [
+      "You hesitated or stayed deep, allowing the defence to drop and close the space behind them.",
+      "Your run angle was too central \u2014 you needed to attack the channel to get in behind the defensive line.",
+      "You moved too late, arriving in the channel after the defensive line had already reorganised."
+    ],
+    "alternate_points": [
+      "You gave the ball carrier a viable forward option, even if the run wasn't into the ideal channel.",
+      "Your position still supported the transition even from a slightly wider or shallower start."
+    ]
   },
   "correct_reasoning": [
     "enable_switch",

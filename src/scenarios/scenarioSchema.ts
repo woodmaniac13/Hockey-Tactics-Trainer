@@ -149,12 +149,12 @@ export const PressureSchema = z.object({
 }).strict();
 
 export const ConstraintThresholdsSchema = z.object({
-  support: z.number().optional(),
-  passing_lane: z.number().optional(),
-  spacing: z.number().optional(),
-  pressure_relief: z.number().optional(),
-  width_depth: z.number().optional(),
-  cover: z.number().optional(),
+  support: z.number().min(0).max(1).optional(),
+  passing_lane: z.number().min(0).max(1).optional(),
+  spacing: z.number().min(0).max(1).optional(),
+  pressure_relief: z.number().min(0).max(1).optional(),
+  width_depth: z.number().min(0).max(1).optional(),
+  cover: z.number().min(0).max(1).optional(),
 }).strict();
 
 /** Controlled vocabulary for tactical line groups. */

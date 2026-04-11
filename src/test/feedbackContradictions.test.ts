@@ -425,4 +425,42 @@ describe('PARTIAL result feedback', () => {
     const fb = generateFeedback(result, baseScenario, undefined, uniformProfile);
     expect(fb.summary).toBe('Partially correct positioning.');
   });
+
+  it('PARTIAL strips ALL generic success-implying positives (not just width_depth + passing_lane)', () => {
+    // A PARTIAL result with all components at 0.85 (above positive threshold)
+    // should still produce zero generic positives — all are success-implying.
+    const result = makeEval('PARTIAL', {
+      support: 0.85,
+      passing_lane: 0.85,
+      spacing: 0.85,
+      pressure_relief: 0.85,
+      width_depth: 0.85,
+      cover: 0.85,
+    });
+    const fb = generateFeedback(result, baseScenario, undefined, uniformProfile);
+    // All 6 generic positive phrases should be stripped for PARTIAL results.
+    const genericPositives = [
+      'You created a strong support angle',
+      'You made yourself available for a pass',
+      'You maintained good spacing',
+      'You helped relieve pressure',
+      'You preserved team structure',
+      'You provided defensive cover',
+    ];
+    for (const phrase of genericPositives) {
+      expect(fb.positives, `"${phrase}" should be stripped for PARTIAL`).not.toContain(phrase);
+    }
+  });
+
+  it('INVALID with high component scores produces zero generic positives', () => {
+    // OUTCOME_GATE caps INVALID to 0 positives, AND the contradiction cleanup
+    // strips generic success phrases. Both guards should hold.
+    const result = makeEval('INVALID', {
+      support: 0.9,
+      passing_lane: 0.9,
+      spacing: 0.9,
+    });
+    const fb = generateFeedback(result, baseScenario, undefined, uniformProfile);
+    expect(fb.positives).toHaveLength(0);
+  });
 });

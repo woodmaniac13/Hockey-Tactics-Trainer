@@ -46,10 +46,17 @@ const OUTCOME_GATE: Record<ResultType, { maxPositives: number; maxImprovements: 
  * Generic positives that imply tactical success.
  * Suppressed via the contradiction cleanup pass when the outcome is
  * failure-oriented (PARTIAL or INVALID).
+ *
+ * All generic positive phrases are success-implying — praising any component
+ * would contradict an overall failure result.
  */
 const SUCCESS_IMPLYING_PHRASES: ReadonlySet<string> = new Set([
-  POSITIVES.width_depth,
+  POSITIVES.support,
   POSITIVES.passing_lane,
+  POSITIVES.spacing,
+  POSITIVES.pressure_relief,
+  POSITIVES.width_depth,
+  POSITIVES.cover,
 ]);
 
 function getTacticalExplanation(scenario: Scenario): string {

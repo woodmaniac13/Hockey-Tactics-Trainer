@@ -1,5 +1,6 @@
-import type { Scenario, TacticalRegion, ScenarioArchetype, LineGroup, PrimaryConceptVocab, FieldZone, ConsequenceType } from '../types';
-import { isSemanticRegion } from '../utils/regions';
+import type { Scenario, TacticalRegion, TacticalRegionGeometry, WeightProfile, ScenarioArchetype, LineGroup, PrimaryConceptVocab, FieldZone, ConsequenceType } from '../types';
+import { isSemanticRegion, resolveRegionGeometry } from '../utils/regions';
+import { evaluate } from '../evaluation/evaluator';
 import {
   CANONICAL_POSITION_ANCHORS,
   NAMED_PITCH_ZONES,
@@ -173,6 +174,23 @@ function isRawGeometry(region: TacticalRegion): boolean {
   return !isSemanticRegion(region);
 }
 
+/** Returns the geometric centre of a resolved region geometry. */
+function getRegionCenter(geo: TacticalRegionGeometry): { x: number; y: number } {
+  switch (geo.type) {
+    case 'circle': return { x: geo.x, y: geo.y };
+    case 'rectangle': return { x: geo.x + geo.width / 2, y: geo.y + geo.height / 2 };
+    case 'lane': return { x: (geo.x1 + geo.x2) / 2, y: (geo.y1 + geo.y2) / 2 };
+    case 'polygon': {
+      const n = geo.vertices.length;
+      if (n === 0) return { x: 0, y: 0 };
+      return {
+        x: geo.vertices.reduce((s, v) => s + v.x, 0) / n,
+        y: geo.vertices.reduce((s, v) => s + v.y, 0) / n,
+      };
+    }
+  }
+}
+
 // ── Main lint function ────────────────────────────────────────────────────────
 
 /**
@@ -188,8 +206,13 @@ function isRawGeometry(region: TacticalRegion): boolean {
  *
  * **Warnings** are advisory: they indicate missing optional fields that improve
  * authoring quality and LLM generation consistency, but do not prevent use.
+ *
+ * When a `weightProfile` is provided, the lint also evaluates each ideal and
+ * acceptable region center against the scenario's constraint thresholds. This
+ * catches the exact class of bug where an authored ideal region center fails
+ * its own scenario's constraints (Bug #4 pattern).
  */
-export function lintScenario(scenario: Scenario): LintResult {
+export function lintScenario(scenario: Scenario, weightProfile?: WeightProfile): LintResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   const id = scenario.scenario_id;
@@ -227,6 +250,35 @@ export function lintScenario(scenario: Scenario): LintResult {
       `[${id}] ${rawCount} region(s) use raw geometry instead of a semantic wrapper — ` +
         `use { label?, purpose?, reference_frame?, geometry } format for authored regions`,
     );
+  }
+
+  // Degenerate geometry detection: regions with zero area are likely authoring
+  // errors that produce nonsensical interior-ratio gradients.
+  for (const region of allRegions) {
+    const geo = resolveRegionGeometry(region, scenario);
+    if (!geo) continue;
+    const label = (isSemanticRegion(region) && 'label' in region && region.label) || geo.type;
+    if (geo.type === 'circle' && geo.r <= 0) {
+      errors.push(`[${id}] region "${label}" has zero or negative radius (r=${geo.r})`);
+    }
+    if (geo.type === 'rectangle' && (geo.width <= 0 || geo.height <= 0)) {
+      errors.push(`[${id}] region "${label}" has zero or negative dimensions (${geo.width}×${geo.height})`);
+    }
+    if (geo.type === 'lane') {
+      const dx = geo.x2 - geo.x1;
+      const dy = geo.y2 - geo.y1;
+      if (dx === 0 && dy === 0) {
+        errors.push(`[${id}] region "${label}" is a zero-length lane (start === end)`);
+      }
+    }
+    if (geo.type === 'polygon' && geo.vertices.length >= 3) {
+      const allSame = geo.vertices.every(
+        v => v.x === geo.vertices[0].x && v.y === geo.vertices[0].y,
+      );
+      if (allSame) {
+        errors.push(`[${id}] region "${label}" is a degenerate polygon (all vertices coincident)`);
+      }
+    }
   }
 
   // target_player must match exactly one teammate
@@ -301,6 +353,53 @@ export function lintScenario(scenario: Scenario): LintResult {
         `[${id}] constraint_thresholds contains unknown key(s): ` +
           `${unknownKeys.map(k => `"${k}"`).join(', ')} — ` +
           `valid keys are: ${[...KNOWN_CONSTRAINT_KEYS].join(', ')}`,
+      );
+    }
+  }
+
+  // Constraint–region centre validation: evaluate each ideal region centre against
+  // the scenario's constraint thresholds using the actual scoring engine. An ideal
+  // region centre that fails constraints is the exact Bug #4 pattern — the player
+  // is shown a green "ideal zone" but gets told their positioning is INVALID.
+  // Acceptable region centres produce a warning (some tension is expected).
+  if (weightProfile) {
+    for (const region of scenario.ideal_regions) {
+      const geo = resolveRegionGeometry(region, scenario);
+      if (!geo) continue;
+      const center = getRegionCenter(geo);
+      const label = (isSemanticRegion(region) && 'label' in region && region.label) || geo.type;
+      const result = evaluate(scenario, center, weightProfile);
+      if (!result.constraints_passed) {
+        errors.push(
+          `[${id}] ideal region "${label}" centre (${center.x.toFixed(1)}, ${center.y.toFixed(1)}) ` +
+            `fails constraint(s): ${result.failed_constraints.join(', ')} — ` +
+            `lower the threshold(s) or adjust the region geometry so the centre passes`,
+        );
+      }
+    }
+    for (const region of scenario.acceptable_regions) {
+      const geo = resolveRegionGeometry(region, scenario);
+      if (!geo) continue;
+      const center = getRegionCenter(geo);
+      const label = (isSemanticRegion(region) && 'label' in region && region.label) || geo.type;
+      const result = evaluate(scenario, center, weightProfile);
+      if (!result.constraints_passed) {
+        warnings.push(
+          `[${id}] acceptable region "${label}" centre (${center.x.toFixed(1)}, ${center.y.toFixed(1)}) ` +
+            `fails constraint(s): ${result.failed_constraints.join(', ')} — ` +
+            `consider lowering the threshold(s) or adjusting the region`,
+        );
+      }
+    }
+
+    // Cover weight in non-defence profile: weight > 0 is wasted because
+    // computeCoverScore returns 0.0 for non-defence phases, silently
+    // depressing overall scores.
+    if (scenario.phase !== 'defence' && (weightProfile.weights.cover ?? 0) > 0) {
+      warnings.push(
+        `[${id}] weight profile "${weightProfile.profile_id}" has cover weight ` +
+          `${weightProfile.weights.cover} but phase is "${scenario.phase}" — ` +
+          `cover always scores 0 in non-defence phases, wasting ${((weightProfile.weights.cover ?? 0) * 100).toFixed(0)}% of weight budget`,
       );
     }
   }

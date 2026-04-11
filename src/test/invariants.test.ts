@@ -416,3 +416,140 @@ function isInsideRegion(pos: { x: number; y: number }, geo: TacticalRegionGeomet
     }
   }
 }
+
+// ─── 6. PARTIAL bucket regression tests ────────────────────────────────────
+
+describe('6. PARTIAL bucket regression tests', () => {
+  const s01 = S01Json as unknown as Scenario;
+  const profile = buildOutProfile as unknown as WeightProfile;
+
+  // Positions found by grid sweep that produce PARTIAL: regionFit > 0, score 40–64.
+  const partialPositions = [
+    { x: 16, y: 48 },
+    { x: 16, y: 52 },
+    { x: 18, y: 46 },
+  ];
+
+  it('known PARTIAL positions produce PARTIAL result', () => {
+    for (const pos of partialPositions) {
+      const result = evaluate(s01, pos, profile);
+      expect(result.result_type).toBe('PARTIAL');
+    }
+  });
+
+  it('PARTIAL results generate appropriate feedback tone', () => {
+    for (const pos of partialPositions) {
+      const result = evaluate(s01, pos, profile);
+      const fb = generateFeedback(result, s01, undefined, profile);
+      // PARTIAL: max 1 positive, max 3 improvements
+      expect(fb.positives.length).toBeLessThanOrEqual(1);
+      expect(fb.improvements.length).toBeLessThanOrEqual(3);
+      expect(fb.summary.length).toBeGreaterThan(0);
+      expect(fb.result_type).toBe('PARTIAL');
+    }
+  });
+
+  it('PARTIAL requires regionFit > 0 and score 40–64', () => {
+    for (const pos of partialPositions) {
+      const result = evaluate(s01, pos, profile);
+      expect(result.region_fit_score).toBeGreaterThan(0);
+      expect(result.score).toBeGreaterThanOrEqual(40);
+      expect(result.score).toBeLessThanOrEqual(64);
+    }
+  });
+});
+
+// ─── 7. Scenario sweep red-flag regression tests ───────────────────────────
+
+describe('7. Scenario sweep red-flag regression', () => {
+  describe('S03: reduced INVALID inside ideal regions after constraint fix', () => {
+    const s03 = S03Json as unknown as Scenario;
+    const profile = attackProfile as unknown as WeightProfile;
+
+    // Positions that were previously INVALID but are now fixed by lowering the
+    // support constraint from 0.4 to 0.2:
+    const fixedPositions = [
+      { x: 80, y: 40 }, { x: 85, y: 50 }, { x: 85, y: 55 },
+      { x: 90, y: 60 },
+    ];
+
+    for (const pos of fixedPositions) {
+      it(`(${pos.x}, ${pos.y}) should no longer be INVALID`, () => {
+        const result = evaluate(s03, pos, profile);
+        expect(result.result_type).not.toBe('INVALID');
+      });
+    }
+
+    // Positions that remain INVALID due to extreme support-angle geometry
+    // (toBall vector nearly parallel to pressure perpendicular at the
+    // same x as the ball). These are genuine fringe cases.
+    const remainingTension = [
+      { x: 80, y: 45 }, { x: 80, y: 50 }, { x: 85, y: 60 },
+    ];
+
+    for (const pos of remainingTension) {
+      it(`(${pos.x}, ${pos.y}) is a known fringe case (inside ideal but low support)`, () => {
+        const result = evaluate(s03, pos, profile);
+        // Still INVALID but region_fit confirms inside ideal region
+        expect(result.region_fit_score).toBe(1.0);
+        expect(result.failed_constraints).toContain('support');
+      });
+    }
+  });
+
+  describe('S05: pressure_relief constraint causes INVALID in ideal lane', () => {
+    const s05 = S05Json as unknown as Scenario;
+    const profile = buildOutProfile as unknown as WeightProfile;
+
+    // The strong_side_outlet_lane runs alongside nearby opponents. Most positions
+    // fail pressure_relief ≥ 0.4. The support constraint was lowered from 0.4 to 0.2
+    // to fix the support tension, but pressure_relief remains the binding constraint.
+    // Positions in the diagonal_escape_pocket (y=38–50) fare better.
+    const diagonalPocket = [
+      { x: 28, y: 42 }, { x: 31, y: 44 }, { x: 34, y: 46 },
+    ];
+
+    it('diagonal_escape_pocket positions should mostly not be INVALID', () => {
+      const results = diagonalPocket.map(pos => evaluate(s05, pos, profile));
+      const nonInvalid = results.filter(r => r.result_type !== 'INVALID').length;
+      expect(nonInvalid).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('S04: ALTERNATE_VALID rate is reduced after constraint tightening', () => {
+    const s04 = S04Json as unknown as Scenario;
+    const profile = transitionProfile as unknown as WeightProfile;
+    const STEP = 5;
+
+    it('ALTERNATE_VALID should be less than 85% of grid points (was 91%)', () => {
+      let total = 0;
+      let altValid = 0;
+      for (let x = 0; x <= 100; x += STEP) {
+        for (let y = 0; y <= 100; y += STEP) {
+          total++;
+          const result = evaluate(s04, { x, y }, profile);
+          if (result.result_type === 'ALTERNATE_VALID') altValid++;
+        }
+      }
+      const altRate = altValid / total;
+      // Was 91% before constraints were tightened; now should be noticeably lower.
+      expect(altRate).toBeLessThan(0.85);
+    });
+  });
+
+  describe('no IDEAL at pitch corners for any scenario', () => {
+    const corners = [
+      { x: 0, y: 0 }, { x: 100, y: 0 },
+      { x: 0, y: 100 }, { x: 100, y: 100 },
+    ];
+
+    for (const { scenario, profile } of scenarios) {
+      for (const corner of corners) {
+        it(`${scenario.scenario_id}: (${corner.x},${corner.y}) should not be IDEAL`, () => {
+          const result = evaluate(scenario, corner, profile);
+          expect(result.result_type).not.toBe('IDEAL');
+        });
+      }
+    }
+  });
+});

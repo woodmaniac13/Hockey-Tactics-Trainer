@@ -10,6 +10,10 @@ const OPTIONS: { value: ReasoningOption; label: string }[] = [
   { value: 'provide_cover', label: 'Provide cover' },
   { value: 'enable_switch', label: 'Enable a switch' },
   { value: 'support_under_pressure', label: 'Support under pressure' },
+  { value: 'maintain_width', label: 'Maintain width' },
+  { value: 'restore_shape', label: 'Restore team shape' },
+  { value: 'break_pressure', label: 'Break the press' },
+  { value: 'occupy_depth', label: 'Occupy depth' },
 ];
 
 export default function ReasoningCapture({ onSubmit }: ReasoningCaptureProps) {

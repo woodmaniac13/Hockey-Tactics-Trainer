@@ -446,19 +446,21 @@ Planned (not required for MVP):
 
 ---
 
-## Known Authoring Guide Gaps
+## Advanced Authoring Features
 
-The following features exist in the schema and implementation but are not yet covered by this authoring guide. Authors should refer to the code and LLM generation guide for current guidance.
+The following features are fully supported and formally specified in [scenario-schema-definition.md](../specifications/scenario-schema-definition.md).
 
-- **`consequence_frame`**: Authored one-step tactical consequences (`on_success` / `on_failure`) that drive a post-submission visual overlay. Includes arrows, entity shifts, pass option states, and tactical outcome labels. All five authored scenarios (S01–S05) include this field. See `docs/llm_scenario_generation/pass_b_system_prompt.md` for the structure and `src/scenarios/scenarioSchema.ts` for the Zod schema.
+- **`named_zone`**: Semantic regions can reference a named zone string (e.g. `"left_back_escape_pocket"`) instead of explicit geometry. The system resolves the zone from `NAMED_PITCH_ZONES` automatically. See the [Named Zones catalog](../specifications/scenario-schema-definition.md#named-zones) for the full list of available zones.
 
-- **`entity_relationships`**: Optional array of declared spatial/tactical relationships between entities (e.g. `goal_side_of`, `supporting_behind`, `pressing`). Authoring-only — validated by content lint for geometric consistency but not evaluated at runtime. See `EntityRelationshipSchema` in `src/scenarios/scenarioSchema.ts`.
+- **`entity_relationships`**: Optional array of declared spatial/tactical relationships between entities (e.g. `goal_side_of`, `supporting_behind`, `pressing`). Authoring-only — validated by content lint for geometric consistency but not evaluated at runtime. See [Entity Relationships](../specifications/scenario-schema-definition.md#entity-relationships).
 
-- **`named_zone`**: Semantic regions can use a `named_zone` string (e.g. `"left_back_escape_pocket"`) instead of explicit geometry. The system resolves the zone from `NAMED_PITCH_ZONES` in `src/utils/pitchConstants.ts`. Over 30 named zones are defined. This is particularly useful with the ScenarioIntent format.
+- **`consequence_frame`**: Authored one-step tactical consequences (`on_success` / `on_failure`) that drive a post-submission board overlay. Includes arrows, entity shifts, pass option states, and tactical outcome labels. All five authored scenarios (S01–S05) include this field. See [Consequence Frame](../specifications/scenario-schema-definition.md#consequence-frame).
+
+- **`correct_reasoning`**: Explicitly declares which reasoning options are correct for this scenario. All eight values are now selectable in the UI. See [Authored Reasoning Alignment](../specifications/scenario-schema-definition.md#authored-reasoning-alignment).
 
 - **`success_points` / `error_points` / `alternate_points`**: Array-of-string bullet fields in `feedback_hints` that provide authored coaching bullets instead of generic component feedback. All five authored scenarios include `success_points` and `error_points`. Generated scenarios are required to include them (enforced by `lintGeneratedScenario`).
 
-- **`tsx` dependency**: The CLI scripts (`generate-scenario`, `lint-content`, `coverage-report`) require `tsx` but it is not declared as a project devDependency. Authors must install it globally (`npm install -g tsx`) or use `npx tsx` directly.
+- **`ScenarioIntent`**: Coordinate-free authoring format for LLM-assisted scenario creation. Use `npm run generate-scenario` to convert an intent JSON to a draft scenario. See [ScenarioIntent](../specifications/scenario-schema-definition.md#scenariointent-coordinate-free-authoring-format).
 
 ---
 

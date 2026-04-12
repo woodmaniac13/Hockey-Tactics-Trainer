@@ -93,7 +93,29 @@ Feedback Generation Pipeline
 	4.	Generate improvements
 	5.	Generate tactical explanation
 	6.	Evaluate reasoning alignment
-	7.	Assemble output
+	7.	Apply outcome gate caps
+	8.	Apply contradiction cleanup
+	9.	Assemble output
+
+### Outcome Gate (per-result-type caps)
+
+The feedback engine caps the number of positives and improvements based on the result type to prevent misleading feedback (e.g. listing many positives for an INVALID result):
+
+| Result type | Max positives | Max improvements |
+|---|---|---|
+| `IDEAL` | 3 | 1 |
+| `VALID` | 3 | 2 |
+| `ALTERNATE_VALID` | 2 | 2 |
+| `PARTIAL` | 1 | 3 |
+| `INVALID` | 0 | 3 |
+| `ERROR` | 0 | 0 |
+
+### Contradiction Cleanup
+
+After assembling positives and improvements, the engine applies two contradiction-prevention rules:
+
+1. **IDEAL re-filter:** For `IDEAL` results, improvements are filtered to only those where the component score ≤ 0.5 (genuinely weak), preventing trivially small improvements from appearing alongside strong praise.
+2. **Failure strip:** For `PARTIAL` and `INVALID` results, generic positives that imply success are removed using a set of `SUCCESS_IMPLYING_PHRASES` to avoid contradicting the negative outcome.
 
 ⸻
 

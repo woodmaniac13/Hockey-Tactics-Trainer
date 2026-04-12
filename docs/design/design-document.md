@@ -727,6 +727,8 @@ MVP answers
 	•	Break pressure
 	•	Occupy depth
 
+> **Known gap:** The UI reasoning prompt (`src/components/ReasoningCapture.tsx`) currently exposes only the first 4 options. The additional 4 options (`maintain_width`, `restore_shape`, `break_pressure`, `occupy_depth`) are defined in the schema and used by `correct_reasoning` in scenario files, but are not yet selectable in the player-facing UI.
+
 Scoring
 
 Add small bonus for aligned reasoning:

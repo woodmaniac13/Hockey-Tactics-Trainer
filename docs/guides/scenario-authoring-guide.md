@@ -108,7 +108,7 @@ To label the high-level tactical pattern of the scenario, add a `scenario_archet
 }
 ```
 
-To explicitly define which reasoning options are correct for this scenario, add `correct_reasoning`. When present, the evaluator uses this list directly rather than inferring alignment from tags. Use values from the controlled vocabulary: `create_passing_angle` | `provide_cover` | `enable_switch` | `support_under_pressure`.
+To explicitly define which reasoning options are correct for this scenario, add `correct_reasoning`. When present, the evaluator uses this list directly rather than inferring alignment from tags. Use values from the controlled vocabulary: `create_passing_angle` | `provide_cover` | `enable_switch` | `support_under_pressure` | `maintain_width` | `restore_shape` | `break_pressure` | `occupy_depth`.
 
 ```json
 {
@@ -443,6 +443,22 @@ Planned (not required for MVP):
 - [LLM Scenario Generation Guide](llm-scenario-generation-guide.md) — two-pass LLM pipeline that generates validated scenario JSON from a typed brief. See `src/llm/generateScenario.ts` and `docs/llm_scenario_generation/` for prompt templates.
 - [ScenarioIntent](../specifications/scenario-schema-definition.md) — coordinate-free authoring format that resolves to full scenarios via `npx tsx scripts/generate-scenario-from-intent.ts`.
 - `npx tsx scripts/scenario-coverage-report.ts` — generates a content coverage matrix to identify gaps for LLM generation.
+
+---
+
+## Known Authoring Guide Gaps
+
+The following features exist in the schema and implementation but are not yet covered by this authoring guide. Authors should refer to the code and LLM generation guide for current guidance.
+
+- **`consequence_frame`**: Authored one-step tactical consequences (`on_success` / `on_failure`) that drive a post-submission visual overlay. Includes arrows, entity shifts, pass option states, and tactical outcome labels. All five authored scenarios (S01–S05) include this field. See `docs/llm_scenario_generation/pass_b_system_prompt.md` for the structure and `src/scenarios/scenarioSchema.ts` for the Zod schema.
+
+- **`entity_relationships`**: Optional array of declared spatial/tactical relationships between entities (e.g. `goal_side_of`, `supporting_behind`, `pressing`). Authoring-only — validated by content lint for geometric consistency but not evaluated at runtime. See `EntityRelationshipSchema` in `src/scenarios/scenarioSchema.ts`.
+
+- **`named_zone`**: Semantic regions can use a `named_zone` string (e.g. `"left_back_escape_pocket"`) instead of explicit geometry. The system resolves the zone from `NAMED_PITCH_ZONES` in `src/utils/pitchConstants.ts`. Over 30 named zones are defined. This is particularly useful with the ScenarioIntent format.
+
+- **`success_points` / `error_points` / `alternate_points`**: Array-of-string bullet fields in `feedback_hints` that provide authored coaching bullets instead of generic component feedback. All five authored scenarios include `success_points` and `error_points`. Generated scenarios are required to include them (enforced by `lintGeneratedScenario`).
+
+- **`tsx` dependency**: The CLI scripts (`generate-scenario`, `lint-content`, `coverage-report`) require `tsx` but it is not declared as a project devDependency. Authors must install it globally (`npm install -g tsx`) or use `npx tsx` directly.
 
 ---
 

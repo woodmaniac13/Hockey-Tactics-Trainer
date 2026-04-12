@@ -487,6 +487,28 @@ Best Practices
 
 ⸻
 
+## Known Documentation Gaps
+
+The following features exist in the implementation (`src/scenarios/scenarioSchema.ts` and related code) but are not yet formally specified in this document. Until they are documented here, the code and inline JSDoc comments serve as the de facto specification.
+
+### Named Zones
+
+Semantic regions support a `named_zone` field as an alternative to explicit `geometry`. When `named_zone` is present (and `geometry` is absent), the system resolves the geometry from the `NAMED_PITCH_ZONES` lookup table in `src/utils/pitchConstants.ts`. Over 30 named zones are defined (e.g. `gk_distribution_area`, `left_back_escape_pocket`, `central_midfield_triangle_slot`). This feature is used by the ScenarioIntent converter and should be documented with the full zone catalog.
+
+### Entity Relationships
+
+The `entity_relationships` field (array of `EntityRelationship` objects) declares spatial/tactical relationships between entities. Each entry includes `entity_id`, `relationship` (enum: `goal_side_of`, `supporting_behind`, `screening`, `pressing`, `tracking_runner`, `providing_width`), `relative_to`, and optional `notes`. These are authoring-only annotations validated by the content lint layer but not used at runtime. The structure and relationship types should be documented here.
+
+### Consequence Frame
+
+The `consequence_frame` field contains authored one-step tactical outcomes (`on_success` and `on_failure` branches). Each branch is an `OutcomePreview` with `consequence_type`, `explanation`, optional `arrows`, `entity_shifts`, `pass_option_states`, `lane_highlight`, `pressure_result`, and `shape_result`. This drives the post-submission "what happens next" overlay. The full `ConsequenceFrame` and `OutcomePreview` structures should be formally specified here.
+
+### ScenarioIntent
+
+The `ScenarioIntent` format (`src/scenarios/scenarioIntent.ts`) is a coordinate-free authoring schema that resolves to full `Scenario` objects using canonical position anchors and named pitch zones. It has a dedicated Zod schema (`ScenarioIntentSchema`) and a converter function (`intentToScenario`). A formal specification or cross-reference should be added to this document.
+
+⸻
+
 Future Extensions
 
 Potential additions:

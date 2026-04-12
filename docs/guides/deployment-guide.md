@@ -90,8 +90,13 @@ on:
     branches: [main]
 
 permissions:
+  contents: read
   pages: write
   id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -99,31 +104,39 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '20'
+          cache: 'npm'
 
-      - name: Install
-        run: npm install
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
 
-      - name: Build
-        run: npm run build
+      - run: npm ci
+      - run: npm run type-check
+      - run: npm test -- --run
+      - run: npm run build
 
       - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Deploy
-        uses: actions/deploy-pages@v1
+      - id: deployment
+        name: Deploy
+        uses: actions/deploy-pages@v4
 
 
 ⸻

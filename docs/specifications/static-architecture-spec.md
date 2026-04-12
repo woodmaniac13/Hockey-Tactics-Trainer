@@ -73,16 +73,30 @@ Requirements
 
 2. Board Renderer
 
+The board has two rendering modes — a 2D canvas view (`Board.tsx`) and a lazy-loaded 3D Three.js/React Three Fiber view (`Board3D.tsx`).
+
 Responsibilities
-	•	render pitch
+	•	render pitch (2D canvas and 3D mesh)
 	•	render players and ball
 	•	handle drag interactions
-	•	render overlays after submission
+	•	render overlays after submission (regions, arrows, entity shifts)
+	•	provide multiple camera presets in 3D mode (behind_attack, top_down, sideline, pov)
 
 Requirements
 	•	smooth dragging (target ~60fps)
 	•	support responsive resizing
 	•	restrict movement within pitch bounds
+
+3D Camera System
+
+The 3D view includes a POV (point-of-view) camera (`src/board/camera/povCamera.ts`) with:
+- Ground-anchored map-style controls
+- Touch gestures: single-finger pan, two-finger pinch zoom, two-finger twist rotate/pitch
+- Desktop: left-drag pan, right/Alt-drag rotate+pitch, scroll wheel cursor-anchored zoom
+- Smooth interpolation and pitch-range constraints
+- Four presets: behind_attack, top_down, sideline, pov
+
+> **Known gap:** The 3D renderer's full capabilities (coordinate mapping, pitch texture, player coloring, label rendering) are not formally specified. The implementation in `Board3D.tsx` is the de facto specification. Consider documenting the 3D coordinate mapping (`pitchToWorld`/`worldToPitch`), camera preset definitions, and gesture semantics in a dedicated section or specification if the 3D view becomes a primary feature.
 
 Entities Rendered
 	•	ball

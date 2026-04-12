@@ -96,7 +96,7 @@ The 3D view includes a POV (point-of-view) camera (`src/board/camera/povCamera.t
 - Smooth interpolation and pitch-range constraints
 - Four presets: behind_attack, top_down, sideline, pov
 
-> **Known gap:** The 3D renderer's full capabilities (coordinate mapping, pitch texture, player coloring, label rendering) are not formally specified. The implementation in `Board3D.tsx` is the de facto specification. Consider documenting the 3D coordinate mapping (`pitchToWorld`/`worldToPitch`), camera preset definitions, and gesture semantics in a dedicated section or specification if the 3D view becomes a primary feature.
+> **Known gap:** The 3D renderer's full capabilities (coordinate mapping, pitch texture, player coloring, label rendering) are not formally specified. The implementation in `Board3D.tsx` is the de facto specification. If the 3D view becomes a primary feature, consider documenting the 3D coordinate mapping (`pitchToWorld`/`worldToPitch`), camera preset definitions, and gesture semantics in a dedicated section or specification.
 
 Entities Rendered
 	•	ball

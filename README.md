@@ -30,6 +30,14 @@ npm test           # watch mode
 npx vitest run     # single run
 ```
 
+Content lint, scenario generation, and coverage report:
+
+```bash
+npm run lint-content        # lint all authored scenarios
+npm run generate-scenario   # convert a ScenarioIntent to a draft scenario
+npm run coverage-report     # print a coverage matrix of existing content
+```
+
 ---
 
 ## Architecture Overview
@@ -38,12 +46,12 @@ The app is a **static React SPA**. All logic runs client-side.
 
 | Layer | Responsibility |
 |---|---|
-| `src/board/` | Interactive pitch canvas — renders entities, regions, handles player drag |
+| `src/board/` | Interactive pitch — 2D canvas (`Board.tsx`) and lazy-loaded 3D Three.js/R3F view (`Board3D.tsx`) with camera presets; handles entity rendering, region overlays, and player drag |
 | `src/evaluation/` | Evaluation engine — scores a player position against a scenario |
 | `src/feedback/` | Generates human-readable feedback from evaluation results |
 | `src/progression/` | Tracks scenario completion and manages unlock state |
 | `src/storage/` | localStorage persistence for progress, attempts, and settings |
-| `src/scenarios/` | Scenario loading and content manifest parsing |
+| `src/scenarios/` | Scenario loading, pack manifest parsing, Zod schema, content lint, and intent converter |
 | `src/components/` | Shared UI components |
 | `src/pages/` | Top-level page views |
 | `src/types/` | All shared TypeScript types |
@@ -78,10 +86,11 @@ The app is a **static React SPA**. All logic runs client-side.
 ```
 Hockey-Tactics-Trainer/
 ├── public/
+│   ├── scenario-packs.json # Pack manifest — entry point for all scenario content
 │   ├── scenarios/          # Scenario JSON files by category (build-out, defence, attack, transition)
 │   └── weights/            # Weight profile JSON files + weights-manifest.json
 ├── src/
-│   ├── board/              # Pitch canvas and player interaction
+│   ├── board/              # 2D canvas (Board.tsx), 3D Three.js view (Board3D.tsx), and camera/ presets
 │   ├── components/         # Shared UI components
 │   ├── evaluation/         # Evaluation engine (evaluator.ts)
 │   ├── feedback/           # Feedback text generation
@@ -94,7 +103,7 @@ Hockey-Tactics-Trainer/
 │   ├── test/               # Unit and integration tests
 │   ├── types/              # Shared TypeScript types (index.ts)
 │   └── utils/              # Geometry helpers and pitch constants
-├── scripts/                # CLI scripts (lint, intent converter, coverage report)
+├── scripts/                # CLI scripts (lint, intent converter, scenario sweep, coverage report)
 ├── tests/                  # Generated-scenario test fixtures
 ├── docs/                   # All documentation (see docs/index.md)
 │   ├── design/             # Design document
@@ -134,8 +143,9 @@ Key documents:
 | Vite | Build tool and dev server |
 | Vitest | Unit testing |
 | Zod | Runtime schema validation |
+| Three.js / @react-three/fiber / drei | 3D pitch view with camera presets |
 | GitHub Pages | Hosting |
-| tsx | CLI script runner (intent converter, lint, coverage report) |
+| tsx | CLI script runner (intent converter, lint, sweep, coverage report) |
 
 ---
 
@@ -145,7 +155,7 @@ Key documents:
 - **Data-driven content:** Scenarios and weight profiles are JSON files. No code changes needed to add content.
 - **Constraint-based evaluation:** Players are not scored on exact coordinates. Tactical principles (angles, lanes, spacing) drive the score.
 - **Multiple valid solutions:** The `ALTERNATE_VALID` result allows correct positions that fall outside authored regions.
-- **Polymorphic regions:** Scenario regions support circle, rectangle, polygon, and lane shapes. The legacy `{ x, y, r }` circle format remains valid.
+- **Polymorphic regions:** Scenario regions support circle, rectangle, polygon, and lane shapes. All regions require a `type` discriminator (no legacy untagged format).
 - **Runtime weight normalization:** Weight profiles may use raw weights; the evaluator normalizes them and emits a warning.
 - **Model-agnostic LLM pipeline:** The generation pipeline (`src/llm/`) takes a `ModelCallFn` callback — no model provider is hard-coded. Prompts are loaded from markdown templates in `docs/llm_scenario_generation/`.
 - **Three-layer validation:** Generated scenarios pass through Zod schema validation, content lint (`lintScenario`), and generated-content lint (`lintGeneratedScenario`) before acceptance.
@@ -157,7 +167,7 @@ Key documents:
 
 1. Copy an existing scenario from `public/scenarios/<category>/`.
 2. Give it a unique `scenario_id` and adjust fields.
-3. Add it to the appropriate category entry in `public/scenarios/content-manifest.json`.
+3. Add it to the appropriate pack in `public/scenario-packs.json`.
 4. Run the app locally and verify scoring, feedback, and rendering.
 5. Commit and push — GitHub Pages deploys automatically.
 
@@ -174,7 +184,7 @@ The project includes a **two-pass LLM generation pipeline** (`src/llm/`) that ca
 3. Call `runGenerationPipeline(brief, callModel, templates)` from `src/llm/generateScenario.ts`.
 4. The pipeline generates the core scenario (Pass A), validates it, optionally repairs it, then generates the consequence frame (Pass B) and merges the result.
 5. Lint the output with `npx tsx scripts/lint-scenarios.ts`.
-6. Add the validated scenario to `public/scenarios/<category>/` and the content manifest.
+6. Add the validated scenario to `public/scenarios/<category>/` and update `public/scenario-packs.json`.
 
 See [LLM Scenario Generation Guide](docs/guides/llm-scenario-generation-guide.md) for the complete prompt reference, pitch coordinate system, and common LLM pitfalls.
 

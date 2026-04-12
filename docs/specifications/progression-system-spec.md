@@ -57,7 +57,7 @@ Scenarios may optionally carry curriculum metadata:
 | `curriculum_group` | string | Logical grouping (e.g. `build_out_basics`) |
 | `learning_stage` | number | Ordering within a group (1 = earliest) |
 | `prerequisites` | string[] | Scenario IDs that must be completed (≥80) before this unlocks |
-| `recommended_after` | string[] | Soft ordering hint (no hard gate) |
+| `recommended_after` | string[] | Soft sequencing hint (no hard gate). Scenario IDs that work well as lead-ins to this one — any of the listed IDs satisfies the hint. |
 
 ---
 

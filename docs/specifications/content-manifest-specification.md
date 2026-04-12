@@ -126,7 +126,7 @@ Example:
 
 Rules:
 	•	must point to valid JSON files
-	•	paths are relative to the deployment root (no leading slash)
+	•	paths are relative to the public root — use the path as it would appear when fetched from the app (e.g. `scenarios/build-out/S01.json`, not `/scenarios/build-out/S01.json`)
 	•	must not contain duplicates
 
 ⸻

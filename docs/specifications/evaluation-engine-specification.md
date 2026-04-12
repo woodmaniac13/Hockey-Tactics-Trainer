@@ -206,8 +206,7 @@ Regions use the polymorphic `TacticalRegion` type. Supported shapes:
 
 | Shape | Key fields |
 |---|---|
-| Legacy circle | `{ x, y, r }` |
-| Tagged circle | `{ type: "circle", x, y, r }` |
+| Circle | `{ type: "circle", x, y, r }` |
 | Rectangle | `{ type: "rectangle", x, y, width, height, rotation? }` |
 | Polygon | `{ type: "polygon", vertices: [{x,y}...] }` |
 | Lane | `{ type: "lane", x1, y1, x2, y2, width }` |

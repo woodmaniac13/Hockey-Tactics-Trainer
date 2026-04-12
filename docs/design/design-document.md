@@ -1,9 +1,9 @@
-2D Web-Based Interactive Tactical Trainer for Field Hockey
+Web-Based Interactive Tactical Trainer for Field Hockey
 
 Overview
 
 A browser-based tactical training tool where players:
-	•	interact with a 2D field hockey board
+	•	interact with a 2D or 3D field hockey board
 	•	reposition a player based on a scenario
 	•	receive immediate feedback based on tactical principles
 
@@ -156,7 +156,6 @@ Core Data Sources
 	•	Scenarios: /public/scenarios/**/*.json
 	•	Weight profiles: /public/weights/*.json
 	•	Manifest: /public/scenario-packs.json
-	•	Static diagrams/icons: /public/assets/**
 
 The app must treat these files as the canonical content source.
 
@@ -177,10 +176,12 @@ The AI agent building this should assume the repo contains or will contain:
   scenario-packs.json
 
 /src
-  /app
   /components
   /board
   /evaluation
+  /feedback
+  /hooks
+  /llm
   /scenarios
   /storage
   /types
@@ -283,7 +284,8 @@ Preferred Stack
 	•	TypeScript
 	•	Vite
 	•	Zod for runtime validation
-	•	Canvas or Konva for board rendering
+	•	Canvas for 2D board rendering
+	•	Three.js / @react-three/fiber / drei for 3D board view
 	•	localStorage for MVP persistence
 
 If a rendering library is used, it must support:
@@ -720,6 +722,10 @@ MVP answers
 	•	Provide cover
 	•	Enable switch
 	•	Support under pressure
+	•	Maintain width
+	•	Restore shape
+	•	Break pressure
+	•	Occupy depth
 
 Scoring
 
@@ -759,7 +765,7 @@ Suggested structure:
   "best_score": 82,
   "last_score": 78,
   "attempt_count": 3,
-  "reasoning_history": ["support_under_pressure"]
+  "last_played": 1710000000000
 }
 
 

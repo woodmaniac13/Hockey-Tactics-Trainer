@@ -289,6 +289,9 @@ If a scenario includes a `feedback_hints` object, the feedback system may use it
 | `feedback_hints.common_error` | result_type is `PARTIAL` or `INVALID` |
 | `feedback_hints.alternate_valid` | result_type is `ALTERNATE_VALID` |
 | `feedback_hints.teaching_emphasis` | appended regardless of outcome |
+| `feedback_hints.success_points` | array of bullet strings used for IDEAL/VALID positives |
+| `feedback_hints.error_points` | array of bullet strings used for PARTIAL/INVALID improvements |
+| `feedback_hints.alternate_points` | array of bullet strings used for ALTERNATE_VALID context |
 
 If a hook is absent, the feedback system falls back to its standard generated output. Fallback must always be safe and must not crash the UI.
 

@@ -61,11 +61,9 @@ Each pack represents a logical grouping of scenarios.
   "description": "Fundamental tactical concepts",
   "order": 1,
   "scenarios": [
-    "/scenarios/build-out/S01.json",
-    "/scenarios/build-out/S02.json"
-  ],
-  "tags": ["core", "mvp"],
-  "difficulty_range": [1, 3]
+    "scenarios/build-out/S01.json",
+    "scenarios/build-out/S02.json"
+  ]
 }
 
 
@@ -79,8 +77,6 @@ title	string	yes
 description	string	yes
 order	number	yes
 scenarios	array	yes
-tags	array	no
-difficulty_range	array	no
 
 
 ⸻
@@ -124,36 +120,14 @@ Array of relative file paths.
 Example:
 
 [
-  "/scenarios/build-out/S01.json",
-  "/scenarios/defence/S02.json"
+  "scenarios/build-out/S01.json",
+  "scenarios/defence/S02.json"
 ]
 
 Rules:
 	•	must point to valid JSON files
-	•	must be relative to /public
+	•	paths are relative to the deployment root (no leading slash)
 	•	must not contain duplicates
-
-⸻
-
-tags
-
-Optional grouping labels.
-
-Used for:
-	•	filtering
-	•	recommendations
-
-⸻
-
-difficulty_range
-
-Optional.
-
-Example:
-
-[1, 3]
-
-Indicates expected difficulty spread.
 
 ⸻
 
@@ -265,11 +239,9 @@ Example Full Manifest
       "description": "Fundamental tactical concepts",
       "order": 1,
       "scenarios": [
-        "/scenarios/build-out/CM_SUPPORT_RIGHT_01.json",
-        "/scenarios/defence/CB_COVER_CENTER_01.json"
-      ],
-      "tags": ["core"],
-      "difficulty_range": [1, 3]
+        "scenarios/build-out/CM_SUPPORT_RIGHT_01.json",
+        "scenarios/defence/CB_COVER_CENTER_01.json"
+      ]
     },
     {
       "id": "advanced",
@@ -277,9 +249,8 @@ Example Full Manifest
       "description": "More complex decision making",
       "order": 2,
       "scenarios": [
-        "/scenarios/transition/CM_SWITCH_01.json"
-      ],
-      "difficulty_range": [3, 5]
+        "scenarios/transition/CM_SWITCH_01.json"
+      ]
     }
   ]
 }

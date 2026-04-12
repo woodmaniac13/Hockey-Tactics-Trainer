@@ -415,7 +415,7 @@ An explicit list of the reasoning options that are tactically correct for this s
 
 **Type**: array of enum strings
 
-**Allowed values**: `create_passing_angle` | `provide_cover` | `enable_switch` | `support_under_pressure`
+**Allowed values**: `create_passing_angle` | `provide_cover` | `enable_switch` | `support_under_pressure` | `maintain_width` | `restore_shape` | `break_pressure` | `occupy_depth`
 
 **Runtime behaviour**:
 - if the player selects any value in this list → reasoning bonus awarded

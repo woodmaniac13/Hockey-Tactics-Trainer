@@ -49,6 +49,7 @@ Offline / Script Runtime
  └── CLI Scripts (scripts/)
       ├── generate-scenario-from-intent.ts
       ├── lint-scenarios.ts
+      ├── scenario-sweep.ts
       └── scenario-coverage-report.ts
 
 
@@ -328,6 +329,7 @@ File Structure (Expected)
 /scripts
   generate-scenario-from-intent.ts
   lint-scenarios.ts
+  scenario-sweep.ts
   scenario-coverage-report.ts
 
 /tests
